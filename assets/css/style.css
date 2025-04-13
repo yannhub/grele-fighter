@@ -23,13 +23,6 @@ body {
   flex-grow: 1;
 }
 
-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
 .logo {
   width: 150px;
   height: auto;
@@ -40,12 +33,6 @@ header {
 
 .mixit-logo {
   margin-top: 10px;
-}
-
-h1 {
-  color: #007540;
-  text-align: center;
-  margin: 10px 0;
 }
 
 .content {
@@ -63,6 +50,7 @@ h1 {
 
 .game-area {
   flex: 3;
+  width: 800px;
   padding: 20px;
   background-color: white;
   border-radius: 10px;
