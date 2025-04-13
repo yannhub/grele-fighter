@@ -1,0 +1,264 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Arial", sans-serif;
+}
+
+body {
+  background-image: url("../img/mais-background.png");
+  background-repeat: repeat;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 150px;
+  height: auto;
+  margin-bottom: 15px;
+  display: block;
+  border-radius: 10px;
+}
+
+.mixit-logo {
+  margin-top: 10px;
+}
+
+h1 {
+  color: #007540;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.content {
+  display: flex;
+  flex-grow: 1;
+}
+
+.logo-column {
+  width: 170px;
+  padding-right: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-area {
+  flex: 3;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard {
+  flex: 1;
+  margin-left: 20px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard h2 {
+  color: #007540;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.leaderboard-list {
+  list-style-type: none;
+}
+
+.leaderboard-list li {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  font-weight: bold;
+}
+
+.leaderboard-list li span {
+  float: right;
+  color: #007540;
+}
+
+.welcome {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.welcome img {
+  max-width: 200px;
+  margin: 20px auto;
+  display: block;
+}
+
+.prize {
+  background-color: #f9f9c6;
+  border: 2px dashed #ffc107;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  margin: 20px auto;
+  max-width: 500px;
+}
+
+.prize h3 {
+  color: #e65100;
+  margin-bottom: 10px;
+}
+
+button {
+  background-color: #007540;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #005a32;
+}
+
+.start-btn {
+  display: block;
+  width: 200px;
+  margin: 20px auto;
+}
+
+.register-form {
+  max-width: 400px;
+  margin: 0 auto;
+  display: none;
+}
+
+.register-form input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.instruction {
+  background-color: #e8f5e9;
+  padding: 15px;
+  border-radius: 10px;
+  margin: 20px 0;
+  display: none;
+}
+
+.instruction h3 {
+  color: #007540;
+  margin-bottom: 10px;
+}
+
+.instruction ul {
+  margin-left: 20px;
+}
+
+.instruction li {
+  margin: 5px 0;
+}
+
+#game-canvas {
+  display: none;
+  border: 2px solid #007540;
+  margin: 0 auto;
+  background-color: #e8f5e9;
+}
+
+#score-display {
+  font-size: 24px;
+  font-weight: bold;
+  color: #007540;
+  text-align: center;
+  margin: 10px 0;
+  display: none;
+}
+
+#game-over {
+  display: none;
+  text-align: center;
+  margin: 20px 0;
+}
+
+#final-score {
+  font-size: 32px;
+  color: #007540;
+  margin: 10px 0;
+}
+
+.corn-field {
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23e8d985"/><path d="M0,0 L100,100 M100,0 L0,100" stroke="%23d4c76c" stroke-width="1"/></svg>');
+}
+
+.defender {
+  width: 50px;
+  height: 50px;
+  background-color: #007540;
+  border-radius: 50%;
+  position: relative;
+}
+
+.hail {
+  width: 20px;
+  height: 20px;
+  background-color: #a8cef0;
+  border-radius: 50%;
+  position: absolute;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.bullet {
+  width: 10px;
+  height: 10px;
+  background-color: #ffeb3b;
+  border-radius: 50%;
+  position: absolute;
+}
+
+/* Ajout de médias queries pour la responsivité */
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+  }
+
+  .logo-column {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    padding-right: 0;
+    padding-bottom: 20px;
+  }
+
+  .logo {
+    margin: 0 10px;
+  }
+
+  .leaderboard {
+    margin-left: 0;
+    margin-top: 20px;
+  }
+}
