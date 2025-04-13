@@ -20,10 +20,15 @@ let canvas, ctx;
 let player = {
   x: 0,
   y: 0,
-  width: 50,
-  height: 30,
-  speed: 5,
+  width: 50, // Sera redimensionné en fonction du canvas
+  height: 30, // Sera redimensionné en fonction du canvas
+  speed: 5, // Sera redimensionné en fonction du canvas
 };
+
+// Facteurs de dimensionnement pour adapter les éléments à la taille du viewport
+let scaleFactor = 1;
+let baseWidth = 600; // Largeur de référence du canvas
+let baseHeight = 400; // Hauteur de référence du canvas
 
 let bullets = [];
 let hails = [];
@@ -99,14 +104,57 @@ function updateLeaderboardDisplay() {
   });
 }
 
+// Fonction pour ajuster la taille du canvas et des éléments de jeu
+function resizeGame() {
+  const gameArea = document.querySelector(".game-area");
+  const gameAreaWidth = gameArea.clientWidth - 40; // -40 pour le padding
+  const gameAreaHeight = Math.min(
+    window.innerHeight * 0.6,
+    gameAreaWidth * 0.7
+  );
+
+  // Ajuster la taille du canvas
+  canvas.width = gameAreaWidth;
+  canvas.height = gameAreaHeight;
+
+  // Calculer le facteur d'échelle par rapport à la taille de référence
+  scaleFactor = Math.min(canvas.width / baseWidth, canvas.height / baseHeight);
+
+  // Ajuster la taille du joueur en fonction du nouveau facteur d'échelle
+  player.width = 50 * scaleFactor;
+  player.height = 30 * scaleFactor;
+  player.speed = 5 * scaleFactor;
+
+  // Repositionner le joueur
+  player.x = canvas.width / 2 - player.width / 2;
+  player.y = canvas.height - player.height - 10 * scaleFactor;
+
+  // Reinitialiser les épis de maïs avec les bonnes dimensions
+  if (cornStalks.length > 0) {
+    initCornStalks();
+  }
+
+  // Ajuster la taille et position des balles
+  for (let bullet of bullets) {
+    bullet.width = 5 * scaleFactor;
+    bullet.height = 10 * scaleFactor;
+    bullet.speed = 7 * scaleFactor;
+  }
+
+  // Ajuster la taille et position des grêlons
+  for (let hail of hails) {
+    hail.size = hail.size * scaleFactor;
+    hail.speed = hail.speed * scaleFactor;
+  }
+}
+
 // Initialiser le jeu
 function initGame() {
   canvas = document.getElementById("game-canvas");
   ctx = canvas.getContext("2d");
 
-  // Positionner le joueur
-  player.x = canvas.width / 2 - player.width / 2;
-  player.y = canvas.height - player.height - 10;
+  // Adapter la taille du canvas à son conteneur
+  resizeGame();
 
   // Initialiser les épis de maïs
   initCornStalks();
@@ -123,6 +171,9 @@ function initGame() {
     keys[e.key] = false;
   });
 
+  // Écouter les changements de taille d'écran
+  window.addEventListener("resize", resizeGame);
+
   // Démarrer la boucle du jeu
   gameInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
 
@@ -138,13 +189,14 @@ function initGame() {
 function initCornStalks() {
   cornStalks = [];
   const cornWidth = Math.floor(canvas.width / CORN_COUNT);
+  const cornHeight = 40 * scaleFactor;
 
   for (let i = 0; i < CORN_COUNT; i++) {
     cornStalks.push({
       x: i * cornWidth,
-      y: canvas.height - 40,
+      y: canvas.height - cornHeight,
       width: cornWidth - 2, // Petit espace entre les épis
-      height: 40,
+      height: cornHeight,
       alive: true,
     });
   }
@@ -199,11 +251,12 @@ function drawCornStalks() {
     if (stalk.alive) {
       // Tige de l'épi
       ctx.fillStyle = "#4CAF50"; // Vert
+      const stemWidth = 4 * scaleFactor;
       ctx.fillRect(
-        stalk.x + stalk.width / 2 - 2,
-        stalk.y + 10,
-        4,
-        stalk.height - 10
+        stalk.x + stalk.width / 2 - stemWidth / 2,
+        stalk.y + 10 * scaleFactor,
+        stemWidth,
+        stalk.height - 10 * scaleFactor
       );
 
       // Épi de maïs (forme cylindrique jaune)
@@ -211,9 +264,9 @@ function drawCornStalks() {
       ctx.beginPath();
       ctx.ellipse(
         stalk.x + stalk.width / 2,
-        stalk.y + 10,
+        stalk.y + 10 * scaleFactor,
         stalk.width / 3,
-        15,
+        15 * scaleFactor,
         0,
         0,
         Math.PI * 2
@@ -227,7 +280,7 @@ function drawCornStalks() {
         stalk.x + stalk.width / 2,
         stalk.y,
         stalk.width / 6,
-        5,
+        5 * scaleFactor,
         0,
         0,
         Math.PI * 2
@@ -240,9 +293,9 @@ function drawCornStalks() {
         for (let j = 0; j < 3; j++) {
           ctx.beginPath();
           ctx.arc(
-            stalk.x + stalk.width / 2 - 5 + j * 5,
-            stalk.y + 7 + i * 2,
-            1,
+            stalk.x + stalk.width / 2 - 5 * scaleFactor + j * 5 * scaleFactor,
+            stalk.y + 7 * scaleFactor + i * 2 * scaleFactor,
+            1 * scaleFactor,
             0,
             Math.PI * 2
           );
@@ -253,25 +306,25 @@ function drawCornStalks() {
       // Feuilles de maïs
       ctx.fillStyle = "#66BB6A"; // Vert clair
       ctx.beginPath();
-      ctx.moveTo(stalk.x + stalk.width / 2, stalk.y + 20);
+      ctx.moveTo(stalk.x + stalk.width / 2, stalk.y + 20 * scaleFactor);
       ctx.quadraticCurveTo(
-        stalk.x + stalk.width / 2 - 15,
-        stalk.y + 30,
-        stalk.x + stalk.width / 2 - 25,
-        stalk.y + 25
+        stalk.x + stalk.width / 2 - 15 * scaleFactor,
+        stalk.y + 30 * scaleFactor,
+        stalk.x + stalk.width / 2 - 25 * scaleFactor,
+        stalk.y + 25 * scaleFactor
       );
-      ctx.lineTo(stalk.x + stalk.width / 2, stalk.y + 35);
+      ctx.lineTo(stalk.x + stalk.width / 2, stalk.y + 35 * scaleFactor);
       ctx.fill();
 
       ctx.beginPath();
-      ctx.moveTo(stalk.x + stalk.width / 2, stalk.y + 25);
+      ctx.moveTo(stalk.x + stalk.width / 2, stalk.y + 25 * scaleFactor);
       ctx.quadraticCurveTo(
-        stalk.x + stalk.width / 2 + 15,
-        stalk.y + 35,
-        stalk.x + stalk.width / 2 + 25,
-        stalk.y + 30
+        stalk.x + stalk.width / 2 + 15 * scaleFactor,
+        stalk.y + 35 * scaleFactor,
+        stalk.x + stalk.width / 2 + 25 * scaleFactor,
+        stalk.y + 30 * scaleFactor
       );
-      ctx.lineTo(stalk.x + stalk.width / 2, stalk.y + 40);
+      ctx.lineTo(stalk.x + stalk.width / 2, stalk.y + 40 * scaleFactor);
       ctx.fill();
     }
   }
@@ -282,7 +335,7 @@ function movePlayer() {
   if (keys["ArrowLeft"] && player.x > -player.width / 3) {
     player.x -= player.speed;
   }
-  if (keys["ArrowRight"] && player.x < canvas.width - player.width * 2 / 3) {
+  if (keys["ArrowRight"] && player.x < canvas.width - (player.width * 2) / 3) {
     player.x += player.speed;
   }
   if (keys[" "] && bullets.length < 5) {
@@ -299,34 +352,63 @@ function drawPlayer() {
   ctx.fillRect(player.x, player.y, player.width, player.height);
 
   // Ajouter un canon sur le dessus
+  const canonWidth = 10 * scaleFactor;
+  const canonHeight = 10 * scaleFactor;
   ctx.fillStyle = "#005a32";
-  ctx.fillRect(player.x + player.width / 2 - 5, player.y - 10, 10, 10);
-  
+  ctx.fillRect(
+    player.x + player.width / 2 - canonWidth / 2,
+    player.y - canonHeight,
+    canonWidth,
+    canonHeight
+  );
+
   // Ajouter le texte "G2S" en blanc
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "bold 16px Arial";
+  ctx.font = `bold ${16 * scaleFactor}px Arial`;
   ctx.textAlign = "center";
-  ctx.fillText("G2S", player.x + player.width / 2, player.y + player.height / 2 + 5);
-  
+  ctx.fillText(
+    "G2S",
+    player.x + player.width / 2,
+    player.y + player.height / 2 + 5 * scaleFactor
+  );
+
   // Ajouter des roues (deux cercles noirs à gauche et à droite)
+  const wheelRadius = 6 * scaleFactor;
   ctx.fillStyle = "#000000";
   // Roue gauche
   ctx.beginPath();
-  ctx.arc(player.x + 10, player.y + player.height, 6, 0, Math.PI * 2);
+  ctx.arc(
+    player.x + 10 * scaleFactor,
+    player.y + player.height,
+    wheelRadius,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
   // Roue droite
   ctx.beginPath();
-  ctx.arc(player.x + player.width - 10, player.y + player.height, 6, 0, Math.PI * 2);
+  ctx.arc(
+    player.x + player.width - 10 * scaleFactor,
+    player.y + player.height,
+    wheelRadius,
+    0,
+    Math.PI * 2
+  );
   ctx.fill();
 }
 
 function createBullet() {
+  const bulletWidth = 5 * scaleFactor;
+  const bulletHeight = 10 * scaleFactor;
+  const bulletSpeed = 7 * scaleFactor;
+  const canonHeight = 10 * scaleFactor;
+
   bullets.push({
-    x: player.x + player.width / 2 - 5,
-    y: player.y - 10,
-    width: 5,
-    height: 10,
-    speed: 7,
+    x: player.x + player.width / 2 - bulletWidth / 2,
+    y: player.y - canonHeight,
+    width: bulletWidth,
+    height: bulletHeight,
+    speed: bulletSpeed,
   });
 }
 
@@ -350,12 +432,14 @@ function drawBullets() {
 }
 
 function createHail() {
-  const size = Math.random() * 10 + 15; // Taille entre 15 et 25
+  const baseSize = Math.random() * 10 + 15; // Taille entre 15 et 25
+  const size = baseSize * scaleFactor;
+
   hails.push({
     x: Math.random() * (canvas.width - size),
     y: -size,
     size: size,
-    speed: (Math.random() * 2 + 1) * gameSpeed,
+    speed: (Math.random() * 2 + 1) * gameSpeed * scaleFactor,
   });
 
   // Augmenter la fréquence des grêlons avec le temps
@@ -551,4 +635,12 @@ playAgainBtn.addEventListener("click", function () {
 // Initialiser le leaderboard au chargement
 document.addEventListener("DOMContentLoaded", function () {
   updateLeaderboardDisplay();
+
+  // Au chargement initial de la page, s'assurer que le canvas est caché
+  // mais adapté à la taille de son conteneur
+  canvas = document.getElementById("game-canvas");
+  resizeGame();
+
+  // Ajouter un écouteur d'événement pour le redimensionnement de la fenêtre
+  window.addEventListener("resize", resizeGame);
 });

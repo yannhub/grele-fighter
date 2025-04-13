@@ -12,11 +12,11 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 20px;
+  padding: 2vmin;
 }
 
 .container {
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -24,15 +24,15 @@ body {
 }
 
 .logo {
-  width: 150px;
+  width: 80%;
   height: auto;
-  margin-bottom: 15px;
+  margin-bottom: 1.5vh;
   display: block;
-  border-radius: 10px;
+  border-radius: 0.5rem;
 }
 
 .mixit-logo {
-  margin-top: 10px;
+  margin-top: 1vh;
 }
 
 .content {
@@ -41,8 +41,9 @@ body {
 }
 
 .logo-column {
-  width: 170px;
-  padding-right: 20px;
+  width: 15%;
+  min-width: 120px;
+  padding-right: 2%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -50,25 +51,26 @@ body {
 
 .game-area {
   flex: 3;
-  width: 800px;
-  padding: 20px;
+  width: 60%;
+  padding: 2vmin;
   background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
 }
 
 .leaderboard {
   flex: 1;
-  margin-left: 20px;
-  padding: 20px;
+  width: 25%;
+  margin-left: 2%;
+  padding: 2vmin;
   background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
 }
 
 .leaderboard h2 {
   color: #007540;
-  margin-bottom: 15px;
+  margin-bottom: 1.5vh;
   text-align: center;
 }
 
@@ -77,7 +79,7 @@ body {
 }
 
 .leaderboard-list li {
-  padding: 10px;
+  padding: 0.8rem;
   border-bottom: 1px solid #eee;
   font-weight: bold;
 }
@@ -89,39 +91,40 @@ body {
 
 .welcome {
   text-align: center;
-  margin: 20px 0;
+  margin: 2vh 0;
 }
 
 .welcome img {
-  max-width: 200px;
-  margin: 20px auto;
+  max-width: 40%;
+  min-width: 150px;
+  margin: 2vh auto;
   display: block;
 }
 
 .prize {
   background-color: #f9f9c6;
   border: 2px dashed #ffc107;
-  padding: 15px;
-  border-radius: 10px;
+  padding: 1.5vh;
+  border-radius: 0.5rem;
   text-align: center;
-  margin: 20px auto;
-  max-width: 500px;
+  margin: 2vh auto;
+  max-width: 70%;
 }
 
 .prize h3 {
   color: #e65100;
-  margin-bottom: 10px;
+  margin-bottom: 1vh;
 }
 
 button {
   background-color: #007540;
   color: white;
   border: none;
-  padding: 10px 20px;
-  font-size: 18px;
-  border-radius: 5px;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 0.3rem;
   cursor: pointer;
-  margin: 10px 0;
+  margin: 1vh 0;
   transition: background-color 0.3s;
 }
 
@@ -131,43 +134,46 @@ button:hover {
 
 .start-btn {
   display: block;
-  width: 200px;
-  margin: 20px auto;
+  width: 40%;
+  min-width: 180px;
+  max-width: 200px;
+  margin: 2vh auto;
 }
 
 .register-form {
-  max-width: 400px;
+  width: 70%;
+  min-width: 300px;
   margin: 0 auto;
   display: none;
 }
 
 .register-form input {
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
+  padding: 0.8rem;
+  margin: 1vh 0;
   border: 1px solid #ddd;
-  border-radius: 5px;
+  border-radius: 0.3rem;
 }
 
 .instruction {
   background-color: #e8f5e9;
-  padding: 15px;
-  border-radius: 10px;
-  margin: 20px 0;
+  padding: 1.5vh;
+  border-radius: 0.5rem;
+  margin: 2vh 0;
   display: none;
 }
 
 .instruction h3 {
   color: #007540;
-  margin-bottom: 10px;
+  margin-bottom: 1vh;
 }
 
 .instruction ul {
-  margin-left: 20px;
+  margin-left: 5%;
 }
 
 .instruction li {
-  margin: 5px 0;
+  margin: 0.5vh 0;
 }
 
 #game-canvas {
@@ -175,27 +181,28 @@ button:hover {
   border: 2px solid #007540;
   margin: 0 auto;
   background-color: #e8f5e9;
+  max-width: 100%;
 }
 
 #score-display {
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: bold;
   color: #007540;
   text-align: center;
-  margin: 10px 0;
+  margin: 1vh 0;
   display: none;
 }
 
 #game-over {
   display: none;
   text-align: center;
-  margin: 20px 0;
+  margin: 2vh 0;
 }
 
 #final-score {
-  font-size: 32px;
+  font-size: 2rem;
   color: #007540;
-  margin: 10px 0;
+  margin: 1vh 0;
 }
 
 .corn-field {
@@ -203,25 +210,31 @@ button:hover {
 }
 
 .defender {
-  width: 50px;
-  height: 50px;
+  width: 4vmin;
+  height: 4vmin;
+  min-width: 30px;
+  min-height: 30px;
   background-color: #007540;
   border-radius: 50%;
   position: relative;
 }
 
 .hail {
-  width: 20px;
-  height: 20px;
+  width: 2vmin;
+  height: 2vmin;
+  min-width: 15px;
+  min-height: 15px;
   background-color: #a8cef0;
   border-radius: 50%;
   position: absolute;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0.3rem rgba(0, 0, 0, 0.2);
 }
 
 .bullet {
-  width: 10px;
-  height: 10px;
+  width: 1vmin;
+  height: 1vmin;
+  min-width: 8px;
+  min-height: 8px;
   background-color: #ffeb3b;
   border-radius: 50%;
   position: absolute;
@@ -238,15 +251,48 @@ button:hover {
     flex-direction: row;
     justify-content: center;
     padding-right: 0;
-    padding-bottom: 20px;
+    padding-bottom: 2vh;
   }
 
   .logo {
-    margin: 0 10px;
+    margin: 0 3%;
+    width: 20%;
+    max-width: 100px;
   }
 
   .leaderboard {
+    width: 100%;
     margin-left: 0;
-    margin-top: 20px;
+    margin-top: 2vh;
+  }
+
+  .game-area {
+    width: 100%;
+  }
+
+  .prize {
+    max-width: 90%;
+  }
+
+  .register-form {
+    width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 1vmin;
+  }
+
+  .container {
+    width: 98%;
+  }
+
+  .register-form {
+    min-width: 90%;
+  }
+
+  button {
+    padding: 0.6rem 1rem;
   }
 }
