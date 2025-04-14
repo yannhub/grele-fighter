@@ -37,6 +37,7 @@
 
             <button id="start-btn" class="start-btn">COMMENCER</button>
             <button id="test-mode-btn" class="test-btn">MODE TEST</button>
+            <button id="test-recap-btn" class="test-btn">TESTER RÉCAP</button>
           </div>
 
           <form id="register-form" class="register-form">
@@ -105,6 +106,11 @@
                     🌽 Maïs sauvés: <span id="corn-saved">0</span> × 50 =
                     <span id="corn-points">0</span> points
                   </p>
+                  <div class="separator"></div>
+                  <p id="powerups-title" style="display: none">
+                    🎮 <strong>Bonus/Malus récupérés:</strong>
+                  </p>
+                  <div id="powerups-list"></div>
                 </div>
               </div>
             </div>
@@ -121,6 +127,6 @@
       </div>
     </div>
 
-    <script src="./assets/js/game.js"></script>
+    <script type="module" src="./assets/js/main.js"></script>
   </body>
 </html>
