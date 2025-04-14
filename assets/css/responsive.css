@@ -1,0 +1,65 @@
+/* Média queries pour la responsivité */
+@media (max-width: 768px) {
+  .content {
+    flex-direction: column;
+  }
+
+  .logo-column {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    padding-right: 0;
+    padding-bottom: 2vh;
+  }
+
+  .logo {
+    margin: 0 3%;
+    width: 20%;
+    max-width: 100px;
+  }
+
+  .leaderboard {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 2vh;
+  }
+
+  .game-area {
+    width: 100%;
+  }
+
+  .prize {
+    max-width: 90%;
+  }
+
+  .register-form {
+    width: 90%;
+  }
+
+  .player-tooltip {
+    width: 80%;
+    left: 10% !important;
+    right: 10%;
+    top: auto !important;
+    bottom: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 1vmin;
+  }
+
+  .container {
+    width: 98%;
+  }
+
+  .register-form {
+    min-width: 90%;
+  }
+
+  button {
+    padding: 0.6rem 1rem;
+  }
+}

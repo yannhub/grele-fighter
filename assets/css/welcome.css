@@ -1,0 +1,84 @@
+.welcome {
+  text-align: center;
+  margin: 2vh 0;
+}
+
+.welcome img {
+  max-width: 40%;
+  min-width: 150px;
+  margin: 2vh auto;
+  display: block;
+}
+
+.welcome h1 {
+  font-size: 2.2rem;
+  color: #007540;
+  margin-bottom: 0.6em;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.welcome p {
+  font-size: 1.1rem;
+  max-width: 800px;
+  margin: 0 auto 1.2em;
+  line-height: 1.7;
+}
+
+.prize {
+  background-color: #f9f9c6;
+  border: 2px dashed #ffc107;
+  padding: 1.8vh;
+  border-radius: 0.5rem;
+  text-align: center;
+  margin: 2vh auto;
+  max-width: 70%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.prize h3 {
+  color: #e65100;
+  margin-bottom: 1vh;
+  font-size: 1.4rem;
+}
+
+.prize p {
+  font-size: 1.05rem;
+}
+
+.start-btn {
+  display: block;
+  width: 40%;
+  min-width: 180px;
+  max-width: 200px;
+  margin: 2vh auto;
+}
+
+.test-btn {
+  display: none;
+  width: 40%;
+  min-width: 180px;
+  max-width: 200px;
+  margin: 1vh auto;
+  background-color: #ff9800;
+}
+
+.test-btn:hover {
+  background-color: #e65100;
+}
+
+.register-form {
+  width: 70%;
+  min-width: 300px;
+  margin: 0 auto;
+  display: none;
+}
+
+.register-form input {
+  width: 100%;
+  padding: 0.9rem;
+  margin: 1vh 0;
+  border: 1px solid #ddd;
+  border-radius: 0.3rem;
+  font-family: "Open Sans", sans-serif;
+  font-size: 1rem;
+}

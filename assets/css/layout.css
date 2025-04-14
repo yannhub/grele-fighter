@@ -1,0 +1,46 @@
+.container {
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+.content {
+  display: flex;
+  flex-grow: 1;
+  height: 100%;
+  overflow: hidden;
+}
+
+.logo-column {
+  width: 15%;
+  min-width: 120px;
+  padding-right: 2%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-area {
+  flex: 3;
+  width: 60%;
+  padding: 2vmin;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+  width: 80%;
+  height: auto;
+  margin-bottom: 1.5vh;
+  display: block;
+  border-radius: 0.5rem;
+}
+
+.mixit-logo {
+  margin-top: 1vh;
+}
