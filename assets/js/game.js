@@ -40,10 +40,13 @@ let timerInterval;
 let playerInfo = {};
 let gameSpeed = 1;
 let keys = {};
+let lastKeyStates = {}; // Pour suivre l'état précédent des touches
 let hailsDestroyed = 0; // Compteur de grêlons détruits
 let gameTimeInSecs = 120; // 2 minutes
 let timeRemaining = gameTimeInSecs; // Temps restant en secondes
 let gameEndReason = ""; // Raison de fin de partie ("time" ou "corn")
+let lastFireTime = 0; // Temps du dernier tir
+let fireRate = 250; // Cadence de tir en millisecondes (250ms par défaut)
 
 // Tableaux pour les animations
 let hailParticles = []; // Animation de particules d'éclatement des grêlons
@@ -254,6 +257,7 @@ function initGame() {
   timeRemaining = gameTimeInSecs;
   hailsDestroyed = 0;
   gameEndReason = "";
+  lastKeyStates = {}; // Réinitialiser l'état des touches
 
   // Adapter la taille du canvas à son conteneur
   resizeGame();
@@ -455,12 +459,26 @@ function movePlayer() {
   if (keys["ArrowRight"] && player.x < canvas.width - (player.width * 2) / 3) {
     player.x += player.speed;
   }
-  if (keys[" "] && bullets.length < 5) {
-    // Éviter le spam en limitant le nombre de balles
+  
+  // Vérifier si espace vient d'être pressé (nouvel appui)
+  const spaceJustPressed = keys[" "] && !lastKeyStates[" "];
+  
+  // Si espace vient juste d'être pressé, permettre un tir immédiat (contourne la cadence)
+  if (spaceJustPressed && bullets.length < 5) {
     createBullet();
-    // Réinitialiser la touche espace pour éviter les tirs continus
-    keys[" "] = false;
+    lastFireTime = Date.now();
   }
+  // Sinon, si espace est maintenu, respecter la cadence normale
+  else if (keys[" "] && bullets.length < 5) {
+    const currentTime = Date.now();
+    if (currentTime - lastFireTime >= fireRate) {
+      createBullet();
+      lastFireTime = currentTime;
+    }
+  }
+  
+  // Mettre à jour l'état précédent des touches
+  lastKeyStates = {...keys};
 }
 
 function drawPlayer() {
