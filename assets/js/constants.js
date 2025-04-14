@@ -5,7 +5,7 @@ export const BASE_WIDTH = 600; // Largeur de référence du canvas
 export const BASE_HEIGHT = 400; // Hauteur de référence du canvas
 
 // Variables de temps
-export const GAME_TIME_IN_SECS = 20; // 2 minutes de jeu
+export const GAME_TIME_IN_SECS = 120; // 2 minutes de jeu
 
 // Paramètres du joueur
 export const PLAYER_DEFAULT = {
