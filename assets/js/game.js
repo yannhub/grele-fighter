@@ -45,6 +45,10 @@ let gameTimeInSecs = 120; // 2 minutes
 let timeRemaining = gameTimeInSecs; // Temps restant en secondes
 let gameEndReason = ""; // Raison de fin de partie ("time" ou "corn")
 
+// Tableaux pour les animations
+let hailParticles = []; // Animation de particules d'éclatement des grêlons
+let dyingCorns = []; // Animation des épis qui se fanent
+
 // Tableau des épis de maïs
 let cornStalks = [];
 const CORN_COUNT = 20;
@@ -333,6 +337,10 @@ function gameLoop() {
 
   // Vérifier les collisions
   checkCollisions();
+
+  // Dessiner les animations
+  drawHailParticles();
+  drawDyingCorns();
 
   // Augmenter progressivement la difficulté
   gameSpeed += 0.0005;
@@ -650,6 +658,9 @@ function checkCollisions() {
         bullets.splice(i, 1);
         i--;
 
+        // Créer une animation de particules à l'emplacement du grêlon
+        createHailParticles(hail.x, hail.y, hail.size);
+
         // Supprimer le grêlon et augmenter le score
         hails.splice(j, 1);
         j--;
@@ -682,6 +693,9 @@ function checkCollisions() {
           // L'épi est touché
           stalk.alive = false;
 
+          // Créer une animation d'épi qui se fane
+          createDyingCorn(stalk.x, stalk.y, stalk.width, stalk.height);
+
           // Supprimer le grêlon
           hails.splice(i, 1);
           i--;
@@ -692,6 +706,123 @@ function checkCollisions() {
           break;
         }
       }
+    }
+  }
+}
+
+function createHailParticles(x, y, size) {
+  // Plus de particules pour de plus gros grêlons
+  const particleCount = Math.floor(size * 1.5);
+
+  // Créer des particules qui s'éparpillent dans toutes les directions
+  for (let i = 0; i < particleCount; i++) {
+    const angle = Math.random() * Math.PI * 2; // Angle aléatoire
+    const speed = (Math.random() * 2 + 1) * scaleFactor; // Vitesse aléatoire
+
+    hailParticles.push({
+      x: x + size / 2,
+      y: y + size / 2,
+      size: Math.random() * 3 * scaleFactor + 1 * scaleFactor, // Taille variée
+      speedX: Math.cos(angle) * speed, // Vitesse horizontale basée sur l'angle
+      speedY: Math.sin(angle) * speed, // Vitesse verticale basée sur l'angle
+      alpha: 1.0, // Opacité initiale
+      color: Math.random() > 0.7 ? "#ffffff" : "#6495ED", // Mélange de bleu et blanc
+    });
+  }
+}
+
+function drawHailParticles() {
+  for (let i = 0; i < hailParticles.length; i++) {
+    const particle = hailParticles[i];
+
+    // Dessiner une particule avec sa couleur propre
+    ctx.fillStyle = particle.color.startsWith("#")
+      ? `${particle.color}${Math.floor(particle.alpha * 255)
+          .toString(16)
+          .padStart(2, "0")}`
+      : particle.color.replace(")", `, ${particle.alpha})`);
+
+    ctx.beginPath();
+    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mettre à jour la position et l'opacité
+    particle.x += particle.speedX;
+    particle.y += particle.speedY;
+    particle.alpha -= 0.025; // Diminuer un peu plus vite pour une animation plus dynamique
+
+    // Réduire légèrement la taille pour donner l'impression de fonte
+    particle.size *= 0.98;
+
+    // Supprimer la particule une fois qu'elle est presque transparente
+    if (particle.alpha <= 0) {
+      hailParticles.splice(i, 1);
+      i--;
+    }
+  }
+}
+
+function createDyingCorn(x, y, width, height) {
+  dyingCorns.push({
+    x: x,
+    y: y,
+    width: width,
+    height: height,
+    alpha: 1.0, // Opacité initiale
+    rotation: 0,
+    color: "#FFC107", // Couleur de départ (jaune comme le maïs)
+  });
+}
+
+function drawDyingCorns() {
+  for (let i = 0; i < dyingCorns.length; i++) {
+    const corn = dyingCorns[i];
+
+    // Sauvegarder le contexte pour appliquer la rotation
+    ctx.save();
+
+    // Déplacer le point d'origine à la base de l'épi de maïs
+    ctx.translate(corn.x + corn.width / 2, corn.y + corn.height);
+
+    // Appliquer la rotation (pencher progressivement l'épi)
+    ctx.rotate(corn.rotation);
+
+    // Calculer la couleur intermédiaire entre jaune et marron
+    const brownValue = Math.floor(139 * (1 - corn.alpha) + 255 * corn.alpha);
+    const greenValue = Math.floor(69 * (1 - corn.alpha) + 193 * corn.alpha);
+    const redValue = Math.floor(19 * (1 - corn.alpha) + 255 * corn.alpha);
+
+    // Dessiner l'épi qui se fane
+    // Tige de l'épi (qui devient marron progressivement)
+    ctx.fillStyle = `rgba(${redValue}, ${greenValue}, 19, ${corn.alpha})`;
+    const stemWidth = 4 * scaleFactor;
+    ctx.fillRect(-stemWidth / 2, -corn.height, stemWidth, corn.height);
+
+    // Épi de maïs (qui devient marron progressivement)
+    ctx.fillStyle = `rgba(${redValue}, ${greenValue}, 19, ${corn.alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(
+      0,
+      -corn.height + 10 * scaleFactor,
+      corn.width / 3,
+      15 * scaleFactor,
+      0,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    // Restaurer le contexte
+    ctx.restore();
+
+    // Faire évoluer l'animation
+    corn.alpha -= 0.01; // Diminuer l'opacité lentement
+    corn.rotation += 0.01; // Augmenter la rotation (pencher l'épi)
+
+    // Supprimer l'épi fané une fois que l'animation est terminée
+    if (corn.alpha <= 0) {
+      dyingCorns.splice(i, 1);
+      i--;
     }
   }
 }
