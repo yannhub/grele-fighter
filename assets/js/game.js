@@ -57,6 +57,64 @@ let cornStalks = [];
 const CORN_COUNT = 20;
 let startTime = 0; // Pour calculer le temps de survie
 
+// Variables pour les bonus/malus
+let powerups = [];
+let powerupInterval;
+let activePowerups = []; // Tableau des bonus/malus actifs
+let powerupEffects = []; // Animation d'effets de bonus/malus
+let activeCloudMalus = null; // Pour stocker le nuage actif (malus spécial)
+// Historique des bonus/malus récupérés pour le récapitulatif de fin
+let collectedPowerups = [];
+
+// Types de bonus/malus
+const POWERUP_TYPES = {
+  // Bonus (effets positifs)
+  RAPID_FIRE: {
+    name: "Cadence Rapide",
+    color: "#32CD32",
+    good: true,
+    icon: "⚡",
+    duration: 15000,
+  },
+  PARALLEL_BULLETS: {
+    name: "Tirs Parallèles",
+    color: "#1E90FF",
+    good: true,
+    icon: "⋔",
+    duration: 12000,
+  },
+  DIAGONAL_BULLETS: {
+    name: "Tirs Diagonaux",
+    color: "#9932CC",
+    good: true,
+    icon: "✕",
+    duration: 12000,
+  },
+  SPEED_UP: {
+    name: "Vitesse Améliorée",
+    color: "#00BFFF",
+    good: true,
+    icon: "➤",
+    duration: 10000,
+  },
+
+  // Malus (effets négatifs)
+  SLOW_DOWN: {
+    name: "Ralentissement",
+    color: "#B22222",
+    good: false,
+    icon: "⊗",
+    duration: 8000,
+  },
+  STORM_CLOUD: {
+    name: "Nuage d'Orage",
+    color: "#4B0082",
+    good: false,
+    icon: "☁",
+    duration: 10000,
+  },
+};
+
 // Gestion du localStorage pour les scores
 function getLeaderboard() {
   const leaderboard =
@@ -258,6 +316,12 @@ function initGame() {
   hailsDestroyed = 0;
   gameEndReason = "";
   lastKeyStates = {}; // Réinitialiser l'état des touches
+  powerups = []; // Réinitialiser les bonus/malus
+  activePowerups = []; // Réinitialiser les bonus/malus actifs
+  powerupEffects = []; // Réinitialiser les animations d'effets
+  activeCloudMalus = null; // Réinitialiser le nuage actif
+  collectedPowerups = []; // Réinitialiser les bonus/malus collectés
+  fireRate = 250; // Réinitialiser la cadence de tir
 
   // Adapter la taille du canvas à son conteneur
   resizeGame();
@@ -298,6 +362,9 @@ function initGame() {
   // Générer des grêlons à intervalles réguliers
   hailInterval = setInterval(createHail, 1500);
 
+  // Générer des bonus/malus à intervalles réguliers
+  powerupInterval = setInterval(createPowerup, 10000); // Un bonus/malus toutes les 10 secondes
+
   // Mettre à jour l'affichage du score
   updateScore();
 }
@@ -331,6 +398,18 @@ function gameLoop() {
   moveHails();
   drawHails();
 
+  // Déplacer et dessiner les bonus/malus
+  movePowerups();
+  drawPowerups();
+
+  // Gérer les bonus/malus actifs
+  handleActivePowerups();
+
+  // Dessiner le nuage de grêle (malus spécial) s'il est actif
+  if (activeCloudMalus) {
+    moveAndDrawStormCloud();
+  }
+
   // Déplacer et dessiner le joueur
   movePlayer();
   drawPlayer();
@@ -345,6 +424,7 @@ function gameLoop() {
   // Dessiner les animations
   drawHailParticles();
   drawDyingCorns();
+  drawPowerupEffects();
 
   // Augmenter progressivement la difficulté
   gameSpeed += 0.0005;
@@ -459,10 +539,10 @@ function movePlayer() {
   if (keys["ArrowRight"] && player.x < canvas.width - (player.width * 2) / 3) {
     player.x += player.speed;
   }
-  
+
   // Vérifier si espace vient d'être pressé (nouvel appui)
   const spaceJustPressed = keys[" "] && !lastKeyStates[" "];
-  
+
   // Si espace vient juste d'être pressé, permettre un tir immédiat (contourne la cadence)
   if (spaceJustPressed && bullets.length < 5) {
     createBullet();
@@ -476,9 +556,9 @@ function movePlayer() {
       lastFireTime = currentTime;
     }
   }
-  
+
   // Mettre à jour l'état précédent des touches
-  lastKeyStates = {...keys};
+  lastKeyStates = { ...keys };
 }
 
 function drawPlayer() {
@@ -532,27 +612,185 @@ function drawPlayer() {
   ctx.fill();
 }
 
+// Fonction pour créer un bonus/malus aléatoire
+function createPowerup() {
+  // Déterminer si c'est un bonus ou un malus (70% chance d'avoir un bonus)
+  const isBonus = Math.random() < 0.7;
+
+  // Sélectionner un type de bonus/malus aléatoire
+  const powerupTypes = Object.keys(POWERUP_TYPES).filter(
+    (type) => POWERUP_TYPES[type].good === isBonus
+  );
+  const powerupType =
+    powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+
+  // Taille du bonus/malus
+  const size = 30 * scaleFactor;
+
+  // Créer le bonus/malus
+  powerups.push({
+    x: Math.random() * (canvas.width - size),
+    y: -size,
+    size: size,
+    speed: 2 * scaleFactor, // Plus lent que les grêlons
+    type: powerupType,
+    rotation: 0, // Pour l'animation de rotation
+    pulse: 0, // Pour l'animation de pulsation
+    pulseDirection: 1, // Direction de la pulsation (augmente ou diminue)
+  });
+}
+
+// Fonction pour déplacer les bonus/malus
+function movePowerups() {
+  for (let i = 0; i < powerups.length; i++) {
+    const powerup = powerups[i];
+
+    // Déplacer le bonus/malus vers le bas
+    powerup.y += powerup.speed;
+
+    // Animation de rotation douce
+    powerup.rotation += 0.02;
+
+    // Animation de pulsation
+    powerup.pulse += 0.05 * powerup.pulseDirection;
+    if (powerup.pulse >= 1) powerup.pulseDirection = -1;
+    if (powerup.pulse <= 0) powerup.pulseDirection = 1;
+
+    // Supprimer les bonus/malus qui sortent de l'écran
+    if (powerup.y > canvas.height + powerup.size) {
+      powerups.splice(i, 1);
+      i--;
+    }
+  }
+}
+
+// Fonction pour dessiner les bonus/malus
+function drawPowerups() {
+  for (const powerup of powerups) {
+    const powerupInfo = POWERUP_TYPES[powerup.type];
+    const centerX = powerup.x + powerup.size / 2;
+    const centerY = powerup.y + powerup.size / 2;
+
+    // Sauvegarder le contexte pour la rotation
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(powerup.rotation);
+
+    // Appliquer l'effet de pulsation
+    const pulseFactor = 1 + powerup.pulse * 0.1; // Pulsation de +/- 10%
+
+    // Dessiner la bulle (vert pour bonus, rouge pour malus)
+    ctx.fillStyle = powerupInfo.color;
+    ctx.beginPath();
+    ctx.arc(0, 0, (powerup.size / 2) * pulseFactor, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ajouter un éclat
+    ctx.fillStyle = powerupInfo.good
+      ? "rgba(255, 255, 255, 0.6)"
+      : "rgba(0, 0, 0, 0.3)";
+    ctx.beginPath();
+    ctx.arc(
+      -powerup.size / 5,
+      -powerup.size / 5,
+      powerup.size / 6,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    // Dessiner l'icône au centre
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = `bold ${20 * scaleFactor}px Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(powerupInfo.icon, 0, 0);
+
+    // Restaurer le contexte
+    ctx.restore();
+  }
+}
+
 function createBullet() {
   const bulletWidth = 5 * scaleFactor;
   const bulletHeight = 10 * scaleFactor;
   const bulletSpeed = 7 * scaleFactor;
   const canonHeight = 10 * scaleFactor;
 
+  // Vérifier si le bonus de tirs parallèles est actif
+  const hasParallelBonus = activePowerups.some(
+    (powerup) => powerup.type === "PARALLEL_BULLETS"
+  );
+
+  // Vérifier si le bonus de tirs diagonaux est actif
+  const hasDiagonalBonus = activePowerups.some(
+    (powerup) => powerup.type === "DIAGONAL_BULLETS"
+  );
+
+  // Créer une balle au centre (par défaut)
   bullets.push({
     x: player.x + player.width / 2 - bulletWidth / 2,
     y: player.y - canonHeight,
     width: bulletWidth,
     height: bulletHeight,
     speed: bulletSpeed,
+    speedX: 0, // Par défaut, pas de déplacement horizontal
   });
+
+  // Ajouter des balles parallèles si le bonus est actif
+  if (hasParallelBonus) {
+    // Balle à gauche
+    bullets.push({
+      x: player.x + player.width / 4 - bulletWidth / 2,
+      y: player.y - canonHeight,
+      width: bulletWidth,
+      height: bulletHeight,
+      speed: bulletSpeed,
+      speedX: 0,
+    });
+
+    // Balle à droite
+    bullets.push({
+      x: player.x + (player.width * 3) / 4 - bulletWidth / 2,
+      y: player.y - canonHeight,
+      width: bulletWidth,
+      height: bulletHeight,
+      speed: bulletSpeed,
+      speedX: 0,
+    });
+  }
+
+  // Ajouter des balles diagonales si le bonus est actif
+  if (hasDiagonalBonus) {
+    // Balle diagonale gauche
+    bullets.push({
+      x: player.x + player.width / 2 - bulletWidth / 2,
+      y: player.y - canonHeight,
+      width: bulletWidth,
+      height: bulletHeight,
+      speed: bulletSpeed * 0.9,
+      speedX: -2 * scaleFactor,
+    });
+
+    // Balle diagonale droite
+    bullets.push({
+      x: player.x + player.width / 2 - bulletWidth / 2,
+      y: player.y - canonHeight,
+      width: bulletWidth,
+      height: bulletHeight,
+      speed: bulletSpeed * 0.9,
+      speedX: 2 * scaleFactor,
+    });
+  }
 }
 
 function moveBullets() {
   for (let i = 0; i < bullets.length; i++) {
     bullets[i].y -= bullets[i].speed;
+    bullets[i].x += bullets[i].speedX;
 
     // Supprimer les balles qui sortent de l'écran
-    if (bullets[i].y < 0) {
+    if (bullets[i].y < 0 || bullets[i].x < 0 || bullets[i].x > canvas.width) {
       bullets.splice(i, 1);
       i--;
     }
@@ -693,6 +931,41 @@ function checkCollisions() {
     }
   }
 
+  // Vérifier les collisions entre les bonus/malus et le joueur (au lieu des balles)
+  for (let i = 0; i < powerups.length; i++) {
+    const powerup = powerups[i];
+    const powerupCenterX = powerup.x + powerup.size / 2;
+    const powerupCenterY = powerup.y + powerup.size / 2;
+    const powerupRadius = powerup.size / 2;
+
+    // Point central du joueur
+    const playerCenterX = player.x + player.width / 2;
+    const playerCenterY = player.y + player.height / 2;
+
+    // Distance entre les centres
+    const dx = powerupCenterX - playerCenterX;
+    const dy = powerupCenterY - playerCenterY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Rayon approximatif du joueur (moyenne de largeur/hauteur divisée par 2)
+    const playerRadius = (player.width + player.height) / 4;
+
+    // Vérifier si la distance est inférieure à la somme des rayons (collision)
+    if (distance < powerupRadius + playerRadius) {
+      // Appliquer l'effet du bonus/malus
+      applyPowerupEffect(powerup);
+
+      // Créer une animation d'effet au point de collision
+      createPowerupEffect(powerup);
+
+      // Supprimer le bonus/malus
+      powerups.splice(i, 1);
+      i--;
+
+      continue;
+    }
+  }
+
   // Vérifier les collisions entre les grêlons et les épis de maïs
   for (let i = 0; i < hails.length; i++) {
     const hail = hails[i];
@@ -722,6 +995,43 @@ function checkCollisions() {
           checkGameOver();
 
           break;
+        }
+      }
+    }
+  }
+
+  // Vérifier les collisions entre le nuage orageux et les épis de maïs si actif
+  if (activeCloudMalus) {
+    const cloudDrops = activeCloudMalus.drops;
+    for (let i = 0; i < cloudDrops.length; i++) {
+      const drop = cloudDrops[i];
+
+      for (let j = 0; j < cornStalks.length; j++) {
+        const stalk = cornStalks[j];
+
+        // Ne vérifier que si l'épi est encore vivant
+        if (stalk.alive) {
+          // Vérifier la collision
+          if (
+            drop.x > stalk.x &&
+            drop.x < stalk.x + stalk.width &&
+            drop.y + drop.size > stalk.y
+          ) {
+            // L'épi est touché
+            stalk.alive = false;
+
+            // Créer une animation d'épi qui se fane
+            createDyingCorn(stalk.x, stalk.y, stalk.width, stalk.height);
+
+            // Supprimer la goutte/grêlon du nuage
+            cloudDrops.splice(i, 1);
+            i--;
+
+            // Vérifier si tous les épis sont morts
+            checkGameOver();
+
+            break;
+          }
         }
       }
     }
@@ -866,6 +1176,7 @@ function endGame() {
   clearInterval(gameInterval);
   clearInterval(hailInterval);
   clearInterval(timerInterval);
+  clearInterval(powerupInterval);
 
   // Calculer le score final incluant les bonus pour les maïs restants
   const remainingCornStalks = cornStalks.filter((stalk) => stalk.alive).length;
@@ -885,6 +1196,9 @@ function endGame() {
   document.getElementById("corn-saved").textContent = remainingCornStalks;
   document.getElementById("corn-points").textContent = cornPoints;
 
+  // Ajouter la liste des bonus/malus récupérés au récapitulatif
+  updatePowerupsSummary();
+
   // Message différent selon la raison de fin de partie
   const gameOverTitle = document.querySelector("#game-over h2");
   if (gameEndReason === "time") {
@@ -895,6 +1209,534 @@ function endGame() {
 
   // Sauvegarder le score
   saveScore(playerInfo, finalScore);
+}
+
+// Fonction pour mettre à jour le récapitulatif des bonus/malus
+function updatePowerupsSummary() {
+  const powerupsList = document.getElementById("powerups-list");
+
+  // Si l'élément n'existe pas encore, le créer
+  if (!powerupsList) {
+    // Créer la section pour les bonus/malus
+    const powerupsSection = document.createElement("div");
+    powerupsSection.className = "powerups-summary";
+
+    // Ajouter un titre
+    const powerupsTitle = document.createElement("h3");
+    powerupsTitle.textContent = "Bonus/Malus récupérés:";
+    powerupsSection.appendChild(powerupsTitle);
+
+    // Créer la liste
+    const listElement = document.createElement("ul");
+    listElement.id = "powerups-list";
+
+    // Ajouter les bonus/malus à la liste
+    if (collectedPowerups.length === 0) {
+      const emptyItem = document.createElement("li");
+      emptyItem.textContent = "Aucun bonus/malus récupéré";
+      listElement.appendChild(emptyItem);
+    } else {
+      // Regrouper les bonus et malus
+      const bonusList = collectedPowerups.filter(
+        (p) => POWERUP_TYPES[p.type].good
+      );
+      const malusList = collectedPowerups.filter(
+        (p) => !POWERUP_TYPES[p.type].good
+      );
+
+      // Ajouter les bonus
+      if (bonusList.length > 0) {
+        const bonusHeader = document.createElement("li");
+        bonusHeader.className = "powerup-category";
+        bonusHeader.textContent = "Bonus:";
+        listElement.appendChild(bonusHeader);
+
+        bonusList.forEach((bonus) => {
+          const item = document.createElement("li");
+          item.className = "powerup-item bonus";
+          const powerupInfo = POWERUP_TYPES[bonus.type];
+
+          // Créer un petit cercle coloré avec l'icône
+          item.innerHTML = `<span class="powerup-icon" style="background-color: ${powerupInfo.color};">${powerupInfo.icon}</span> ${bonus.name}`;
+
+          listElement.appendChild(item);
+        });
+      }
+
+      // Ajouter les malus
+      if (malusList.length > 0) {
+        const malusHeader = document.createElement("li");
+        malusHeader.className = "powerup-category";
+        malusHeader.textContent = "Malus:";
+        listElement.appendChild(malusHeader);
+
+        malusList.forEach((malus) => {
+          const item = document.createElement("li");
+          item.className = "powerup-item malus";
+          const powerupInfo = POWERUP_TYPES[malus.type];
+
+          // Créer un petit cercle coloré avec l'icône
+          item.innerHTML = `<span class="powerup-icon" style="background-color: ${powerupInfo.color};">${powerupInfo.icon}</span> ${malus.name}`;
+
+          listElement.appendChild(item);
+        });
+      }
+    }
+
+    powerupsSection.appendChild(listElement);
+
+    // Insérer la section avant le bouton "Rejouer"
+    const playAgainContainer =
+      document.querySelector("#play-again-btn").parentElement;
+    gameOverScreen.insertBefore(powerupsSection, playAgainContainer);
+  } else {
+    // Vider la liste existante
+    powerupsList.innerHTML = "";
+
+    // Remplir avec les nouveaux éléments
+    if (collectedPowerups.length === 0) {
+      const emptyItem = document.createElement("li");
+      emptyItem.textContent = "Aucun bonus/malus récupéré";
+      powerupsList.appendChild(emptyItem);
+    } else {
+      // Regrouper les bonus et malus
+      const bonusList = collectedPowerups.filter(
+        (p) => POWERUP_TYPES[p.type].good
+      );
+      const malusList = collectedPowerups.filter(
+        (p) => !POWERUP_TYPES[p.type].good
+      );
+
+      // Ajouter les bonus
+      if (bonusList.length > 0) {
+        const bonusHeader = document.createElement("li");
+        bonusHeader.className = "powerup-category";
+        bonusHeader.textContent = "Bonus:";
+        powerupsList.appendChild(bonusHeader);
+
+        bonusList.forEach((bonus) => {
+          const item = document.createElement("li");
+          item.className = "powerup-item bonus";
+          const powerupInfo = POWERUP_TYPES[bonus.type];
+
+          // Créer un petit cercle coloré avec l'icône
+          item.innerHTML = `<span class="powerup-icon" style="background-color: ${powerupInfo.color};">${powerupInfo.icon}</span> ${bonus.name}`;
+
+          powerupsList.appendChild(item);
+        });
+      }
+
+      // Ajouter les malus
+      if (malusList.length > 0) {
+        const malusHeader = document.createElement("li");
+        malusHeader.className = "powerup-category";
+        malusHeader.textContent = "Malus:";
+        powerupsList.appendChild(malusHeader);
+
+        malusList.forEach((malus) => {
+          const item = document.createElement("li");
+          item.className = "powerup-item malus";
+          const powerupInfo = POWERUP_TYPES[malus.type];
+
+          // Créer un petit cercle coloré avec l'icône
+          item.innerHTML = `<span class="powerup-icon" style="background-color: ${powerupInfo.color};">${powerupInfo.icon}</span> ${malus.name}`;
+
+          powerupsList.appendChild(item);
+        });
+      }
+    }
+  }
+}
+
+// Fonction pour déplacer et dessiner le nuage d'orage (malus spécial)
+function moveAndDrawStormCloud() {
+  if (!activeCloudMalus) return;
+
+  const cloud = activeCloudMalus;
+
+  // Déplacer le nuage horizontalement
+  cloud.x += cloud.speedX;
+
+  // Inverser la direction si le nuage atteint les bords
+  if (cloud.x <= 0 || cloud.x + cloud.width >= canvas.width) {
+    cloud.speedX *= -1;
+  }
+
+  // Dessiner le nuage
+  ctx.save();
+
+  // Dessiner le corps principal du nuage (gris foncé)
+  const gradient = ctx.createRadialGradient(
+    cloud.x + cloud.width / 2,
+    cloud.y + cloud.height / 2,
+    10 * scaleFactor,
+    cloud.x + cloud.width / 2,
+    cloud.y + cloud.height / 2,
+    cloud.width / 2
+  );
+  gradient.addColorStop(0, "#4B0082"); // Indigo au centre
+  gradient.addColorStop(1, "#000033"); // Bleu très foncé aux bords
+
+  // Forme du nuage (plusieurs cercles combinés)
+  ctx.fillStyle = gradient;
+
+  // Cercle principal
+  ctx.beginPath();
+  ctx.arc(
+    cloud.x + cloud.width / 2,
+    cloud.y + cloud.height / 2,
+    cloud.width / 3,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+
+  // Cercles supplémentaires pour donner une forme de nuage
+  const cloudPoints = [
+    {
+      x: cloud.x + cloud.width * 0.2,
+      y: cloud.y + cloud.height * 0.4,
+      r: cloud.width * 0.2,
+    },
+    {
+      x: cloud.x + cloud.width * 0.4,
+      y: cloud.y + cloud.height * 0.3,
+      r: cloud.width * 0.15,
+    },
+    {
+      x: cloud.x + cloud.width * 0.6,
+      y: cloud.y + cloud.height * 0.3,
+      r: cloud.width * 0.18,
+    },
+    {
+      x: cloud.x + cloud.width * 0.8,
+      y: cloud.y + cloud.height * 0.4,
+      r: cloud.width * 0.2,
+    },
+  ];
+
+  for (const point of cloudPoints) {
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, point.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Éclairs occasionnels (effet visuel)
+  if (Math.random() < 0.1) {
+    ctx.strokeStyle = "#FFFF00"; // Jaune vif
+    ctx.lineWidth = 2 * scaleFactor;
+    ctx.beginPath();
+
+    // Point de départ au centre du nuage
+    const startX = cloud.x + cloud.width / 2;
+    const startY = cloud.y + cloud.height * 0.8;
+
+    ctx.moveTo(startX, startY);
+
+    // Créer un tracé en zigzag
+    let x = startX;
+    let y = startY;
+
+    for (let i = 0; i < 3; i++) {
+      // Calculer le prochain point avec un déplacement aléatoire
+      const nextX = x + (Math.random() * 20 - 10) * scaleFactor;
+      const nextY = y + (10 + Math.random() * 10) * scaleFactor;
+
+      ctx.lineTo(nextX, nextY);
+      x = nextX;
+      y = nextY;
+    }
+
+    ctx.stroke();
+  }
+
+  // Faire tomber des grêlons à intervalles réguliers
+  const currentTime = Date.now();
+  if (currentTime - cloud.lastDropTime > 500) {
+    // Tous les 500ms
+    // Créer un nouveau grêlon
+    const dropSize = (Math.random() * 5 + 10) * scaleFactor; // Plus petit que les grêlons normaux
+
+    cloud.drops.push({
+      x: cloud.x + Math.random() * cloud.width,
+      y: cloud.y + cloud.height,
+      size: dropSize,
+      speed: 3 * scaleFactor,
+    });
+
+    cloud.lastDropTime = currentTime;
+  }
+
+  // Déplacer et dessiner les gouttes/grêlons
+  for (let i = 0; i < cloud.drops.length; i++) {
+    const drop = cloud.drops[i];
+
+    // Déplacer la goutte vers le bas
+    drop.y += drop.speed;
+
+    // Dessiner la goutte (petit grêlon)
+    ctx.fillStyle = "#6495ED";
+    ctx.beginPath();
+    ctx.arc(drop.x, drop.y, drop.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ajouter un effet de brillance
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(
+      drop.x - drop.size / 4,
+      drop.y - drop.size / 4,
+      drop.size / 6,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    // Supprimer les gouttes qui sortent de l'écran
+    if (drop.y > canvas.height) {
+      cloud.drops.splice(i, 1);
+      i--;
+    }
+  }
+
+  ctx.restore();
+}
+
+// Fonction pour gérer les bonus/malus actifs
+function handleActivePowerups() {
+  const currentTime = Date.now();
+
+  // Parcourir la liste des bonus/malus actifs
+  for (let i = 0; i < activePowerups.length; i++) {
+    const powerup = activePowerups[i];
+
+    // Vérifier si le bonus/malus est expiré
+    if (currentTime > powerup.endTime) {
+      // Restaurer les valeurs d'origine
+      switch (powerup.type) {
+        case "RAPID_FIRE":
+          fireRate = powerup.originalValue;
+          break;
+
+        case "SPEED_UP":
+        case "SLOW_DOWN":
+          player.speed = powerup.originalValue;
+          break;
+      }
+
+      // Supprimer le bonus/malus de la liste
+      activePowerups.splice(i, 1);
+      i--;
+    }
+  }
+
+  // Gérer le nuage orageux (malus spécial)
+  if (activeCloudMalus && currentTime > activeCloudMalus.endTime) {
+    activeCloudMalus = null;
+  }
+}
+
+// Fonction pour appliquer l'effet d'un bonus/malus
+function applyPowerupEffect(powerup) {
+  const powerupInfo = POWERUP_TYPES[powerup.type];
+
+  // Enregistrer le bonus/malus récupéré pour le récapitulatif
+  collectedPowerups.push({
+    type: powerup.type,
+    name: powerupInfo.name,
+    time: new Date().getTime(),
+  });
+
+  // Appliquer l'effet en fonction du type
+  switch (powerup.type) {
+    // Bonus
+    case "RAPID_FIRE":
+      // Augmenter la cadence de tir (réduire le délai)
+      fireRate = 100; // Cadence plus rapide
+
+      // Ajouter à la liste des bonus actifs avec durée
+      activePowerups.push({
+        type: powerup.type,
+        endTime: Date.now() + powerupInfo.duration,
+        originalValue: 250, // Valeur originale pour restauration
+      });
+      break;
+
+    case "PARALLEL_BULLETS":
+      // Ajouter à la liste des bonus actifs avec durée
+      activePowerups.push({
+        type: powerup.type,
+        endTime: Date.now() + powerupInfo.duration,
+      });
+      break;
+
+    case "DIAGONAL_BULLETS":
+      // Ajouter à la liste des bonus actifs avec durée
+      activePowerups.push({
+        type: powerup.type,
+        endTime: Date.now() + powerupInfo.duration,
+      });
+      break;
+
+    case "SPEED_UP":
+      // Augmenter la vitesse du joueur
+      player.speed = 8 * scaleFactor; // Vitesse augmentée
+
+      // Ajouter à la liste des bonus actifs avec durée
+      activePowerups.push({
+        type: powerup.type,
+        endTime: Date.now() + powerupInfo.duration,
+        originalValue: 5 * scaleFactor, // Valeur originale pour restauration
+      });
+      break;
+
+    // Malus
+    case "STORM_CLOUD":
+      // Créer un nuage qui se déplace et fait tomber des grêlons
+      activeCloudMalus = {
+        x: Math.random() * (canvas.width - 100 * scaleFactor),
+        y: 50 * scaleFactor,
+        width: 120 * scaleFactor,
+        height: 60 * scaleFactor,
+        speedX: 1 * scaleFactor * (Math.random() > 0.5 ? 1 : -1), // Direction aléatoire
+        lastDropTime: 0,
+        drops: [], // Grêlons générés par le nuage
+        endTime: Date.now() + powerupInfo.duration,
+      };
+      break;
+  }
+}
+
+// Fonction pour créer une animation d'effet de bonus/malus
+function createPowerupEffect(powerup) {
+  const powerupInfo = POWERUP_TYPES[powerup.type];
+  const isGood = powerupInfo.good;
+  const effectDuration = 1000; // Durée de l'effet en millisecondes
+
+  // Créer des particules qui représentent l'effet du bonus/malus
+  const particleCount = 20;
+  const baseSize = powerup.size;
+
+  for (let i = 0; i < particleCount; i++) {
+    const angle = Math.random() * Math.PI * 2; // Angle aléatoire
+    const distance = (Math.random() * baseSize) / 2; // Distance du centre
+    const x = powerup.x + powerup.size / 2 + Math.cos(angle) * distance;
+    const y = powerup.y + powerup.size / 2 + Math.sin(angle) * distance;
+
+    powerupEffects.push({
+      x: x,
+      y: y,
+      size: Math.random() * 8 * scaleFactor + 2 * scaleFactor,
+      speedX: Math.cos(angle) * (1 + Math.random()) * scaleFactor * 2,
+      speedY: Math.sin(angle) * (1 + Math.random()) * scaleFactor * 2,
+      color: powerupInfo.color,
+      alpha: 1.0,
+      isGood: isGood,
+      type: powerup.type,
+      startTime: Date.now(),
+      duration: effectDuration + Math.random() * 500, // Variation légère de la durée
+    });
+  }
+
+  // Ajouter un texte flottant qui indique le nom du bonus/malus
+  powerupEffects.push({
+    x: powerup.x + powerup.size / 2,
+    y: powerup.y - 20 * scaleFactor,
+    text: powerupInfo.name,
+    color: powerupInfo.color,
+    alpha: 1.0,
+    speedY: -1 * scaleFactor, // Déplacement lent vers le haut
+    isGood: isGood,
+    type: "TEXT",
+    startTime: Date.now(),
+    duration: effectDuration * 1.5,
+  });
+}
+
+// Fonction pour dessiner les animations d'effets de bonus/malus
+function drawPowerupEffects() {
+  const currentTime = Date.now();
+
+  for (let i = 0; i < powerupEffects.length; i++) {
+    const effect = powerupEffects[i];
+    const elapsedTime = currentTime - effect.startTime;
+    const progress = elapsedTime / effect.duration;
+
+    // Vérifier si l'effet est expiré
+    if (progress >= 1) {
+      powerupEffects.splice(i, 1);
+      i--;
+      continue;
+    }
+
+    // Animation différente selon le type d'effet
+    if (effect.type === "TEXT") {
+      // Texte flottant pour le nom du bonus/malus
+      ctx.font = `bold ${16 * scaleFactor}px Arial`;
+      ctx.textAlign = "center";
+      ctx.fillStyle = `${effect.color}${Math.floor((1 - progress) * 255)
+        .toString(16)
+        .padStart(2, "0")}`;
+      ctx.fillText(effect.text, effect.x, effect.y);
+
+      // Déplacer le texte vers le haut
+      effect.y += effect.speedY;
+    } else {
+      // Particules pour l'animation de l'effet
+      ctx.fillStyle = `${effect.color}${Math.floor((1 - progress) * 255)
+        .toString(16)
+        .padStart(2, "0")}`;
+
+      // Formes différentes selon que c'est un bonus ou un malus
+      if (effect.isGood) {
+        // Étoiles pour les bonus
+        const size = effect.size * (1 - progress * 0.5);
+        drawStar(effect.x, effect.y, 5, size / 2, size / 4);
+      } else {
+        // Cercles pour les malus
+        ctx.beginPath();
+        ctx.arc(
+          effect.x,
+          effect.y,
+          effect.size * (1 - progress * 0.5),
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      // Déplacer la particule
+      effect.x += effect.speedX * (1 - progress);
+      effect.y += effect.speedY * (1 - progress);
+    }
+  }
+}
+
+// Fonction utilitaire pour dessiner une étoile (pour les effets de bonus)
+function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+  let rot = (Math.PI / 2) * 3;
+  let x = cx;
+  let y = cy;
+  const step = Math.PI / spikes;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - outerRadius);
+
+  for (let i = 0; i < spikes; i++) {
+    x = cx + Math.cos(rot) * outerRadius;
+    y = cy + Math.sin(rot) * outerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+
+    x = cx + Math.cos(rot) * innerRadius;
+    y = cy + Math.sin(rot) * innerRadius;
+    ctx.lineTo(x, y);
+    rot += step;
+  }
+
+  ctx.lineTo(cx, cy - outerRadius);
+  ctx.closePath();
+  ctx.fill();
 }
 
 // Navigation entre les écrans
