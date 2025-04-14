@@ -14,9 +14,11 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  height: 100vh; /* Ajout de cette ligne pour définir la hauteur du body */
   padding: 2vmin;
   line-height: 1.6;
   font-size: 16px;
+  overflow: hidden; /* Éviter le scroll du body */
 }
 
 h1,
@@ -41,6 +43,8 @@ p {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  height: 100%; /* Utilise toute la hauteur disponible */
+  overflow: hidden; /* Éviter le débordement */
 }
 
 .logo {
@@ -58,6 +62,8 @@ p {
 .content {
   display: flex;
   flex-grow: 1;
+  height: 100%; /* Utilise toute la hauteur disponible */
+  overflow: hidden; /* Éviter le débordement */
 }
 
 .logo-column {
@@ -86,6 +92,10 @@ p {
   background-color: white;
   border-radius: 0.5rem;
   box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Utilise toute la hauteur disponible */
+  overflow: hidden; /* Éviter le débordement */
 }
 
 .leaderboard h2 {
@@ -98,6 +108,9 @@ p {
 
 .leaderboard-list {
   list-style-type: none;
+  overflow-y: auto;
+  flex-grow: 1; /* Prend tout l'espace disponible */
+  height: 100%; /* Utilise tout l'espace restant */
 }
 
 .leaderboard-list li {
@@ -238,7 +251,7 @@ button:hover {
 }
 
 .test-btn {
-  display: block;
+  display: none;
   width: 40%;
   min-width: 180px;
   max-width: 200px;
@@ -339,11 +352,12 @@ button:hover {
 }
 
 .final-stats {
-  background: #f9f9c6;
-  border-radius: 8px;
-  padding: 20px;
+  background: linear-gradient(to bottom, #f8f9fa, #e8f5e9);
+  border-radius: 12px;
+  padding: 25px;
   min-width: 280px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 6px 15px rgba(0, 117, 64, 0.15);
+  border: 2px solid #007540;
 }
 
 #final-score {
@@ -481,6 +495,60 @@ button:hover {
 .game-rules p {
   margin: 5px 0;
   font-size: 1.05rem;
+}
+
+#powerups-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 5px;
+}
+
+.powerup-item {
+  position: relative;
+}
+
+.powerup-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: white;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin: 2px;
+}
+
+.powerup-icon-good {
+  border: 2px solid #4caf50;
+}
+
+.powerup-icon-bad {
+  border: 2px solid #f44336;
+}
+
+.powerup-count {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.powerup-count-good {
+  background-color: #4caf50;
+}
+
+.powerup-count-bad {
+  background-color: #f44336;
 }
 
 /* Ajout de médias queries pour la responsivité */
