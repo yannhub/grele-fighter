@@ -36,52 +36,78 @@
             </div>
 
             <button id="start-btn" class="start-btn">COMMENCER</button>
+            <button id="test-mode-btn" class="test-btn">MODE TEST</button>
           </div>
 
           <form id="register-form" class="register-form">
             <h3>Entrez vos informations</h3>
             <input type="text" id="firstname" placeholder="Prénom" required />
             <input type="text" id="lastname" placeholder="Nom" required />
+            <input type="email" id="email" placeholder="Email" required />
+            <input
+              type="text"
+              id="organization"
+              placeholder="Organisation (optionnel)"
+            />
             <input type="text" id="nickname" placeholder="Pseudo (optionnel)" />
             <button type="submit" id="submit-info">SUIVANT</button>
           </form>
 
           <div id="game-instructions" class="instruction">
             <h3>Comment jouer</h3>
-            <ul>
-              <li>
-                Utilisez les touches <strong>flèches gauche</strong> et
-                <strong>flèche droite</strong> pour déplacer votre défenseur
-              </li>
-              <li>
-                Appuyez sur la <strong>barre d'espace</strong> pour tirer et
-                détruire les grêlons
-              </li>
-              <li>
-                Protégez vos champs de maïs en empêchant les grêlons d'atteindre
-                le sol
-              </li>
-              <li>
-                Le jeu s'accélère au fur et à mesure de votre progression!
-              </li>
-              <li>
-                Garder vos récoltes en vie le plus longtemps possible pour
-                maximiser votre score!
-              </li>
-            </ul>
+
+            <div class="controls-container">
+              <div class="control-item">
+                <div class="key-visual">
+                  <div class="arrow-key left-key">◀</div>
+                  <div class="arrow-key right-key">▶</div>
+                </div>
+                <p>Déplacer</p>
+              </div>
+
+              <div class="control-item">
+                <div class="key-visual">
+                  <div class="space-key">Espace</div>
+                </div>
+                <p>Tirer</p>
+              </div>
+            </div>
+
+            <div class="game-rules">
+              <p>🎯 <strong>10 points</strong> par grêlon détruit</p>
+              <p>🌽 <strong>50 points bonus</strong> par maïs sauvé</p>
+              <p>
+                ⏱️ Partie de <strong>2 minutes</strong> - Le jeu s'accélère!
+              </p>
+            </div>
+
             <button id="play-btn">JOUER</button>
           </div>
 
           <div id="score-display">
-            Score: <span id="current-score">0.00</span>
+            Score: <span id="current-score">0</span> | Temps:
+            <span id="timer">2:00</span>
           </div>
 
           <canvas id="game-canvas"></canvas>
 
           <div id="game-over">
             <h2>Partie terminée!</h2>
-            <p>Votre score final:</p>
-            <div id="final-score">0.00</div>
+            <div class="game-over-recap">
+              <div class="final-stats">
+                <p>Votre score final: <span id="final-score">0</span></p>
+                <div class="score-breakdown">
+                  <p>
+                    🎯 Grêlons détruits: <span id="hails-destroyed">0</span> ×
+                    10 = <span id="hails-points">0</span> points
+                  </p>
+                  <p>
+                    🌽 Maïs sauvés: <span id="corn-saved">0</span> × 50 =
+                    <span id="corn-points">0</span> points
+                  </p>
+                </div>
+              </div>
+            </div>
             <button id="play-again-btn">REJOUER</button>
           </div>
         </div>

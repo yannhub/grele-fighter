@@ -14,6 +14,7 @@ const startBtn = document.getElementById("start-btn");
 const submitInfoBtn = document.getElementById("submit-info");
 const playBtn = document.getElementById("play-btn");
 const playAgainBtn = document.getElementById("play-again-btn");
+const testModeBtn = document.getElementById("test-mode-btn");
 
 // Variables du jeu
 let canvas, ctx;
@@ -35,10 +36,14 @@ let hails = [];
 let score = 0;
 let gameInterval;
 let hailInterval;
+let timerInterval;
 let playerInfo = {};
 let gameSpeed = 1;
 let keys = {};
-let lastScoreUpdate = 0; // Pour suivre la dernière mise à jour du score
+let hailsDestroyed = 0; // Compteur de grêlons détruits
+let gameTimeInSecs = 120; // 2 minutes
+let timeRemaining = gameTimeInSecs; // Temps restant en secondes
+let gameEndReason = ""; // Raison de fin de partie ("time" ou "corn")
 
 // Tableau des épis de maïs
 let cornStalks = [];
@@ -62,7 +67,9 @@ function saveScore(playerInfo, score) {
     nickname:
       playerInfo.nickname ||
       `${playerInfo.firstname} ${playerInfo.lastname.charAt(0)}.`,
-    score: score.toFixed(2),
+    email: playerInfo.email || "",
+    organization: playerInfo.organization || "",
+    score: score,
     date: new Date().toISOString(),
   };
 
@@ -97,10 +104,88 @@ function updateLeaderboardDisplay() {
 
   leaderboard.forEach((entry, index) => {
     const li = document.createElement("li");
-    li.innerHTML = `${index + 1}. ${entry.nickname} <span>${
-      entry.score
-    }</span>`;
+    li.innerHTML = `${index + 1}. ${
+      entry.nickname
+    } <span class="organization">${
+      entry.organization
+    }</span> <span class="score">${entry.score}</span>`;
+
+    // Créer un attribut data pour stocker les informations complètes du joueur
+    li.setAttribute(
+      "data-player-info",
+      JSON.stringify({
+        nom: `${entry.firstname} ${entry.lastname}`,
+        pseudo: entry.nickname,
+        email: entry.email,
+        organisation: entry.organization,
+        score: entry.score,
+        date: new Date(entry.date).toLocaleDateString("fr-FR"),
+      })
+    );
+
+    // Ajouter la classe pour le style de la tooltip
+    li.classList.add("leaderboard-entry");
+
     leaderboardList.appendChild(li);
+  });
+
+  // Ajouter les écouteurs d'événements pour le survol
+  setupLeaderboardTooltips();
+}
+
+// Fonction pour configurer les tooltips au survol
+function setupLeaderboardTooltips() {
+  const entries = document.querySelectorAll(".leaderboard-entry");
+
+  // Créer un élément tooltip s'il n'existe pas déjà
+  let tooltip = document.getElementById("player-tooltip");
+  if (!tooltip) {
+    tooltip = document.createElement("div");
+    tooltip.id = "player-tooltip";
+    tooltip.className = "player-tooltip";
+    document.body.appendChild(tooltip);
+  }
+
+  entries.forEach((entry) => {
+    entry.addEventListener("mouseenter", function (e) {
+      const playerInfo = JSON.parse(this.getAttribute("data-player-info"));
+
+      // Formatter le contenu de la tooltip
+      tooltip.innerHTML = `
+        <div class="tooltip-content">
+          <h3>${playerInfo.pseudo}</h3>
+          <p><strong>Nom:</strong> ${playerInfo.nom}</p>
+          <p><strong>Email:</strong> ${playerInfo.email}</p>
+          <p><strong>Organisation:</strong> ${playerInfo.organisation}</p>
+          <p><strong>Score:</strong> ${playerInfo.score}</p>
+          <p><strong>Date:</strong> ${playerInfo.date}</p>
+        </div>
+      `;
+
+      // Positionner la tooltip près de l'élément survolé
+      const rect = this.getBoundingClientRect();
+      tooltip.style.display = "block";
+
+      // Calculer la largeur de la fenêtre
+      const windowWidth = window.innerWidth;
+
+      // Calculer si la tooltip déborde à droite (en laissant une marge de 20px)
+      const tooltipWidth = tooltip.offsetWidth;
+      const rightOverflow = rect.right + tooltipWidth + 20 > windowWidth;
+
+      // Si la tooltip déborde à droite, l'afficher à gauche de l'élément
+      if (rightOverflow) {
+        tooltip.style.left = `${rect.left - tooltipWidth - 10}px`;
+      } else {
+        tooltip.style.left = `${rect.right + 10}px`;
+      }
+
+      tooltip.style.top = `${rect.top}px`;
+    });
+
+    entry.addEventListener("mouseleave", function () {
+      tooltip.style.display = "none";
+    });
   });
 }
 
@@ -109,7 +194,7 @@ function resizeGame() {
   const gameArea = document.querySelector(".game-area");
   const gameAreaWidth = gameArea.clientWidth - 40; // -40 pour le padding
   const gameAreaHeight = Math.min(
-    window.innerHeight * 0.6,
+    window.innerHeight * 0.8,
     gameAreaWidth * 0.7
   );
 
@@ -127,8 +212,7 @@ function resizeGame() {
 
   // Repositionner le joueur
   player.x = canvas.width / 2 - player.width / 2;
-  player.y = canvas.height - player.height - 10 * scaleFactor;
-
+  player.y = canvas.height - player.height - 6 * scaleFactor;
   // Reinitialiser les épis de maïs avec les bonnes dimensions
   if (cornStalks.length > 0) {
     initCornStalks();
@@ -148,19 +232,30 @@ function resizeGame() {
   }
 }
 
+// Met à jour l'affichage du timer
+function updateTimer() {
+  const minutes = Math.floor(timeRemaining / 60);
+  const seconds = timeRemaining % 60;
+  const timerDisplay = document.getElementById("timer");
+  timerDisplay.textContent = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+}
+
 // Initialiser le jeu
 function initGame() {
   canvas = document.getElementById("game-canvas");
   ctx = canvas.getContext("2d");
+
+  // Réinitialiser les variables du jeu
+  score = 0;
+  timeRemaining = gameTimeInSecs;
+  hailsDestroyed = 0;
+  gameEndReason = "";
 
   // Adapter la taille du canvas à son conteneur
   resizeGame();
 
   // Initialiser les épis de maïs
   initCornStalks();
-
-  // Démarrer le compteur de temps pour le score
-  startTime = Date.now();
 
   // Ajouter les écouteurs d'événements pour le clavier
   window.addEventListener("keydown", function (e) {
@@ -174,14 +269,28 @@ function initGame() {
   // Écouter les changements de taille d'écran
   window.addEventListener("resize", resizeGame);
 
+  // Afficher le timer initial
+  updateTimer();
+
+  // Démarrer le timer
+  timerInterval = setInterval(function () {
+    timeRemaining--;
+    updateTimer();
+
+    // Vérifier si le temps est écoulé
+    if (timeRemaining <= 0) {
+      gameEndReason = "time";
+      endGame();
+    }
+  }, 1000);
+
   // Démarrer la boucle du jeu
   gameInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
 
   // Générer des grêlons à intervalles réguliers
-  hailInterval = setInterval(createHail, 1000);
+  hailInterval = setInterval(createHail, 1500);
 
-  // Démarrer avec un score de 0
-  score = 0;
+  // Mettre à jour l'affichage du score
   updateScore();
 }
 
@@ -210,6 +319,10 @@ function gameLoop() {
   // Dessiner le fond (champ de maïs)
   drawBackground();
 
+  // Déplacer et dessiner les grêlons
+  moveHails();
+  drawHails();
+
   // Déplacer et dessiner le joueur
   movePlayer();
   drawPlayer();
@@ -217,10 +330,6 @@ function gameLoop() {
   // Déplacer et dessiner les balles
   moveBullets();
   drawBullets();
-
-  // Déplacer et dessiner les grêlons
-  moveHails();
-  drawHails();
 
   // Vérifier les collisions
   checkCollisions();
@@ -432,19 +541,53 @@ function drawBullets() {
 }
 
 function createHail() {
-  const baseSize = Math.random() * 10 + 15; // Taille entre 15 et 25
+  const baseSize = Math.random() * 5 + 20;
   const size = baseSize * scaleFactor;
+
+  // Limiter l'augmentation de la vitesse des grêlons
+  // Utiliser Math.min pour plafonner la vitesse maximale à 1.6 fois la vitesse initiale
+  const cappedSpeed = Math.min(gameSpeed, 1.6) * scaleFactor;
 
   hails.push({
     x: Math.random() * (canvas.width - size),
     y: -size,
     size: size,
-    speed: (Math.random() * 2 + 1) * gameSpeed * scaleFactor,
+    speed: cappedSpeed,
   });
 
-  // Augmenter la fréquence des grêlons avec le temps
-  if (gameSpeed > 1.5 && Math.random() > 0.7) {
-    createHail();
+  // Augmenter fortement la fréquence des grêlons avec une progression douce
+  // Probabilité croissante plus aggressive pour le nombre
+  // À gameSpeed = 1, probabilité = 0.05 (5%)
+  // À gameSpeed = 1.5, probabilité = 0.25 (25%)
+  // À gameSpeed = 2, probabilité = 0.40 (40%)
+  // À gameSpeed = 2.5, probabilité = 0.50 (50%)
+  const extraHailProbability = Math.min(0.05 + (gameSpeed - 1) * 0.4, 0.6);
+
+  // Chance d'avoir un second grêlon
+  if (gameSpeed > 1 && Math.random() < extraHailProbability) {
+    setTimeout(() => {
+      // Créer un grêlon avec un léger décalage pour une meilleure répartition
+      const newSize = (Math.random() * 5 + 20) * scaleFactor;
+      hails.push({
+        x: Math.random() * (canvas.width - newSize),
+        y: -newSize,
+        size: newSize,
+        speed: cappedSpeed,
+      });
+    }, Math.random() * 200); // Décalage aléatoire jusqu'à 200ms
+  }
+
+  // Chance d'avoir un troisième grêlon à des niveaux plus élevés
+  if (gameSpeed > 1.8 && Math.random() < extraHailProbability - 0.2) {
+    setTimeout(() => {
+      const newSize = (Math.random() * 5 + 20) * scaleFactor;
+      hails.push({
+        x: Math.random() * (canvas.width - newSize),
+        y: -newSize,
+        size: newSize,
+        speed: cappedSpeed,
+      });
+    }, Math.random() * 350); // Décalage aléatoire plus important
   }
 }
 
@@ -463,7 +606,7 @@ function moveHails() {
 function drawHails() {
   for (const hail of hails) {
     // Dessiner un grêlon (cercle blanc/bleuté)
-    ctx.fillStyle = "#a8cef0";
+    ctx.fillStyle = "#6495ED";
     ctx.beginPath();
     ctx.arc(
       hail.x + hail.size / 2,
@@ -507,9 +650,14 @@ function checkCollisions() {
         bullets.splice(i, 1);
         i--;
 
-        // Supprimer le grêlon
+        // Supprimer le grêlon et augmenter le score
         hails.splice(j, 1);
         j--;
+
+        // Ajouter 10 points au score et incrémenter le compteur de grêlons détruits
+        score += 10;
+        hailsDestroyed++;
+        updateScore();
 
         break;
       }
@@ -553,34 +701,50 @@ function checkGameOver() {
   const remainingCornStalks = cornStalks.filter((stalk) => stalk.alive).length;
 
   if (remainingCornStalks === 0) {
+    // Définir la raison de fin de partie
+    gameEndReason = "corn";
     endGame();
   }
 }
 
 function updateScore() {
-  // Calculer le score basé sur le temps écoulé depuis le début du jeu
-  const elapsedTime = (Date.now() - startTime) / 1000; // Convertir en secondes
-  score = elapsedTime;
-  currentScoreEl.textContent = score.toFixed(2);
+  // Mettre à jour l'affichage du score
+  currentScoreEl.textContent = score;
 }
 
 function endGame() {
   // Arrêter les intervalles
   clearInterval(gameInterval);
   clearInterval(hailInterval);
+  clearInterval(timerInterval);
 
-  // Calculer le score final en secondes
-  const finalScore = (Date.now() - startTime) / 1000;
+  // Calculer le score final incluant les bonus pour les maïs restants
+  const remainingCornStalks = cornStalks.filter((stalk) => stalk.alive).length;
+  const cornPoints = remainingCornStalks * 50;
+  const hailPoints = hailsDestroyed * 10;
+  const finalScore = hailPoints + cornPoints;
 
   // Afficher l'écran de fin
   gameCanvas.style.display = "none";
   scoreDisplay.style.display = "none";
   gameOverScreen.style.display = "block";
 
-  // Afficher le score final avec 2 décimales
-  finalScoreEl.textContent = finalScore.toFixed(2);
+  // Remplir les détails du score final
+  finalScoreEl.textContent = finalScore;
+  document.getElementById("hails-destroyed").textContent = hailsDestroyed;
+  document.getElementById("hails-points").textContent = hailPoints;
+  document.getElementById("corn-saved").textContent = remainingCornStalks;
+  document.getElementById("corn-points").textContent = cornPoints;
 
-  // Sauvegarder le score (on passe directement le finalScore)
+  // Message différent selon la raison de fin de partie
+  const gameOverTitle = document.querySelector("#game-over h2");
+  if (gameEndReason === "time") {
+    gameOverTitle.textContent = "Temps écoulé!";
+  } else if (gameEndReason === "corn") {
+    gameOverTitle.textContent = "Tous vos maïs sont détruits!";
+  }
+
+  // Sauvegarder le score
   saveScore(playerInfo, finalScore);
 }
 
@@ -598,6 +762,8 @@ registerForm.addEventListener("submit", function (e) {
     firstname: document.getElementById("firstname").value,
     lastname: document.getElementById("lastname").value,
     nickname: document.getElementById("nickname").value,
+    email: document.getElementById("email").value,
+    organization: document.getElementById("organization").value,
   };
 
   // Passer aux instructions
@@ -644,3 +810,28 @@ document.addEventListener("DOMContentLoaded", function () {
   // Ajouter un écouteur d'événement pour le redimensionnement de la fenêtre
   window.addEventListener("resize", resizeGame);
 });
+
+// Fonction pour démarrer le mode test
+function startTestMode() {
+  // Configurer des informations de joueur par défaut
+  playerInfo = {
+    firstname: "Testeur",
+    lastname: "G2S",
+    nickname: "TesteurG2S",
+    email: "testeur@g2s.com",
+    organization: "G2S",
+  };
+
+  // Masquer l'écran d'accueil
+  welcomeScreen.style.display = "none";
+
+  // Afficher directement le canvas de jeu et le score
+  gameCanvas.style.display = "block";
+  scoreDisplay.style.display = "block";
+
+  // Démarrer le jeu
+  initGame();
+}
+
+// Ajouter l'écouteur d'événements au bouton de test
+testModeBtn.addEventListener("click", startTestMode);
