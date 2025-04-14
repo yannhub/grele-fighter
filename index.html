@@ -20,22 +20,35 @@
 
         <div class="game-area">
           <div id="welcome-screen" class="welcome">
-            <h2>Bienvenue au jeu de défense contre la grêle!</h2>
-            <p>Protégez les champs de maïs contre les tempêtes de grêle!</p>
+            <div class="welcome-header">
+              <div class="welcome-tagline">
+                Défendez vos cultures, sauvez la récolte!
+              </div>
+            </div>
+
+            <div class="welcome-description">
+              <p>
+                Prenez les commandes du canon anti-grêle et protégez les champs
+                de maïs contre les intempéries destructrices!
+              </p>
+            </div>
 
             <div class="prize">
-              <h3>🏆 GRAND PRIX 🏆</h3>
+              <h3>🏆 GRAND PRIX DU JOUR 🏆</h3>
               <p>
-                Le meilleur score de la journée remportera un magnifique panier
-                de fruits et légumes frais!
+                Défiez les autres joueurs et remportez un magnifique panier de
+                produits frais locaux!
               </p>
               <img
                 src="./assets/img/panier-legumes.png"
                 alt="Panier de fruits et légumes"
+                class="prize-image"
               />
             </div>
 
-            <button id="start-btn" class="start-btn">COMMENCER</button>
+            <button id="start-btn" class="start-btn pulse-effect">
+              JOUER MAINTENANT
+            </button>
             <button id="test-mode-btn" class="test-btn">MODE TEST</button>
             <button id="test-recap-btn" class="test-btn">TESTER RÉCAP</button>
           </div>
