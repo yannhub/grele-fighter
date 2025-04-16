@@ -190,7 +190,7 @@ export const POWERUP_TYPES = {
     duration: 8000,
   },
   STORM_CLOUD: {
-    name: "Nuage d'Orage",
+    name: "Nuage toxique",
     color: "#4B0082",
     good: false,
     icon: "☁",
