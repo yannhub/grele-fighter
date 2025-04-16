@@ -3,8 +3,8 @@
 import {
   POWERUP_DEFAULT,
   POWERUP_TYPES,
-  ANIMATION,
   PLAYER_DEFAULT,
+  CLOUD_DROPS_DEFAULT,
 } from "./constants.js";
 
 export default class PowerupSystem {
@@ -367,13 +367,13 @@ export default class PowerupSystem {
       const drop = cloud.drops[i];
 
       // Dessiner la goutte (petit grêlon)
-      this.ctx.fillStyle = "#6495ED";
+      this.ctx.fillStyle = CLOUD_DROPS_DEFAULT.color;
       this.ctx.beginPath();
       this.ctx.arc(drop.x, drop.y, drop.size / 2, 0, Math.PI * 2);
       this.ctx.fill();
 
       // Ajouter un effet de brillance
-      this.ctx.fillStyle = "#ffffff";
+      this.ctx.fillStyle = CLOUD_DROPS_DEFAULT.highlightColor;
       this.ctx.beginPath();
       this.ctx.arc(
         drop.x - drop.size / 4,
@@ -411,16 +411,19 @@ export default class PowerupSystem {
 
     // Faire tomber des grêlons à intervalles réguliers
     const currentTime = Date.now();
-    if (currentTime - cloud.lastDropTime > 500) {
-      // Tous les 500ms
-      // Créer un nouveau grêlon
-      const dropSize = (Math.random() * 5 + 10) * this.scaleFactor; // Plus petit que les grêlons normaux
+    if (currentTime - cloud.lastDropTime > CLOUD_DROPS_DEFAULT.createInterval) {
+      // Créer un nouveau grêlon/goutte
+      const dropSize =
+        (Math.random() *
+          (CLOUD_DROPS_DEFAULT.maxSize - CLOUD_DROPS_DEFAULT.minSize) +
+          CLOUD_DROPS_DEFAULT.minSize) *
+        this.scaleFactor;
 
       cloud.drops.push({
         x: cloud.x + Math.random() * cloud.width,
         y: cloud.y + cloud.height,
         size: dropSize,
-        speed: 3 * this.scaleFactor,
+        speed: CLOUD_DROPS_DEFAULT.speed * this.scaleFactor,
       });
 
       cloud.lastDropTime = currentTime;

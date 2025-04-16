@@ -6,6 +6,8 @@ export const BASE_HEIGHT = 400; // Hauteur de référence du canvas
 
 // Variables de temps
 export const GAME_TIME_IN_SECS = 120; // 2 minutes de jeu
+export const FPS = 60; // Images par seconde pour la boucle de jeu
+export const FRAME_DURATION = 1000 / FPS;
 
 // Paramètres du joueur
 export const PLAYER_DEFAULT = {
@@ -15,11 +17,33 @@ export const PLAYER_DEFAULT = {
   fireRate: 250, // Cadence de tir en ms (250ms par défaut)
 };
 
+// Paramètres du canon du joueur
+export const PLAYER_CANON = {
+  width: 10,
+  height: 10,
+  yOffset: 6, // Décalage vertical du joueur par rapport au bas
+};
+
+// Paramètres d'affichage du joueur
+export const PLAYER_DISPLAY = {
+  fontSize: 16,
+  textOffsetY: 5,
+  wheelRadius: 6,
+  wheelOffsetX: 10,
+  textColor: "#FFFFFF",
+  bodyColor: "#007540",
+  canonColor: "#005a32",
+  wheelColor: "#000000",
+};
+
 // Paramètres des munitions
 export const BULLET_DEFAULT = {
   width: 5,
   height: 10,
   speed: 7,
+  diagonalSpeedMultiplier: 0.9,
+  diagonalOffsetX: 2,
+  color: "#ffeb3b",
 };
 
 // Paramètres des grêlons
@@ -29,17 +53,86 @@ export const HAIL_DEFAULT = {
   speed: 1,
   createInterval: 1000, // Intervalle de création (1s)
   points: 10, // Points par grêlon détruit
+  minInterval: 10, // Intervalle minimal
+  intervalReduction: 165, // Réduction par niveau de difficulté (ajusté pour atteindre le minimum dans les 2 minutes)
+  color: "#6495ED", // Couleur des grêlons
+  highlightColor: "#FFFFFF", // Couleur de la brillance
+};
+
+// Probabilités des grêlons supplémentaires
+export const HAIL_PROBABILITY = {
+  baseProbability: 0.15,
+  multiplier: 0.5,
+  maxProbability: 0.8,
+  extraDelay1: 200, // ms
+  extraDelay2: 350, // ms
+  extraDelay3: 400, // ms
+  difficultyThreshold1: 1.4,
+  difficultyThreshold2: 2.0,
+  probabilityReduction1: 0.15,
+  probabilityReduction2: 0.3,
 };
 
 // Paramètres des épis de maïs
 export const CORN_COUNT = 20;
 export const CORN_DEFAULT = {
   height: 40,
-  points: 50, // Points par épi sauvé
+  points: 100, // Points par épi sauvé
+  gap: 2, // Espace entre les épis
+  stemWidth: 4,
+  stemOffsetY: 10,
+  clobWidth: 3, // Diviseur pour largeur de l'épi
+  clobHeight: 15,
+  silkRadius: 6, // Diviseur pour rayon des soies
+  silkHeight: 5,
+  grainRadius: 1,
+  grainSpacingX: 5,
+  grainSpacingY: 2,
+  grainCountX: 3,
+  grainCountY: 8,
+  leafOffset1: 15,
+  leafOffset2: 25,
+  leafOffset3: 35,
+  leafOffset4: 40,
+  recoverCount: 5, // Nombre d'épis à récupérer avec le bonus
+};
+
+// Couleurs des épis de maïs
+export const CORN_COLORS = {
+  stem: "#4CAF50", // Tige verte
+  cob: "#FFC107", // Jaune maïs
+  silk: "#8D6E63", // Soies marron
+  grain: "#FFD54F", // Grains jaune doré
+  leaf: "#66BB6A", // Feuilles vert clair
+  dyingRedStart: 255,
+  dyingRedEnd: 19,
+  dyingGreenStart: 193,
+  dyingGreenEnd: 69,
+  dyingBlueValue: 19,
+};
+
+// Paramètres des gouttes du nuage d'orage
+export const CLOUD_DROPS_DEFAULT = {
+  minSize: 10, // Taille minimale des gouttes
+  maxSize: 15, // Taille maximale des gouttes
+  speed: 3, // Vitesse de chute
+  createInterval: 500, // Intervalle de création (500ms)
+  color: "#9932cc", // Couleur des gouttes (bleu cornflower)
+  highlightColor: "#FFFFFF", // Couleur de la brillance
+  points: 50, // Points par goutte détruite
+};
+
+// Paramètres du nuage d'orage
+export const STORM_CLOUD = {
+  width: 120,
+  height: 60,
+  posY: 50,
+  speed: 1,
+  duration: 10000, // 10 secondes
 };
 
 // Taux de difficulté progressive
-export const DIFFICULTY_INCREASE_RATE = 0.0005;
+export const DIFFICULTY_INCREASE_RATE = 0.0007;
 export const MAX_SPEED_MULTIPLIER = 1.6; // Vitesse maximale des grêlons (x1.6)
 
 // Paramètres des bonus/malus
@@ -48,6 +141,19 @@ export const POWERUP_DEFAULT = {
   speed: 2,
   createInterval: 10000, // Intervalle de création (10s)
   bonusProbability: 0.7, // 70% de chance d'obtenir un bonus vs. malus
+};
+
+// Couleurs du fond
+export const BACKGROUND = {
+  skyTop: "#87CEEB", // Bleu ciel en haut
+  skyBottom: "#B0E2FF", // Bleu ciel plus clair en bas
+};
+
+// Paramètres de l'interface
+export const UI = {
+  gamePadding: 40,
+  maxHeightRatio: 0.8,
+  aspectRatio: 0.7,
 };
 
 // Types de bonus/malus avec leurs caractéristiques

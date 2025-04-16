@@ -1,6 +1,11 @@
 // player.js - Gestion du joueur et des tirs
 
-import { PLAYER_DEFAULT, BULLET_DEFAULT } from "./constants.js";
+import {
+  PLAYER_DEFAULT,
+  BULLET_DEFAULT,
+  PLAYER_CANON,
+  PLAYER_DISPLAY,
+} from "./constants.js";
 
 export default class Player {
   constructor(canvas, ctx, scaleFactor) {
@@ -17,7 +22,7 @@ export default class Player {
 
     // Position initiale
     this.x = canvas.width / 2 - this.width / 2;
-    this.y = canvas.height - this.height - 6 * scaleFactor;
+    this.y = canvas.height - this.height - PLAYER_CANON.yOffset * scaleFactor;
 
     // Gestion des inputs
     this.keys = {};
@@ -101,7 +106,7 @@ export default class Player {
     const bulletWidth = BULLET_DEFAULT.width * this.scaleFactor;
     const bulletHeight = BULLET_DEFAULT.height * this.scaleFactor;
     const bulletSpeed = BULLET_DEFAULT.speed * this.scaleFactor;
-    const canonHeight = 10 * this.scaleFactor;
+    const canonHeight = PLAYER_CANON.height * this.scaleFactor;
 
     // Créer une balle au centre (par défaut)
     this.bullets.push({
@@ -144,8 +149,8 @@ export default class Player {
         y: this.y - canonHeight,
         width: bulletWidth,
         height: bulletHeight,
-        speed: bulletSpeed * 0.9,
-        speedX: -2 * this.scaleFactor,
+        speed: bulletSpeed * BULLET_DEFAULT.diagonalSpeedMultiplier,
+        speedX: -BULLET_DEFAULT.diagonalOffsetX * this.scaleFactor,
       });
 
       // Balle diagonale droite
@@ -154,8 +159,8 @@ export default class Player {
         y: this.y - canonHeight,
         width: bulletWidth,
         height: bulletHeight,
-        speed: bulletSpeed * 0.9,
-        speedX: 2 * this.scaleFactor,
+        speed: bulletSpeed * BULLET_DEFAULT.diagonalSpeedMultiplier,
+        speedX: BULLET_DEFAULT.diagonalOffsetX * this.scaleFactor,
       });
     }
   }
@@ -187,13 +192,13 @@ export default class Player {
   // Dessin du véhicule du joueur
   drawPlayer() {
     // Corps du véhicule
-    this.ctx.fillStyle = "#007540";
+    this.ctx.fillStyle = PLAYER_DISPLAY.bodyColor;
     this.ctx.fillRect(this.x, this.y, this.width, this.height);
 
     // Ajouter un canon sur le dessus
-    const canonWidth = 10 * this.scaleFactor;
-    const canonHeight = 10 * this.scaleFactor;
-    this.ctx.fillStyle = "#005a32";
+    const canonWidth = PLAYER_CANON.width * this.scaleFactor;
+    const canonHeight = PLAYER_CANON.height * this.scaleFactor;
+    this.ctx.fillStyle = PLAYER_DISPLAY.canonColor;
     this.ctx.fillRect(
       this.x + this.width / 2 - canonWidth / 2,
       this.y - canonHeight,
@@ -202,22 +207,24 @@ export default class Player {
     );
 
     // Ajouter le texte "G2S" en blanc
-    this.ctx.fillStyle = "#FFFFFF";
-    this.ctx.font = `bold ${16 * this.scaleFactor}px Arial`;
+    this.ctx.fillStyle = PLAYER_DISPLAY.textColor;
+    this.ctx.font = `bold ${
+      PLAYER_DISPLAY.fontSize * this.scaleFactor
+    }px Arial`;
     this.ctx.textAlign = "center";
     this.ctx.fillText(
       "G2S",
       this.x + this.width / 2,
-      this.y + this.height / 2 + 5 * this.scaleFactor
+      this.y + this.height / 2 + PLAYER_DISPLAY.textOffsetY * this.scaleFactor
     );
 
     // Ajouter des roues (deux cercles noirs à gauche et à droite)
-    const wheelRadius = 6 * this.scaleFactor;
-    this.ctx.fillStyle = "#000000";
+    const wheelRadius = PLAYER_DISPLAY.wheelRadius * this.scaleFactor;
+    this.ctx.fillStyle = PLAYER_DISPLAY.wheelColor;
     // Roue gauche
     this.ctx.beginPath();
     this.ctx.arc(
-      this.x + 10 * this.scaleFactor,
+      this.x + PLAYER_DISPLAY.wheelOffsetX * this.scaleFactor,
       this.y + this.height,
       wheelRadius,
       0,
@@ -227,7 +234,7 @@ export default class Player {
     // Roue droite
     this.ctx.beginPath();
     this.ctx.arc(
-      this.x + this.width - 10 * this.scaleFactor,
+      this.x + this.width - PLAYER_DISPLAY.wheelOffsetX * this.scaleFactor,
       this.y + this.height,
       wheelRadius,
       0,
@@ -238,7 +245,7 @@ export default class Player {
 
   // Dessin des projectiles
   drawBullets() {
-    this.ctx.fillStyle = "#ffeb3b";
+    this.ctx.fillStyle = BULLET_DEFAULT.color;
     for (const bullet of this.bullets) {
       this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
     }
@@ -263,7 +270,8 @@ export default class Player {
     this.speed = PLAYER_DEFAULT.speed * newScaleFactor;
 
     // Repositionner le joueur
-    this.y = this.canvas.height - this.height - 6 * newScaleFactor;
+    this.y =
+      this.canvas.height - this.height - PLAYER_CANON.yOffset * newScaleFactor;
 
     // Ajuster les balles existantes
     for (const bullet of this.bullets) {

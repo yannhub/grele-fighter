@@ -1,6 +1,11 @@
 // corn.js - Gestion des épis de maïs
 
-import { CORN_COUNT, CORN_DEFAULT, ANIMATION } from "./constants.js";
+import {
+  CORN_COUNT,
+  CORN_DEFAULT,
+  ANIMATION,
+  CORN_COLORS,
+} from "./constants.js";
 
 export default class CornField {
   constructor(canvas, ctx, scaleFactor) {
@@ -22,7 +27,7 @@ export default class CornField {
       this.cornStalks.push({
         x: i * cornWidth,
         y: this.canvas.height - cornHeight,
-        width: cornWidth - 2, // Petit espace entre les épis
+        width: cornWidth - CORN_DEFAULT.gap, // Petit espace entre les épis
         height: cornHeight,
         alive: true,
       });
@@ -43,23 +48,23 @@ export default class CornField {
     for (const stalk of this.cornStalks) {
       if (stalk.alive) {
         // Tige de l'épi
-        this.ctx.fillStyle = "#4CAF50"; // Vert
-        const stemWidth = 4 * this.scaleFactor;
+        this.ctx.fillStyle = CORN_COLORS.stem; // Vert
+        const stemWidth = CORN_DEFAULT.stemWidth * this.scaleFactor;
         this.ctx.fillRect(
           stalk.x + stalk.width / 2 - stemWidth / 2,
-          stalk.y + 10 * this.scaleFactor,
+          stalk.y + CORN_DEFAULT.stemOffsetY * this.scaleFactor,
           stemWidth,
-          stalk.height - 10 * this.scaleFactor
+          stalk.height - CORN_DEFAULT.stemOffsetY * this.scaleFactor
         );
 
         // Épi de maïs (forme cylindrique jaune)
-        this.ctx.fillStyle = "#FFC107"; // Jaune maïs
+        this.ctx.fillStyle = CORN_COLORS.cob; // Jaune maïs
         this.ctx.beginPath();
         this.ctx.ellipse(
           stalk.x + stalk.width / 2,
-          stalk.y + 10 * this.scaleFactor,
-          stalk.width / 3,
-          15 * this.scaleFactor,
+          stalk.y + CORN_DEFAULT.stemOffsetY * this.scaleFactor,
+          stalk.width / CORN_DEFAULT.clobWidth,
+          CORN_DEFAULT.clobHeight * this.scaleFactor,
           0,
           0,
           Math.PI * 2
@@ -67,13 +72,13 @@ export default class CornField {
         this.ctx.fill();
 
         // Soies du maïs (filaments marrons au sommet)
-        this.ctx.fillStyle = "#8D6E63"; // Marron
+        this.ctx.fillStyle = CORN_COLORS.silk; // Marron
         this.ctx.beginPath();
         this.ctx.ellipse(
           stalk.x + stalk.width / 2,
           stalk.y,
-          stalk.width / 6,
-          5 * this.scaleFactor,
+          stalk.width / CORN_DEFAULT.silkRadius,
+          CORN_DEFAULT.silkHeight * this.scaleFactor,
           0,
           0,
           Math.PI * 2
@@ -81,17 +86,19 @@ export default class CornField {
         this.ctx.fill();
 
         // Grains de maïs (points)
-        this.ctx.fillStyle = "#FFD54F"; // Jaune doré
-        for (let i = 0; i < 8; i++) {
-          for (let j = 0; j < 3; j++) {
+        this.ctx.fillStyle = CORN_COLORS.grain; // Jaune doré
+        for (let i = 0; i < CORN_DEFAULT.grainCountY; i++) {
+          for (let j = 0; j < CORN_DEFAULT.grainCountX; j++) {
             this.ctx.beginPath();
             this.ctx.arc(
               stalk.x +
                 stalk.width / 2 -
-                5 * this.scaleFactor +
-                j * 5 * this.scaleFactor,
-              stalk.y + 7 * this.scaleFactor + i * 2 * this.scaleFactor,
-              1 * this.scaleFactor,
+                CORN_DEFAULT.grainSpacingX * this.scaleFactor +
+                j * CORN_DEFAULT.grainSpacingX * this.scaleFactor,
+              stalk.y +
+                CORN_DEFAULT.stemOffsetY * this.scaleFactor +
+                i * CORN_DEFAULT.grainSpacingY * this.scaleFactor,
+              CORN_DEFAULT.grainRadius * this.scaleFactor,
               0,
               Math.PI * 2
             );
@@ -100,38 +107,46 @@ export default class CornField {
         }
 
         // Feuilles de maïs
-        this.ctx.fillStyle = "#66BB6A"; // Vert clair
+        this.ctx.fillStyle = CORN_COLORS.leaf; // Vert clair
         this.ctx.beginPath();
         this.ctx.moveTo(
           stalk.x + stalk.width / 2,
-          stalk.y + 20 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset1 * this.scaleFactor
         );
         this.ctx.quadraticCurveTo(
-          stalk.x + stalk.width / 2 - 15 * this.scaleFactor,
-          stalk.y + 30 * this.scaleFactor,
-          stalk.x + stalk.width / 2 - 25 * this.scaleFactor,
-          stalk.y + 25 * this.scaleFactor
+          stalk.x +
+            stalk.width / 2 -
+            CORN_DEFAULT.leafOffset1 * this.scaleFactor,
+          stalk.y + CORN_DEFAULT.leafOffset2 * this.scaleFactor,
+          stalk.x +
+            stalk.width / 2 -
+            CORN_DEFAULT.leafOffset2 * this.scaleFactor,
+          stalk.y + CORN_DEFAULT.leafOffset1 * this.scaleFactor
         );
         this.ctx.lineTo(
           stalk.x + stalk.width / 2,
-          stalk.y + 35 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset3 * this.scaleFactor
         );
         this.ctx.fill();
 
         this.ctx.beginPath();
         this.ctx.moveTo(
           stalk.x + stalk.width / 2,
-          stalk.y + 25 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset2 * this.scaleFactor
         );
         this.ctx.quadraticCurveTo(
-          stalk.x + stalk.width / 2 + 15 * this.scaleFactor,
-          stalk.y + 35 * this.scaleFactor,
-          stalk.x + stalk.width / 2 + 25 * this.scaleFactor,
-          stalk.y + 30 * this.scaleFactor
+          stalk.x +
+            stalk.width / 2 +
+            CORN_DEFAULT.leafOffset1 * this.scaleFactor,
+          stalk.y + CORN_DEFAULT.leafOffset3 * this.scaleFactor,
+          stalk.x +
+            stalk.width / 2 +
+            CORN_DEFAULT.leafOffset2 * this.scaleFactor,
+          stalk.y + CORN_DEFAULT.leafOffset2 * this.scaleFactor
         );
         this.ctx.lineTo(
           stalk.x + stalk.width / 2,
-          stalk.y + 40 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset4 * this.scaleFactor
         );
         this.ctx.fill();
       }
@@ -147,7 +162,7 @@ export default class CornField {
       height: height,
       alpha: 1.0, // Opacité initiale
       rotation: 0,
-      color: "#FFC107", // Couleur de départ (jaune comme le maïs)
+      color: CORN_COLORS.cob, // Couleur de départ (jaune comme le maïs)
     });
   }
 
@@ -166,24 +181,33 @@ export default class CornField {
       this.ctx.rotate(corn.rotation);
 
       // Calculer la couleur intermédiaire entre jaune et marron
-      const brownValue = Math.floor(139 * (1 - corn.alpha) + 255 * corn.alpha);
-      const greenValue = Math.floor(69 * (1 - corn.alpha) + 193 * corn.alpha);
-      const redValue = Math.floor(19 * (1 - corn.alpha) + 255 * corn.alpha);
+      const brownValue = Math.floor(
+        CORN_COLORS.dyingRedEnd * (1 - corn.alpha) +
+          CORN_COLORS.dyingRedStart * corn.alpha
+      );
+      const greenValue = Math.floor(
+        CORN_COLORS.dyingGreenEnd * (1 - corn.alpha) +
+          CORN_COLORS.dyingGreenStart * corn.alpha
+      );
+      const redValue = Math.floor(
+        CORN_COLORS.dyingBlueValue * (1 - corn.alpha) +
+          CORN_COLORS.dyingRedStart * corn.alpha
+      );
 
       // Dessiner l'épi qui se fane
       // Tige de l'épi (qui devient marron progressivement)
-      this.ctx.fillStyle = `rgba(${redValue}, ${greenValue}, 19, ${corn.alpha})`;
-      const stemWidth = 4 * this.scaleFactor;
+      this.ctx.fillStyle = `rgba(${redValue}, ${greenValue}, ${CORN_COLORS.dyingBlueValue}, ${corn.alpha})`;
+      const stemWidth = CORN_DEFAULT.stemWidth * this.scaleFactor;
       this.ctx.fillRect(-stemWidth / 2, -corn.height, stemWidth, corn.height);
 
       // Épi de maïs (qui devient marron progressivement)
-      this.ctx.fillStyle = `rgba(${redValue}, ${greenValue}, 19, ${corn.alpha})`;
+      this.ctx.fillStyle = `rgba(${redValue}, ${greenValue}, ${CORN_COLORS.dyingBlueValue}, ${corn.alpha})`;
       this.ctx.beginPath();
       this.ctx.ellipse(
         0,
-        -corn.height + 10 * this.scaleFactor,
-        corn.width / 3,
-        15 * this.scaleFactor,
+        -corn.height + CORN_DEFAULT.stemOffsetY * this.scaleFactor,
+        corn.width / CORN_DEFAULT.clobWidth,
+        CORN_DEFAULT.clobHeight * this.scaleFactor,
         0,
         0,
         Math.PI * 2
@@ -216,7 +240,7 @@ export default class CornField {
   }
 
   // Récupération d'épis détruits (pour le bonus RECOVER_CORN)
-  recoverCorns(count = 5) {
+  recoverCorns(count = CORN_DEFAULT.recoverCount) {
     // Collecter tous les indices des épis détruits
     const deadCornIndices = this.cornStalks
       .map((stalk, index) => ({ stalk, index }))

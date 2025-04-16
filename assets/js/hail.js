@@ -1,6 +1,12 @@
 // hail.js - Gestion des grêlons et de leur animation
 
-import { HAIL_DEFAULT, ANIMATION, MAX_SPEED_MULTIPLIER } from "./constants.js";
+import {
+  HAIL_DEFAULT,
+  ANIMATION,
+  MAX_SPEED_MULTIPLIER,
+  HAIL_PROBABILITY,
+  STORM_CLOUD,
+} from "./constants.js";
 
 export default class HailSystem {
   constructor(canvas, ctx, scaleFactor) {
@@ -33,8 +39,9 @@ export default class HailSystem {
     // Augmenter fortement la fréquence des grêlons avec une progression douce
     // Augmentation de la probabilité de base pour avoir plus de grêlons
     const extraHailProbability = Math.min(
-      0.15 + (this.gameSpeed - 1) * 0.5,
-      0.8
+      HAIL_PROBABILITY.baseProbability +
+        (this.gameSpeed - 1) * HAIL_PROBABILITY.multiplier,
+      HAIL_PROBABILITY.maxProbability
     );
 
     // Chance d'avoir un second grêlon (augmentée)
@@ -49,11 +56,15 @@ export default class HailSystem {
           size: newSize,
           speed: cappedSpeed,
         });
-      }, Math.random() * 200); // Décalage aléatoire jusqu'à 200ms
+      }, Math.random() * HAIL_PROBABILITY.extraDelay1); // Décalage aléatoire
     }
 
     // Chance d'avoir un troisième grêlon (augmentée et disponible plus tôt)
-    if (this.gameSpeed > 1.4 && Math.random() < extraHailProbability - 0.15) {
+    if (
+      this.gameSpeed > HAIL_PROBABILITY.difficultyThreshold1 &&
+      Math.random() <
+        extraHailProbability - HAIL_PROBABILITY.probabilityReduction1
+    ) {
       setTimeout(() => {
         const newSize =
           (Math.random() * 5 + HAIL_DEFAULT.minSize) * this.scaleFactor;
@@ -63,11 +74,15 @@ export default class HailSystem {
           size: newSize,
           speed: cappedSpeed,
         });
-      }, Math.random() * 350); // Décalage aléatoire plus important
+      }, Math.random() * HAIL_PROBABILITY.extraDelay2); // Décalage aléatoire plus important
     }
 
     // Ajout d'une quatrième chance de grêlon à des niveaux de difficulté plus élevés
-    if (this.gameSpeed > 2.0 && Math.random() < extraHailProbability - 0.3) {
+    if (
+      this.gameSpeed > HAIL_PROBABILITY.difficultyThreshold2 &&
+      Math.random() <
+        extraHailProbability - HAIL_PROBABILITY.probabilityReduction2
+    ) {
       setTimeout(() => {
         const newSize =
           (Math.random() * 5 + HAIL_DEFAULT.minSize) * this.scaleFactor;
@@ -77,7 +92,7 @@ export default class HailSystem {
           size: newSize,
           speed: cappedSpeed,
         });
-      }, Math.random() * 400);
+      }, Math.random() * HAIL_PROBABILITY.extraDelay3);
     }
   }
 
@@ -131,7 +146,7 @@ export default class HailSystem {
   drawHails() {
     for (const hail of this.hails) {
       // Dessiner un grêlon (cercle blanc/bleuté)
-      this.ctx.fillStyle = "#6495ED";
+      this.ctx.fillStyle = HAIL_DEFAULT.color;
       this.ctx.beginPath();
       this.ctx.arc(
         hail.x + hail.size / 2,
@@ -143,7 +158,7 @@ export default class HailSystem {
       this.ctx.fill();
 
       // Ajouter un effet de brillance
-      this.ctx.fillStyle = "#ffffff";
+      this.ctx.fillStyle = HAIL_DEFAULT.highlightColor;
       this.ctx.beginPath();
       this.ctx.arc(
         hail.x + hail.size / 3,
@@ -173,7 +188,7 @@ export default class HailSystem {
   }
 
   // Création des particules d'animation lors de la destruction d'un grêlon
-  createHailParticles(x, y, size) {
+  createHailParticles(x, y, size, hailColor = HAIL_DEFAULT.color) {
     // Plus de particules pour de plus gros grêlons
     const particleCount = Math.floor(size * ANIMATION.particleCount);
 
@@ -189,7 +204,7 @@ export default class HailSystem {
         speedX: Math.cos(angle) * speed, // Vitesse horizontale basée sur l'angle
         speedY: Math.sin(angle) * speed, // Vitesse verticale basée sur l'angle
         alpha: 1.0, // Opacité initiale
-        color: Math.random() > 0.7 ? "#ffffff" : "#6495ED", // Mélange de bleu et blanc
+        color: Math.random() > 0.7 ? "#ffffff" : hailColor, // Mélange de bleu et blanc
       });
     }
   }
@@ -197,14 +212,17 @@ export default class HailSystem {
   // Gestion du nuage d'orage (malus spécial)
   createStormCloud() {
     return {
-      x: Math.random() * (this.canvas.width - 100 * this.scaleFactor),
-      y: 50 * this.scaleFactor,
-      width: 120 * this.scaleFactor,
-      height: 60 * this.scaleFactor,
-      speedX: 1 * this.scaleFactor * (Math.random() > 0.5 ? 1 : -1), // Direction aléatoire
+      x:
+        Math.random() *
+        (this.canvas.width - STORM_CLOUD.width * this.scaleFactor),
+      y: STORM_CLOUD.posY * this.scaleFactor,
+      width: STORM_CLOUD.width * this.scaleFactor,
+      height: STORM_CLOUD.height * this.scaleFactor,
+      speedX:
+        STORM_CLOUD.speed * this.scaleFactor * (Math.random() > 0.5 ? 1 : -1), // Direction aléatoire
       lastDropTime: 0,
       drops: [], // Grêlons générés par le nuage
-      endTime: Date.now() + 10000, // 10 secondes par défaut
+      endTime: Date.now() + STORM_CLOUD.duration, // Durée du nuage d'orage
     };
   }
 

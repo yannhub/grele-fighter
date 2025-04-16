@@ -4,9 +4,10 @@ import {
   BASE_WIDTH,
   BASE_HEIGHT,
   DIFFICULTY_INCREASE_RATE,
-  POWERUP_DEFAULT,
   HAIL_DEFAULT,
-  POWERUP_TYPES,
+  FRAME_DURATION,
+  BACKGROUND,
+  UI,
 } from "./constants.js";
 import Player from "./player.js";
 import CornField from "./corn.js";
@@ -87,7 +88,7 @@ export default class Game {
     this.ui.startTimer();
 
     // Démarrer la boucle du jeu
-    this.gameInterval = setInterval(() => this.gameLoop(), 1000 / 60); // 60 FPS
+    this.gameInterval = setInterval(() => this.gameLoop(), FRAME_DURATION); // 60 FPS
 
     // Générer des grêlons à intervalles réguliers avec une fréquence qui augmente avec le temps
     this.updateHailInterval();
@@ -101,21 +102,22 @@ export default class Game {
     // Arrêter l'intervalle précédent s'il existe
     if (this.hailInterval) clearInterval(this.hailInterval);
 
-    // Calculer l'intervalle basé sur la vitesse du jeu actuelle
-    // On commence à HAIL_DEFAULT.createInterval (1000ms) et on diminue progressivement
-    // jusqu'à un minimum de 200ms pour éviter une génération trop rapide
-    const newInterval = Math.max(
-      200,
-      HAIL_DEFAULT.createInterval - (this.gameSpeed - 1) * 100
-    );
+    // Utiliser l'intervalle déjà calculé dans gameLoop ou le calculer si c'est la première fois
+    const newInterval =
+      this.currentHailInterval ||
+      Math.max(
+        HAIL_DEFAULT.minInterval,
+        HAIL_DEFAULT.createInterval -
+          (this.gameSpeed - 1) * HAIL_DEFAULT.intervalReduction
+      );
 
     // Créer un nouvel intervalle avec le délai calculé
     this.hailInterval = setInterval(() => {
       this.hailSystem.createHail();
 
-      // Mettre à jour l'intervalle si le jeu est toujours en cours
-      // Vérifier si la vitesse du jeu a suffisamment augmenté pour justifier un ajustement
-      if (this.gameSpeed > 1.1 && this.gameSpeed % 0.2 < 0.01) {
+      // Mettre à jour l'intervalle à chaque création de grêlon
+      // en utilisant la valeur calculée dans gameLoop
+      if (this.currentHailInterval !== newInterval) {
         this.updateHailInterval();
       }
     }, newInterval);
@@ -187,7 +189,10 @@ export default class Game {
     this.collisionManager.checkCollisions();
 
     // Mettre à jour le score affiché
-    this.ui.updateScore(this.collisionManager.getScore());
+    this.ui.updateScore(
+      this.collisionManager.getScore(),
+      this.currentHailInterval
+    );
 
     // Vérifier si tous les épis sont détruits
     if (this.collisionManager.areAllCornsDead()) {
@@ -198,6 +203,25 @@ export default class Game {
     // Augmenter progressivement la difficulté
     this.gameSpeed += DIFFICULTY_INCREASE_RATE;
     this.hailSystem.setGameSpeed(this.gameSpeed);
+
+    // Mettre à jour l'intervalle de création des grêlons à chaque frame
+    const newInterval = Math.max(
+      HAIL_DEFAULT.minInterval,
+      HAIL_DEFAULT.createInterval -
+        (this.gameSpeed - 1) * HAIL_DEFAULT.intervalReduction
+    );
+
+    // Si l'intervalle a changé de façon significative (plus de 10ms de différence)
+    // ou s'il n'existe pas encore, le mettre à jour et recréer le timer
+    if (
+      !this.currentHailInterval ||
+      Math.abs(this.currentHailInterval - newInterval) > 10
+    ) {
+      this.currentHailInterval = newInterval;
+      this.updateHailInterval();
+    } else {
+      this.currentHailInterval = newInterval;
+    }
   }
 
   // Dessiner l'arrière-plan
@@ -209,8 +233,8 @@ export default class Game {
       0,
       this.canvas.height
     );
-    skyGradient.addColorStop(0, "#87CEEB"); // Bleu ciel en haut
-    skyGradient.addColorStop(1, "#B0E2FF"); // Bleu ciel plus clair en bas
+    skyGradient.addColorStop(0, BACKGROUND.skyTop); // Bleu ciel en haut
+    skyGradient.addColorStop(1, BACKGROUND.skyBottom); // Bleu ciel plus clair en bas
 
     // Appliquer le fond bleu
     this.ctx.fillStyle = skyGradient;
@@ -223,10 +247,10 @@ export default class Game {
   // Redimensionner le jeu en fonction de la taille de l'écran
   resizeGame() {
     const gameArea = document.querySelector(".game-area");
-    const gameAreaWidth = gameArea.clientWidth - 40; // -40 pour le padding
+    const gameAreaWidth = gameArea.clientWidth - UI.gamePadding; // -40 pour le padding
     const gameAreaHeight = Math.min(
-      window.innerHeight * 0.8,
-      gameAreaWidth * 0.7
+      window.innerHeight * UI.maxHeightRatio,
+      gameAreaWidth * UI.aspectRatio
     );
 
     // Ajuster la taille du canvas
@@ -265,6 +289,7 @@ export default class Game {
 
     // Calculer le score final
     const hailsDestroyed = this.collisionManager.getHailsDestroyed();
+    const cloudDropsDestroyed = this.collisionManager.getCloudDropsDestroyed();
     const cornSaved = this.cornField.getAliveCornCount();
     const collectedPowerups = this.powerupSystem.collectedPowerups;
 
@@ -272,6 +297,7 @@ export default class Game {
     const finalScore = this.ui.showGameOver(
       this.collisionManager.getScore(),
       hailsDestroyed,
+      cloudDropsDestroyed,
       cornSaved,
       collectedPowerups
     );

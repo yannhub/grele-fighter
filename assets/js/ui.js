@@ -1,6 +1,12 @@
 // ui.js - Gestion de l'interface utilisateur et la navigation entre écrans
 
-import { GAME_TIME_IN_SECS, CORN_DEFAULT, POWERUP_TYPES } from "./constants.js";
+import {
+  GAME_TIME_IN_SECS,
+  CORN_DEFAULT,
+  POWERUP_TYPES,
+  CLOUD_DROPS_DEFAULT,
+  HAIL_DEFAULT,
+} from "./constants.js";
 
 export default class UI {
   constructor(gameManager) {
@@ -33,8 +39,43 @@ export default class UI {
     this.playerInfo = {};
     this.gameEndReason = "";
 
+    // Initialiser les valeurs d'interface depuis les constantes
+    this.initializeUIValues();
+
     // Initialiser les événements
     this.setupEventListeners();
+  }
+
+  // Initialise les valeurs de l'interface à partir des constantes
+  initializeUIValues() {
+    // Points pour les grêlons, gouttes de nuage et maïs dans les règles du jeu
+    const hailPointsEl = document.getElementById("hail-points");
+    const cloudPointsEl = document.getElementById("cloud-points");
+    const cornPointsEl = document.getElementById("corn-points-value");
+
+    // Points dans l'écran de récapitulation
+    const hailPointsRecapEl = document.getElementById("hail-points-recap");
+    const cloudPointsRecapEl = document.getElementById("cloud-points-recap");
+    const cornPointsRecapEl = document.getElementById("corn-points-recap");
+
+    // Mettre à jour les valeurs si les éléments existent
+    if (hailPointsEl) hailPointsEl.textContent = HAIL_DEFAULT.points;
+    if (cloudPointsEl) cloudPointsEl.textContent = CLOUD_DROPS_DEFAULT.points;
+    if (cornPointsEl) cornPointsEl.textContent = CORN_DEFAULT.points;
+
+    if (hailPointsRecapEl) hailPointsRecapEl.textContent = HAIL_DEFAULT.points;
+    if (cloudPointsRecapEl)
+      cloudPointsRecapEl.textContent = CLOUD_DROPS_DEFAULT.points;
+    if (cornPointsRecapEl) cornPointsRecapEl.textContent = CORN_DEFAULT.points;
+
+    // Durée de la partie
+    const gameTimeInMinutes = Math.floor(GAME_TIME_IN_SECS / 60);
+    const gameTimeEl = document.getElementById("game-time");
+    if (gameTimeEl) gameTimeEl.textContent = gameTimeInMinutes;
+
+    // Initialiser aussi le temps affiché dans le timer
+    if (this.timerDisplay)
+      this.timerDisplay.textContent = `${gameTimeInMinutes}:00`;
   }
 
   // Configuration des écouteurs d'événements
@@ -159,14 +200,21 @@ export default class UI {
   }
 
   // Afficher l'écran de fin de jeu
-  showGameOver(score, hailsDestroyed, cornSaved, collectedPowerups) {
+  showGameOver(
+    score,
+    hailsDestroyed,
+    cloudDropsDestroyed,
+    cornSaved,
+    collectedPowerups
+  ) {
     // Arrêter le timer
     clearInterval(this.timerInterval);
 
     // Calculer les points
-    const hailPoints = hailsDestroyed * 10;
+    const hailPoints = hailsDestroyed * HAIL_DEFAULT.points; // Points pour les grêlons
+    const cloudDropPoints = cloudDropsDestroyed * CLOUD_DROPS_DEFAULT.points; // Points pour les gouttes de nuage
     const cornPoints = cornSaved * CORN_DEFAULT.points;
-    const finalScore = hailPoints + cornPoints;
+    const finalScore = hailPoints + cloudDropPoints + cornPoints;
 
     // Afficher l'écran de fin
     this.gameCanvas.style.display = "none";
@@ -177,6 +225,12 @@ export default class UI {
     this.finalScoreEl.textContent = finalScore;
     document.getElementById("hails-destroyed").textContent = hailsDestroyed;
     document.getElementById("hails-points").textContent = hailPoints;
+
+    // Ajouter les détails sur les gouttes de nuage
+    document.getElementById("cloud-drops-destroyed").textContent =
+      cloudDropsDestroyed;
+    document.getElementById("cloud-drops-points").textContent = cloudDropPoints;
+
     document.getElementById("corn-saved").textContent = cornSaved;
     document.getElementById("corn-points").textContent = cornPoints;
 
@@ -318,6 +372,7 @@ export default class UI {
     this.showGameOver(
       1500, // Score total
       120, // 120 grêlons détruits
+      50, // 50 gouttes de nuage détruites
       5, // 5 maïs sauvés
       testPowerups // Array de powerups collectés
     );

@@ -1,6 +1,6 @@
 // collision.js - Gestion des collisions entre objets du jeu
 
-import { HAIL_DEFAULT, CORN_DEFAULT } from "./constants.js";
+import { HAIL_DEFAULT, CLOUD_DROPS_DEFAULT } from "./constants.js";
 
 export default class CollisionManager {
   constructor(player, hailSystem, cornField, powerupSystem) {
@@ -10,6 +10,7 @@ export default class CollisionManager {
     this.powerupSystem = powerupSystem;
     this.score = 0;
     this.hailsDestroyed = 0;
+    this.cloudDropsDestroyed = 0; // Nouveau compteur pour les gouttes de nuage
   }
 
   // Vérifier toutes les collisions
@@ -79,16 +80,17 @@ export default class CollisionManager {
             this.hailSystem.createHailParticles(
               drop.x - drop.size / 2,
               drop.y - drop.size / 2,
-              drop.size
+              drop.size,
+              CLOUD_DROPS_DEFAULT.color
             );
 
             // Supprimer la goutte
             cloudDrops.splice(j, 1);
             j--;
 
-            // Ajouter 5 points au score (moins que les grêlons normaux)
-            this.score += 5;
-            this.hailsDestroyed++;
+            // Ajouter des points au score (moins que les grêlons normaux)
+            this.score += CLOUD_DROPS_DEFAULT.points;
+            this.cloudDropsDestroyed++; // Utiliser le compteur dédié aux gouttes de nuage
 
             break;
           }
@@ -239,9 +241,15 @@ export default class CollisionManager {
     return this.hailsDestroyed;
   }
 
+  // Récupérer le nombre de gouttes de nuage détruites
+  getCloudDropsDestroyed() {
+    return this.cloudDropsDestroyed;
+  }
+
   // Réinitialiser les statistiques
   reset() {
     this.score = 0;
     this.hailsDestroyed = 0;
+    this.cloudDropsDestroyed = 0;
   }
 }
