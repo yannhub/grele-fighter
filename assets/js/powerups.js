@@ -5,6 +5,7 @@ import {
   POWERUP_TYPES,
   PLAYER_DEFAULT,
   CLOUD_DROPS_DEFAULT,
+  GAME_TIME_IN_SECS,
 } from "./constants.js";
 
 export default class PowerupSystem {
@@ -20,7 +21,7 @@ export default class PowerupSystem {
 
     // Propriétés pour la fréquence progressive
     this.powerupFrequency = POWERUP_DEFAULT.createInterval; // Intervalle initial
-    this.minPowerupFrequency = 3000; // Intervalle minimum (3 secondes)
+    this.minPowerupFrequency = 1000; // Intervalle minimum (1 secondes)
   }
 
   // Création d'un bonus/malus aléatoire
@@ -52,12 +53,25 @@ export default class PowerupSystem {
   }
 
   // Mettre à jour l'intervalle de génération des bonus/malus
-  updatePowerupFrequency(gameSpeed) {
-    // Réduire progressivement l'intervalle en fonction de la vitesse du jeu
-    // Avec une formule qui diminue l'intervalle mais pas trop rapidement
+  updatePowerupFrequency(gameStartTime) {
+    // Temps de jeu écoulé en millisecondes
+    const elapsedTime = Date.now() - gameStartTime;
+
+    // Temps total de jeu en millisecondes (2 minutes = 120000 ms)
+    const totalGameTime = GAME_TIME_IN_SECS * 1000;
+
+    // Intervalle initial: 5000ms (5 secondes)
+    const initialInterval = 5000;
+
+    // Intervalle minimal: 1000ms (1 seconde)
+    const minInterval = 1000;
+
+    // Calculer l'intervalle en fonction du temps écoulé
+    // Formule linéaire: commence à initialInterval et diminue jusqu'à minInterval à la fin
     const newFrequency = Math.max(
-      this.minPowerupFrequency,
-      POWERUP_DEFAULT.createInterval - (gameSpeed - 1) * 4000
+      minInterval,
+      initialInterval -
+        (elapsedTime / totalGameTime) * (initialInterval - minInterval)
     );
 
     this.powerupFrequency = newFrequency;

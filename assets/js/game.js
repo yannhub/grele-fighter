@@ -84,6 +84,9 @@ export default class Game {
     // Réinitialiser les variables du jeu
     this.resetGame();
 
+    // Enregistrer le temps de début de la partie
+    this.gameStartTime = Date.now();
+
     // Démarrer le timer
     this.ui.startTimer();
 
@@ -125,9 +128,9 @@ export default class Game {
 
   // Planifier la création d'un bonus/malus avec un délai dynamique
   schedulePowerupCreation() {
-    // Utiliser la nouvelle méthode pour obtenir l'intervalle actuel
+    // Utiliser la méthode avec le temps de début du jeu pour obtenir une progression linéaire
     const currentInterval = this.powerupSystem.updatePowerupFrequency(
-      this.gameSpeed
+      this.gameStartTime
     );
 
     // Créer un nouveau timeout avec l'intervalle actuel

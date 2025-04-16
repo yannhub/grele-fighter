@@ -53,24 +53,10 @@ export const HAIL_DEFAULT = {
   speed: 1,
   createInterval: 1000, // Intervalle de création (1s)
   points: 10, // Points par grêlon détruit
-  minInterval: 10, // Intervalle minimal
-  intervalReduction: 165, // Réduction par niveau de difficulté (ajusté pour atteindre le minimum dans les 2 minutes)
+  minInterval: 30, // Intervalle minimal
+  intervalReduction: 250, // Réduction par niveau de difficulté (ajusté pour atteindre le minimum dans les 2 minutes)
   color: "#6495ED", // Couleur des grêlons
   highlightColor: "#FFFFFF", // Couleur de la brillance
-};
-
-// Probabilités des grêlons supplémentaires
-export const HAIL_PROBABILITY = {
-  baseProbability: 0.15,
-  multiplier: 0.5,
-  maxProbability: 0.8,
-  extraDelay1: 200, // ms
-  extraDelay2: 350, // ms
-  extraDelay3: 400, // ms
-  difficultyThreshold1: 1.4,
-  difficultyThreshold2: 2.0,
-  probabilityReduction1: 0.15,
-  probabilityReduction2: 0.3,
 };
 
 // Paramètres des épis de maïs
@@ -132,7 +118,7 @@ export const STORM_CLOUD = {
 };
 
 // Taux de difficulté progressive
-export const DIFFICULTY_INCREASE_RATE = 0.0007;
+export const DIFFICULTY_INCREASE_RATE = 0.0008;
 export const MAX_SPEED_MULTIPLIER = 1.6; // Vitesse maximale des grêlons (x1.6)
 
 // Paramètres des bonus/malus
@@ -140,7 +126,7 @@ export const POWERUP_DEFAULT = {
   size: 30,
   speed: 2,
   createInterval: 10000, // Intervalle de création (10s)
-  bonusProbability: 0.7, // 70% de chance d'obtenir un bonus vs. malus
+  bonusProbability: 0.8, // 80% de chance d'obtenir un bonus vs. malus
 };
 
 // Couleurs du fond

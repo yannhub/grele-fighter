@@ -4,7 +4,6 @@ import {
   HAIL_DEFAULT,
   ANIMATION,
   MAX_SPEED_MULTIPLIER,
-  HAIL_PROBABILITY,
   STORM_CLOUD,
 } from "./constants.js";
 
@@ -35,65 +34,6 @@ export default class HailSystem {
       size: size,
       speed: cappedSpeed,
     });
-
-    // Augmenter fortement la fréquence des grêlons avec une progression douce
-    // Augmentation de la probabilité de base pour avoir plus de grêlons
-    const extraHailProbability = Math.min(
-      HAIL_PROBABILITY.baseProbability +
-        (this.gameSpeed - 1) * HAIL_PROBABILITY.multiplier,
-      HAIL_PROBABILITY.maxProbability
-    );
-
-    // Chance d'avoir un second grêlon (augmentée)
-    if (Math.random() < extraHailProbability) {
-      setTimeout(() => {
-        // Créer un grêlon avec un léger décalage pour une meilleure répartition
-        const newSize =
-          (Math.random() * 5 + HAIL_DEFAULT.minSize) * this.scaleFactor;
-        this.hails.push({
-          x: Math.random() * (this.canvas.width - newSize),
-          y: -newSize,
-          size: newSize,
-          speed: cappedSpeed,
-        });
-      }, Math.random() * HAIL_PROBABILITY.extraDelay1); // Décalage aléatoire
-    }
-
-    // Chance d'avoir un troisième grêlon (augmentée et disponible plus tôt)
-    if (
-      this.gameSpeed > HAIL_PROBABILITY.difficultyThreshold1 &&
-      Math.random() <
-        extraHailProbability - HAIL_PROBABILITY.probabilityReduction1
-    ) {
-      setTimeout(() => {
-        const newSize =
-          (Math.random() * 5 + HAIL_DEFAULT.minSize) * this.scaleFactor;
-        this.hails.push({
-          x: Math.random() * (this.canvas.width - newSize),
-          y: -newSize,
-          size: newSize,
-          speed: cappedSpeed,
-        });
-      }, Math.random() * HAIL_PROBABILITY.extraDelay2); // Décalage aléatoire plus important
-    }
-
-    // Ajout d'une quatrième chance de grêlon à des niveaux de difficulté plus élevés
-    if (
-      this.gameSpeed > HAIL_PROBABILITY.difficultyThreshold2 &&
-      Math.random() <
-        extraHailProbability - HAIL_PROBABILITY.probabilityReduction2
-    ) {
-      setTimeout(() => {
-        const newSize =
-          (Math.random() * 5 + HAIL_DEFAULT.minSize) * this.scaleFactor;
-        this.hails.push({
-          x: Math.random() * (this.canvas.width - newSize),
-          y: -newSize,
-          size: newSize,
-          speed: cappedSpeed,
-        });
-      }, Math.random() * HAIL_PROBABILITY.extraDelay3);
-    }
   }
 
   // Mise à jour de la position des grêlons
