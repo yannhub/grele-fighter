@@ -9,6 +9,10 @@ export const GAME_TIME_IN_SECS = 120; // 2 minutes de jeu
 export const FPS = 60; // Images par seconde pour la boucle de jeu
 export const FRAME_DURATION = 1000 / FPS;
 
+// Taux de difficulté progressive
+export const DIFFICULTY_INCREASE_RATE = 1 / (GAME_TIME_IN_SECS * FPS);
+export const MAX_SPEED_MULTIPLIER = 3; // Vitesse maximale des grêlons (x1.6)
+
 // Paramètres du joueur
 export const PLAYER_DEFAULT = {
   width: 50,
@@ -54,7 +58,7 @@ export const HAIL_DEFAULT = {
   createInterval: 1000, // Intervalle de création (1s)
   points: 10, // Points par grêlon détruit
   minInterval: 30, // Intervalle minimal
-  intervalReduction: 250, // Réduction par niveau de difficulté (ajusté pour atteindre le minimum dans les 2 minutes)
+  intervalReduction: 500,
   color: "#6495ED", // Couleur des grêlons
   highlightColor: "#FFFFFF", // Couleur de la brillance
 };
@@ -116,10 +120,6 @@ export const STORM_CLOUD = {
   speed: 1,
   duration: 10000, // 10 secondes
 };
-
-// Taux de difficulté progressive
-export const DIFFICULTY_INCREASE_RATE = 0.0008;
-export const MAX_SPEED_MULTIPLIER = 1.6; // Vitesse maximale des grêlons (x1.6)
 
 // Paramètres des bonus/malus
 export const POWERUP_DEFAULT = {

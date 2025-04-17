@@ -17,7 +17,8 @@ export default class Player {
     this.width = PLAYER_DEFAULT.width * scaleFactor;
     this.height = PLAYER_DEFAULT.height * scaleFactor;
     this.speed = PLAYER_DEFAULT.speed * scaleFactor;
-    this.fireRate = PLAYER_DEFAULT.fireRate;
+    this.baseFireRate = PLAYER_DEFAULT.fireRate;
+    this.fireRate = this.baseFireRate;
     this.lastFireTime = 0;
 
     // Position initiale
@@ -249,6 +250,10 @@ export default class Player {
     for (const bullet of this.bullets) {
       this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
     }
+  }
+
+  setGameSpeed(newGameSpeed) {
+    this.baseFireRate = PLAYER_DEFAULT.fireRate / Math.log(newGameSpeed * 3);
   }
 
   // Mise à jour des attributs du joueur
