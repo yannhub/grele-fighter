@@ -111,7 +111,7 @@ export default class Game {
       Math.max(
         HAIL_DEFAULT.minInterval,
         HAIL_DEFAULT.createInterval -
-          (this.gameSpeed - 1) * HAIL_DEFAULT.intervalReduction
+          Math.log(this.gameSpeed) * HAIL_DEFAULT.intervalReduction * 2.5
       );
 
     // Créer un nouvel intervalle avec le délai calculé
@@ -191,6 +191,9 @@ export default class Game {
     // Vérifier les collisions
     this.collisionManager.checkCollisions();
 
+    // Afficher les informations de debug
+    this.drawDebugInfo();
+
     // Mettre à jour le score affiché
     this.ui.updateScore(
       this.collisionManager.getScore(),
@@ -205,13 +208,15 @@ export default class Game {
 
     // Augmenter progressivement la difficulté
     this.gameSpeed += DIFFICULTY_INCREASE_RATE;
+
     this.hailSystem.setGameSpeed(this.gameSpeed);
+    this.player.setGameSpeed(this.gameSpeed);
 
     // Mettre à jour l'intervalle de création des grêlons à chaque frame
     const newInterval = Math.max(
       HAIL_DEFAULT.minInterval,
       HAIL_DEFAULT.createInterval -
-        (this.gameSpeed - 1) * HAIL_DEFAULT.intervalReduction
+        Math.log(this.gameSpeed) * HAIL_DEFAULT.intervalReduction * 3
     );
 
     // Si l'intervalle a changé de façon significative (plus de 10ms de différence)
@@ -281,6 +286,28 @@ export default class Game {
       this.powerupSystem.activeCloudMalus = this.hailSystem.createStormCloud();
       this.stormCloudTriggered = true;
     }
+  }
+
+  // Nouvelle méthode pour afficher les informations de debug
+  drawDebugInfo() {
+    // Définir le style du texte et du fond pour la fenêtre de debug
+    this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    this.ctx.fillRect(10, 10, 220, 90);
+    this.ctx.fillStyle = "#ffffff";
+    this.ctx.font = "14px monospace";
+
+    // Afficher les informations
+    this.ctx.fillText(`GameSpeed: ${this.gameSpeed.toFixed(3)}`, 40, 30);
+    this.ctx.fillText(
+      `HailInterval: ${Math.round(this.currentHailInterval || 0)}ms`,
+      40,
+      50
+    );
+    this.ctx.fillText(
+      `BaseFireRate: ${Math.round(this.player.baseFireRate)}ms`,
+      40,
+      70
+    );
   }
 
   // Terminer la partie

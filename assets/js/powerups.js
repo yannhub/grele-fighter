@@ -460,13 +460,13 @@ export default class PowerupSystem {
       // Bonus
       case "RAPID_FIRE":
         // Augmenter la cadence de tir (réduire le délai)
-        player.setFireRate(PLAYER_DEFAULT.fireRate / 2); // Cadence plus rapide
+        player.setFireRate(player.baseFireRate / 2); // Cadence plus rapide
 
         // Ajouter à la liste des bonus actifs avec durée
         this.activePowerups.push({
           type: powerup.type,
           endTime: Date.now() + powerupInfo.duration,
-          restoreFunction: () => player.setFireRate(PLAYER_DEFAULT.fireRate),
+          restoreFunction: () => player.setFireRate(player.baseFireRate),
         });
         break;
 
