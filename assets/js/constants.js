@@ -5,7 +5,7 @@ export const BASE_WIDTH = 600; // Largeur de référence du canvas
 export const BASE_HEIGHT = 400; // Hauteur de référence du canvas
 
 // Variables de temps
-export const GAME_TIME_IN_SECS = 120; // 2 minutes de jeu
+export const GAME_TIME_IN_SECS = 180; // 3 minutes de jeu
 export const FPS = 60; // Images par seconde pour la boucle de jeu
 export const FRAME_DURATION = 1000 / FPS;
 
@@ -18,7 +18,7 @@ export const PLAYER_DEFAULT = {
   width: 50,
   height: 30,
   speed: 5,
-  fireRate: 250, // Cadence de tir en ms (250ms par défaut)
+  fireRate: 300, // Cadence de tir en ms (250ms par défaut)
 };
 
 // Paramètres du canon du joueur
@@ -57,7 +57,7 @@ export const HAIL_DEFAULT = {
   speed: 1,
   createInterval: 1000, // Intervalle de création (1s)
   points: 10, // Points par grêlon détruit
-  minInterval: 30, // Intervalle minimal
+  minInterval: 10, // Intervalle minimal
   intervalReduction: 500,
   color: "#6495ED", // Couleur des grêlons
   highlightColor: "#FFFFFF", // Couleur de la brillance
