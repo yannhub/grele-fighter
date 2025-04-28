@@ -192,7 +192,7 @@ export default class Game {
     this.collisionManager.checkCollisions();
 
     // Afficher les informations de debug
-    this.drawDebugInfo();
+    // this.drawDebugInfo();
 
     // Mettre à jour le score affiché
     this.ui.updateScore(
