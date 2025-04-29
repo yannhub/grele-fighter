@@ -25,8 +25,7 @@ export default class PowerupSystem {
     this.activeRobotCart = null; // Chariot robot actif
 
     // Propriétés pour la fréquence progressive
-    this.powerupFrequency = POWERUP_DEFAULT.createInterval; // Intervalle initial
-    this.minPowerupFrequency = 1000; // Intervalle minimum (1 secondes)
+    this.powerupFrequency = POWERUP_DEFAULT.createInterval;
 
     // Index pour le système de rotation des powerups
     this.currentPowerupIndex = 0;
@@ -66,7 +65,7 @@ export default class PowerupSystem {
     const elapsedTime = Date.now() - gameStartTime;
 
     // Temps total de jeu en millisecondes
-    const totalGameTime = GAME_TIME_IN_SECS * 1000;
+    const totalGameTime = (GAME_TIME_IN_SECS - 5) * 1000;
 
     const initialInterval = POWERUP_DEFAULT.createInterval;
 
@@ -76,7 +75,7 @@ export default class PowerupSystem {
     // Formule linéaire: commence à initialInterval et diminue jusqu'à minInterval à la fin
     const newFrequency = Math.max(
       minInterval,
-      initialInterval - 
+      initialInterval -
         (elapsedTime / totalGameTime) * (initialInterval - minInterval)
     );
 
@@ -631,7 +630,7 @@ export default class PowerupSystem {
           speedX: 2 * this.scaleFactor,
           bullets: [],
           lastFireTime: 0,
-          fireRate: PLAYER_DEFAULT.fireRate,
+          fireRate: PLAYER_DEFAULT.fireRate / 2,
           endTime: Date.now() + powerupInfo.duration,
         };
 
@@ -753,7 +752,8 @@ export default class PowerupSystem {
     // Paramètres de l'animation
     const centerX = player.getCenterX();
     const centerY = player.getCenterY();
-    const maxRadius = Math.max(this.canvas.width, this.canvas.height) * 1.5;
+    // Réduire le rayon maximal à la moitié de l'écran au lieu de 1.5 fois
+    const maxRadius = Math.max(this.canvas.width, this.canvas.height) * 0.7;
     const explosionSpeed = 12 * this.scaleFactor;
     const explosionColor = POWERUP_TYPES.EXPLOSION.color;
 

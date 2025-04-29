@@ -126,7 +126,7 @@ export const POWERUP_DEFAULT = {
   size: 30,
   speed: 2,
   createInterval: 5000, // Intervalle de création
-  minInterval: 500, // Intervalle minimal
+  minInterval: 800, // Intervalle minimal
 };
 
 // Couleurs du fond
@@ -144,41 +144,33 @@ export const UI = {
 
 // Types de bonus/malus avec leurs caractéristiques
 export const POWERUP_TYPES = {
-  // Bonus (effets positifs)
-  RAPID_FIRE: {
-    name: "Cadence Rapide",
-    color: "#32CD32",
-    good: true,
-    icon: "⚡",
-    duration: 15000,
-  },
   PARALLEL_BULLETS: {
     name: "Tirs Parallèles",
     color: "#1E90FF",
     good: true,
     icon: "⋔",
-    duration: 12000,
+    duration: 10000,
   },
-  DIAGONAL_BULLETS: {
-    name: "Tirs Diagonaux",
-    color: "#9932CC",
-    good: true,
-    icon: "✕",
-    duration: 12000,
+  SLOW_DOWN: {
+    name: "Ralentissement",
+    color: "#B22222",
+    good: false,
+    icon: "⊗",
+    duration: 6000,
   },
   ROBOT_CART: {
     name: "Chariot Robot",
     color: "#FF8C00", // Orange foncé
     good: true,
     icon: "⋈",
-    duration: 10000,
+    duration: 8000,
   },
   SPEED_UP: {
     name: "Vitesse Améliorée",
     color: "#00BFFF",
     good: true,
     icon: "➤",
-    duration: 10000,
+    duration: 8000,
   },
   RECOVER_CORN: {
     name: "Récupération de Maïs",
@@ -187,6 +179,13 @@ export const POWERUP_TYPES = {
     icon: "🌽",
     duration: 1000, // Effet immédiat
   },
+  RAPID_FIRE: {
+    name: "Cadence Rapide",
+    color: "#32CD32",
+    good: true,
+    icon: "⚡",
+    duration: 10000,
+  },
   EXPLOSION: {
     name: "Explosion",
     color: "#FF4500", // Orange-rouge
@@ -194,13 +193,11 @@ export const POWERUP_TYPES = {
     icon: "💥",
     duration: 1000, // Effet immédiat
   },
-
-  // Malus (effets négatifs)
-  SLOW_DOWN: {
-    name: "Ralentissement",
-    color: "#B22222",
-    good: false,
-    icon: "⊗",
+  DIAGONAL_BULLETS: {
+    name: "Tirs Diagonaux",
+    color: "#9932CC",
+    good: true,
+    icon: "✕",
     duration: 8000,
   },
   STORM_CLOUD: {
