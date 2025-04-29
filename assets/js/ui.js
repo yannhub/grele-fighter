@@ -27,6 +27,7 @@ export default class UI {
     this.submitInfoBtn = document.getElementById("submit-info");
     this.playBtn = document.getElementById("play-btn");
     this.playAgainBtn = document.getElementById("play-again-btn");
+    this.homeBtn = document.getElementById("home-btn");
     this.testModeBtn = document.getElementById("test-mode-btn");
     this.testRecapBtn = document.getElementById("test-recap-btn");
 
@@ -71,7 +72,9 @@ export default class UI {
     // Durée de la partie
     const gameTimeInMinutes = Math.floor(GAME_TIME_IN_SECS / 60);
     const gameTimeInSeconds = GAME_TIME_IN_SECS % 60;
-    const formattedTime = `${gameTimeInMinutes}:${gameTimeInSeconds < 10 ? '0' : ''}${gameTimeInSeconds}`;
+    const formattedTime = `${gameTimeInMinutes}:${
+      gameTimeInSeconds < 10 ? "0" : ""
+    }${gameTimeInSeconds}`;
     const gameTimeEl = document.getElementById("game-time");
     if (gameTimeEl) gameTimeEl.textContent = formattedTime;
 
@@ -124,6 +127,20 @@ export default class UI {
 
       // Démarrer une nouvelle partie
       this.gameManager.startGame();
+    });
+
+    this.homeBtn.addEventListener("click", () => {
+      // Retour à l'écran d'accueil
+      this.gameCanvas.style.display = "none";
+      this.scoreDisplay.style.display = "none";
+      this.gameOverScreen.style.display = "none";
+      this.welcomeScreen.style.display = "block";
+
+      // Réinitialiser le formulaire
+      document.getElementById("register-form").reset();
+
+      // Vider les informations du joueur
+      this.playerInfo = {};
     });
 
     this.testModeBtn.addEventListener("click", () => {
