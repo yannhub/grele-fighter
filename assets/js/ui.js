@@ -70,8 +70,10 @@ export default class UI {
 
     // Durée de la partie
     const gameTimeInMinutes = Math.floor(GAME_TIME_IN_SECS / 60);
+    const gameTimeInSeconds = GAME_TIME_IN_SECS % 60;
+    const formattedTime = `${gameTimeInMinutes}:${gameTimeInSeconds < 10 ? '0' : ''}${gameTimeInSeconds}`;
     const gameTimeEl = document.getElementById("game-time");
-    if (gameTimeEl) gameTimeEl.textContent = gameTimeInMinutes;
+    if (gameTimeEl) gameTimeEl.textContent = formattedTime;
 
     // Initialiser aussi le temps affiché dans le timer
     if (this.timerDisplay)
