@@ -5,7 +5,7 @@ export const BASE_WIDTH = 600; // Largeur de référence du canvas
 export const BASE_HEIGHT = 400; // Hauteur de référence du canvas
 
 // Variables de temps
-export const GAME_TIME_IN_SECS = 120; // 3 minutes de jeu
+export const GAME_TIME_IN_SECS = 90;
 export const FPS = 60; // Images par seconde pour la boucle de jeu
 export const FRAME_DURATION = 1000 / FPS;
 
@@ -18,7 +18,7 @@ export const PLAYER_DEFAULT = {
   width: 50,
   height: 30,
   speed: 5,
-  fireRate: 300, // Cadence de tir en ms (250ms par défaut)
+  fireRate: 300, // Cadence de tir en ms
 };
 
 // Paramètres du canon du joueur
@@ -125,8 +125,8 @@ export const STORM_CLOUD = {
 export const POWERUP_DEFAULT = {
   size: 30,
   speed: 2,
-  createInterval: 2000, // Intervalle de création (10s)
-  bonusProbability: 0.8, // 80% de chance d'obtenir un bonus vs. malus
+  createInterval: 5000, // Intervalle de création
+  minInterval: 500, // Intervalle minimal
 };
 
 // Couleurs du fond

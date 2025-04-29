@@ -27,19 +27,22 @@ export default class PowerupSystem {
     // Propriétés pour la fréquence progressive
     this.powerupFrequency = POWERUP_DEFAULT.createInterval; // Intervalle initial
     this.minPowerupFrequency = 1000; // Intervalle minimum (1 secondes)
+
+    // Index pour le système de rotation des powerups
+    this.currentPowerupIndex = 0;
+
+    // Liste complète des types de powerups dans l'ordre
+    this.powerupSequence = Object.keys(POWERUP_TYPES);
   }
 
-  // Création d'un bonus/malus aléatoire
+  // Création d'un bonus/malus suivant séquentiellement la liste
   createPowerup() {
-    // Déterminer si c'est un bonus ou un malus
-    const isBonus = Math.random() < POWERUP_DEFAULT.bonusProbability;
+    // Sélectionner le prochain powerup dans la séquence
+    const powerupType = this.powerupSequence[this.currentPowerupIndex];
 
-    // Sélectionner un type de bonus/malus aléatoire
-    const powerupTypes = Object.keys(POWERUP_TYPES).filter(
-      (type) => POWERUP_TYPES[type].good === isBonus
-    );
-    const powerupType =
-      powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+    // Passer au prochain powerup pour la prochaine fois
+    this.currentPowerupIndex =
+      (this.currentPowerupIndex + 1) % this.powerupSequence.length;
 
     // Taille du bonus/malus
     const size = POWERUP_DEFAULT.size * this.scaleFactor;
@@ -62,20 +65,18 @@ export default class PowerupSystem {
     // Temps de jeu écoulé en millisecondes
     const elapsedTime = Date.now() - gameStartTime;
 
-    // Temps total de jeu en millisecondes (2 minutes = 120000 ms)
+    // Temps total de jeu en millisecondes
     const totalGameTime = GAME_TIME_IN_SECS * 1000;
 
-    // Intervalle initial: 5000ms (5 secondes)
-    const initialInterval = 5000;
+    const initialInterval = POWERUP_DEFAULT.createInterval;
 
-    // Intervalle minimal: 1000ms (1 seconde)
-    const minInterval = 1000;
+    const minInterval = POWERUP_DEFAULT.minInterval;
 
     // Calculer l'intervalle en fonction du temps écoulé
     // Formule linéaire: commence à initialInterval et diminue jusqu'à minInterval à la fin
     const newFrequency = Math.max(
       minInterval,
-      initialInterval -
+      initialInterval - 
         (elapsedTime / totalGameTime) * (initialInterval - minInterval)
     );
 

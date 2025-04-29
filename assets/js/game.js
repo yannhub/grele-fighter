@@ -157,6 +157,11 @@ export default class Game {
     // Réinitialiser le gestionnaire de collision
     this.collisionManager.reset();
 
+    // Réinitialiser explicitement l'index de séquence des powerups
+    if (this.powerupSystem) {
+      this.powerupSystem.currentPowerupIndex = 0;
+    }
+
     // Arrêter les intervalles existants si nécessaire
     if (this.gameInterval) clearInterval(this.gameInterval);
     if (this.hailInterval) clearInterval(this.hailInterval);
