@@ -6,6 +6,9 @@ import {
   PLAYER_DEFAULT,
   CLOUD_DROPS_DEFAULT,
   GAME_TIME_IN_SECS,
+  BULLET_DEFAULT,
+  PLAYER_DISPLAY,
+  PLAYER_CANON,
 } from "./constants.js";
 
 export default class PowerupSystem {
@@ -19,6 +22,7 @@ export default class PowerupSystem {
     this.activeCloudMalus = null; // Nuage d'orage actif
     this.collectedPowerups = []; // Historique des bonus/malus récupérés
     this.explosionRing = null; // Anneau d'explosion actif
+    this.activeRobotCart = null; // Chariot robot actif
 
     // Propriétés pour la fréquence progressive
     this.powerupFrequency = POWERUP_DEFAULT.createInterval; // Intervalle initial
@@ -85,6 +89,7 @@ export default class PowerupSystem {
     this.handleActivePowerups();
     this.updatePowerupEffects();
     this.updateExplosionRing();
+    this.updateRobotCart(); // Mise à jour du chariot robot
   }
 
   // Déplacement des bonus/malus
@@ -184,6 +189,7 @@ export default class PowerupSystem {
     this.drawPowerupEffects();
     this.drawStormCloud();
     this.drawExplosionRing();
+    this.drawRobotCart(); // Dessin du chariot robot
   }
 
   // Dessin des bonus/malus
@@ -447,6 +453,138 @@ export default class PowerupSystem {
     }
   }
 
+  // Mise à jour du chariot robot
+  updateRobotCart() {
+    if (!this.activeRobotCart) return;
+
+    const robot = this.activeRobotCart;
+    const currentTime = Date.now();
+
+    // Vérifier si la durée du bonus est expirée
+    if (currentTime > robot.endTime) {
+      this.activeRobotCart = null;
+      return;
+    }
+
+    // Déplacer le robot horizontalement
+    robot.x += robot.speedX;
+
+    // Inverser la direction si le robot atteint les bords
+    if (robot.x <= 0 || robot.x + robot.width >= this.canvas.width) {
+      robot.speedX *= -1;
+    }
+
+    // Tirer des projectiles à intervalles réguliers
+    if (currentTime - robot.lastFireTime > robot.fireRate) {
+      // Créer un nouveau projectile
+      const bulletWidth = BULLET_DEFAULT.width * this.scaleFactor;
+      const bulletHeight = BULLET_DEFAULT.height * this.scaleFactor;
+
+      // Position du projectile (au centre du canon)
+      const bulletX = robot.x + robot.width / 2 - bulletWidth / 2;
+      const bulletY = robot.y - bulletHeight;
+
+      // Ajouter le projectile
+      robot.bullets.push({
+        x: bulletX,
+        y: bulletY,
+        width: bulletWidth,
+        height: bulletHeight,
+        speed: BULLET_DEFAULT.speed * this.scaleFactor,
+      });
+
+      robot.lastFireTime = currentTime;
+    }
+
+    // Mettre à jour les projectiles du robot
+    this.updateRobotBullets(robot);
+  }
+
+  // Mise à jour des projectiles du chariot robot
+  updateRobotBullets(robot) {
+    for (let i = 0; i < robot.bullets.length; i++) {
+      const bullet = robot.bullets[i];
+
+      // Déplacer le projectile vers le haut
+      bullet.y -= bullet.speed;
+
+      // Supprimer les projectiles qui sortent de l'écran
+      if (bullet.y + bullet.height < 0) {
+        robot.bullets.splice(i, 1);
+        i--;
+      }
+    }
+  }
+
+  // Dessin du chariot robot
+  drawRobotCart() {
+    if (!this.activeRobotCart) return;
+
+    const robot = this.activeRobotCart;
+
+    // Dessiner le corps du robot (rectangle)
+    this.ctx.fillStyle = "#FF8C00";
+    this.ctx.fillRect(robot.x, robot.y, robot.width, robot.height);
+
+    // Dessiner le canon du robot
+    const canonWidth = PLAYER_CANON.width * this.scaleFactor;
+    const canonHeight = PLAYER_CANON.height * this.scaleFactor;
+    const canonX = robot.x + robot.width / 2 - canonWidth / 2;
+    const canonY = robot.y - canonHeight;
+
+    this.ctx.fillStyle = PLAYER_DISPLAY.canonColor;
+    this.ctx.fillRect(canonX, canonY, canonWidth, canonHeight);
+
+    // Dessiner les roues du robot
+    const wheelRadius = PLAYER_DISPLAY.wheelRadius * this.scaleFactor;
+    const wheelOffsetX = PLAYER_DISPLAY.wheelOffsetX * this.scaleFactor;
+
+    this.ctx.fillStyle = PLAYER_DISPLAY.wheelColor;
+
+    // Roue gauche
+    this.ctx.beginPath();
+    this.ctx.arc(
+      robot.x + wheelOffsetX,
+      robot.y + robot.height,
+      wheelRadius,
+      0,
+      Math.PI * 2
+    );
+    this.ctx.fill();
+
+    // Roue droite
+    this.ctx.beginPath();
+    this.ctx.arc(
+      robot.x + robot.width - wheelOffsetX,
+      robot.y + robot.height,
+      wheelRadius,
+      0,
+      Math.PI * 2
+    );
+    this.ctx.fill();
+
+    // Dessiner les projectiles du robot
+    this.drawRobotBullets(robot);
+
+    // Ajouter un effet de clignotement près de la fin de la durée du bonus
+    const remainingTime = robot.endTime - Date.now();
+    if (remainingTime < 3000 && Math.floor(Date.now() / 200) % 2 === 0) {
+      // Dessiner un contour clignotant
+      this.ctx.strokeStyle = "#FF0000";
+      this.ctx.lineWidth = 2 * this.scaleFactor;
+      this.ctx.strokeRect(robot.x, robot.y, robot.width, robot.height);
+    }
+  }
+
+  // Dessin des projectiles du chariot robot
+  drawRobotBullets(robot) {
+    this.ctx.fillStyle = BULLET_DEFAULT.color;
+
+    for (const bullet of robot.bullets) {
+      this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+    }
+  }
+
   // Activation d'un bonus ou malus
   applyPowerupEffect(powerup, player, cornField) {
     const powerupInfo = POWERUP_TYPES[powerup.type];
@@ -475,11 +613,34 @@ export default class PowerupSystem {
 
       case "PARALLEL_BULLETS":
       case "DIAGONAL_BULLETS":
-      case "DOUBLE_CANON":
         // Ajouter à la liste des bonus actifs avec durée
         this.activePowerups.push({
           type: powerup.type,
           endTime: Date.now() + powerupInfo.duration,
+        });
+        break;
+
+      case "ROBOT_CART":
+        // Créer un chariot robot qui se déplace et tire tout seul
+        this.activeRobotCart = {
+          x: player.x - player.width / 2, // Positionner à côté du joueur
+          y: player.y + player.height / 2,
+          width: 30 * this.scaleFactor,
+          height: 20 * this.scaleFactor,
+          speedX: 2 * this.scaleFactor,
+          bullets: [],
+          lastFireTime: 0,
+          fireRate: PLAYER_DEFAULT.fireRate,
+          endTime: Date.now() + powerupInfo.duration,
+        };
+
+        // Ajouter à la liste des bonus actifs avec durée
+        this.activePowerups.push({
+          type: powerup.type,
+          endTime: Date.now() + powerupInfo.duration,
+          restoreFunction: () => {
+            this.activeRobotCart = null;
+          },
         });
         break;
 

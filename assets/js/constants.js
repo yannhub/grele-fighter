@@ -166,11 +166,11 @@ export const POWERUP_TYPES = {
     icon: "✕",
     duration: 12000,
   },
-  DOUBLE_CANON: {
-    name: "Canon Double",
+  ROBOT_CART: {
+    name: "Chariot Robot",
     color: "#FF8C00", // Orange foncé
     good: true,
-    icon: "‖",
+    icon: "⋈",
     duration: 10000,
   },
   SPEED_UP: {

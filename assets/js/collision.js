@@ -16,6 +16,7 @@ export default class CollisionManager {
   // Vérifier toutes les collisions
   checkCollisions() {
     this.checkBulletHailCollisions();
+    this.checkRobotBulletCollisions(); // Vérifier les collisions avec les projectiles du robot
     this.checkPowerupPlayerCollisions();
     this.checkHailCornCollisions();
     this.checkCloudCollisions();
@@ -92,6 +93,89 @@ export default class CollisionManager {
             // Ajouter des points au score (moins que les grêlons normaux)
             this.score += CLOUD_DROPS_DEFAULT.points;
             this.cloudDropsDestroyed++; // Utiliser le compteur dédié aux gouttes de nuage
+
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Vérifier les collisions entre les projectiles du robot et les grêlons/gouttes
+  checkRobotBulletCollisions() {
+    // Si le robot n'est pas actif, ne rien faire
+    if (!this.powerupSystem.activeRobotCart) return;
+
+    const robotBullets = this.powerupSystem.activeRobotCart.bullets;
+    const hails = this.hailSystem.hails;
+
+    for (let i = 0; i < robotBullets.length; i++) {
+      const bullet = robotBullets[i];
+
+      // Vérifier les collisions avec les grêlons
+      for (let j = 0; j < hails.length; j++) {
+        const hail = hails[j];
+
+        // Vérifier la collision (simple boîte englobante)
+        if (
+          bullet.x < hail.x + hail.size &&
+          bullet.x + bullet.width > hail.x &&
+          bullet.y < hail.y + hail.size &&
+          bullet.y + bullet.height > hail.y
+        ) {
+          // Collision détectée
+          robotBullets.splice(i, 1);
+          i--;
+
+          // Créer une animation de particules à l'emplacement du grêlon
+          this.hailSystem.createHailParticles(hail.x, hail.y, hail.size);
+
+          // Supprimer le grêlon et augmenter le score
+          hails.splice(j, 1);
+          j--;
+
+          // Ajouter des points au score et incrémenter le compteur de grêlons détruits
+          this.score += HAIL_DEFAULT.points;
+          this.hailsDestroyed++;
+
+          break;
+        }
+      }
+
+      // Vérifier les collisions avec les gouttes du nuage d'orage
+      if (this.powerupSystem.activeCloudMalus && i < robotBullets.length) {
+        // Vérifier que le projectile existe toujours
+        const cloudDrops = this.powerupSystem.activeCloudMalus.drops;
+
+        for (let j = 0; j < cloudDrops.length; j++) {
+          const drop = cloudDrops[j];
+
+          // Vérifier la collision
+          if (
+            bullet.x < drop.x + drop.size &&
+            bullet.x + bullet.width > drop.x - drop.size &&
+            bullet.y < drop.y + drop.size &&
+            bullet.y + bullet.height > drop.y - drop.size
+          ) {
+            // Collision détectée
+            robotBullets.splice(i, 1);
+            i--;
+
+            // Créer une animation de particules à l'emplacement de la goutte
+            this.hailSystem.createHailParticles(
+              drop.x - drop.size / 2,
+              drop.y - drop.size / 2,
+              drop.size,
+              CLOUD_DROPS_DEFAULT.color
+            );
+
+            // Supprimer la goutte
+            cloudDrops.splice(j, 1);
+            j--;
+
+            // Ajouter des points au score
+            this.score += CLOUD_DROPS_DEFAULT.points;
+            this.cloudDropsDestroyed++;
 
             break;
           }
