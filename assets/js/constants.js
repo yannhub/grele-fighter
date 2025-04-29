@@ -166,6 +166,13 @@ export const POWERUP_TYPES = {
     icon: "✕",
     duration: 12000,
   },
+  DOUBLE_CANON: {
+    name: "Canon Double",
+    color: "#FF8C00", // Orange foncé
+    good: true,
+    icon: "‖",
+    duration: 10000,
+  },
   SPEED_UP: {
     name: "Vitesse Améliorée",
     color: "#00BFFF",

@@ -472,6 +472,7 @@ export default class PowerupSystem {
 
       case "PARALLEL_BULLETS":
       case "DIAGONAL_BULLETS":
+      case "DOUBLE_CANON":
         // Ajouter à la liste des bonus actifs avec durée
         this.activePowerups.push({
           type: powerup.type,

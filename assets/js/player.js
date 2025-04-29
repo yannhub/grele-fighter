@@ -76,13 +76,15 @@ export default class Player {
     // Vérifier si espace vient d'être pressé (nouvel appui)
     const spaceJustPressed = this.keys[" "] && !this.lastKeyStates[" "];
 
-    // Vérifier si les bonus de tir parallèle et diagonal sont actifs
+    // Vérifier si les bonus sont actifs
     const parallelBonus =
       this.powerupSystem &&
       this.powerupSystem.isPowerupActive("PARALLEL_BULLETS");
     const diagonalBonus =
       this.powerupSystem &&
       this.powerupSystem.isPowerupActive("DIAGONAL_BULLETS");
+    const doubleCanonBonus =
+      this.powerupSystem && this.powerupSystem.isPowerupActive("DOUBLE_CANON");
 
     // Taux de tir actuel - ne pas réinitialiser lors de l'utilisation des bonus
     const currentTime = Date.now();
@@ -90,34 +92,62 @@ export default class Player {
 
     // Si espace vient juste d'être pressé, permettre un tir immédiat (contourne la cadence)
     if (spaceJustPressed) {
-      this.createBullet(parallelBonus, diagonalBonus);
+      this.createBullet(parallelBonus, diagonalBonus, doubleCanonBonus);
       this.lastFireTime = currentTime;
     }
     // Sinon, si espace est maintenu, respecter la cadence normale
     else if (this.keys[" "]) {
       if (timeSinceLastFire >= this.fireRate) {
-        this.createBullet(parallelBonus, diagonalBonus);
+        this.createBullet(parallelBonus, diagonalBonus, doubleCanonBonus);
         this.lastFireTime = currentTime;
       }
     }
   }
 
   // Création d'un projectile
-  createBullet(parallelBonus = false, diagonalBonus = false) {
+  createBullet(
+    parallelBonus = false,
+    diagonalBonus = false,
+    doubleCanonBonus = false
+  ) {
     const bulletWidth = BULLET_DEFAULT.width * this.scaleFactor;
     const bulletHeight = BULLET_DEFAULT.height * this.scaleFactor;
     const bulletSpeed = BULLET_DEFAULT.speed * this.scaleFactor;
     const canonHeight = PLAYER_CANON.height * this.scaleFactor;
+    const canonWidth = PLAYER_CANON.width * this.scaleFactor;
 
-    // Créer une balle au centre (par défaut)
-    this.bullets.push({
-      x: this.x + this.width / 2 - bulletWidth / 2,
-      y: this.y - canonHeight,
-      width: bulletWidth,
-      height: bulletHeight,
-      speed: bulletSpeed,
-      speedX: 0, // Par défaut, pas de déplacement horizontal
-    });
+    // Si le bonus de canon double est actif, tirer depuis les deux canons
+    if (doubleCanonBonus) {
+      // Canon gauche
+      this.bullets.push({
+        x: this.x + this.width / 3 - bulletWidth / 2,
+        y: this.y - canonHeight,
+        width: bulletWidth,
+        height: bulletHeight,
+        speed: bulletSpeed,
+        speedX: 0,
+      });
+
+      // Canon droit
+      this.bullets.push({
+        x: this.x + (this.width * 2) / 3 - bulletWidth / 2,
+        y: this.y - canonHeight,
+        width: bulletWidth,
+        height: bulletHeight,
+        speed: bulletSpeed,
+        speedX: 0,
+      });
+    } else {
+      // Comportement normal - une seule balle au centre
+      this.bullets.push({
+        x: this.x + this.width / 2 - bulletWidth / 2,
+        y: this.y - canonHeight,
+        width: bulletWidth,
+        height: bulletHeight,
+        speed: bulletSpeed,
+        speedX: 0, // Par défaut, pas de déplacement horizontal
+      });
+    }
 
     // Ajouter des balles parallèles si le bonus est actif
     if (parallelBonus) {
@@ -196,16 +226,37 @@ export default class Player {
     this.ctx.fillStyle = PLAYER_DISPLAY.bodyColor;
     this.ctx.fillRect(this.x, this.y, this.width, this.height);
 
-    // Ajouter un canon sur le dessus
     const canonWidth = PLAYER_CANON.width * this.scaleFactor;
     const canonHeight = PLAYER_CANON.height * this.scaleFactor;
     this.ctx.fillStyle = PLAYER_DISPLAY.canonColor;
-    this.ctx.fillRect(
-      this.x + this.width / 2 - canonWidth / 2,
-      this.y - canonHeight,
-      canonWidth,
-      canonHeight
-    );
+
+    // Vérifier si le bonus de canon double est actif
+    const doubleCanonBonus =
+      this.powerupSystem && this.powerupSystem.isPowerupActive("DOUBLE_CANON");
+
+    if (doubleCanonBonus) {
+      // Dessiner deux canons côte à côte
+      this.ctx.fillRect(
+        this.x + this.width / 3 - canonWidth / 2,
+        this.y - canonHeight,
+        canonWidth,
+        canonHeight
+      );
+      this.ctx.fillRect(
+        this.x + (this.width * 2) / 3 - canonWidth / 2,
+        this.y - canonHeight,
+        canonWidth,
+        canonHeight
+      );
+    } else {
+      // Dessiner un seul canon au centre (comportement par défaut)
+      this.ctx.fillRect(
+        this.x + this.width / 2 - canonWidth / 2,
+        this.y - canonHeight,
+        canonWidth,
+        canonHeight
+      );
+    }
 
     // Ajouter le texte "G2S" en blanc
     this.ctx.fillStyle = PLAYER_DISPLAY.textColor;
