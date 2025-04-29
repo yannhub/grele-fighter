@@ -31,16 +31,16 @@ export default class Leaderboard {
 
     // Créer une entrée pour le nouveau score
     const entry = {
-      firstname: playerInfo.firstname,
-      lastname: playerInfo.lastname,
-      nickname:
-        playerInfo.nickname ||
-        `${playerInfo.firstname} ${playerInfo.lastname.charAt(0)}.`,
-      email: playerInfo.email || "",
+      nickname: playerInfo.nickname || "Anonyme",
       organization: playerInfo.organization || "",
       score: score,
       date: new Date().toISOString(),
     };
+
+    // Récupérer les anciens champs si disponibles (pour compatibilité avec les données existantes)
+    if (playerInfo.firstname) entry.firstname = playerInfo.firstname;
+    if (playerInfo.lastname) entry.lastname = playerInfo.lastname;
+    if (playerInfo.email) entry.email = playerInfo.email;
 
     // Ajouter le nouveau score
     leaderboard.push(entry);
@@ -79,9 +79,12 @@ export default class Leaderboard {
       li.setAttribute(
         "data-player-info",
         JSON.stringify({
-          nom: `${entry.firstname} ${entry.lastname}`,
+          nom:
+            entry.firstname && entry.lastname
+              ? `${entry.firstname} ${entry.lastname}`
+              : "Anonyme",
           pseudo: entry.nickname,
-          email: entry.email,
+          email: entry.email || "Non renseigné",
           organisation: entry.organization,
           score: entry.score,
           date: new Date(entry.date).toLocaleDateString("fr-FR"),

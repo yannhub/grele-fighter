@@ -95,10 +95,7 @@ export default class UI {
 
       // Récupérer les informations du joueur
       this.playerInfo = {
-        firstname: document.getElementById("firstname").value,
-        lastname: document.getElementById("lastname").value,
         nickname: document.getElementById("nickname").value,
-        email: document.getElementById("email").value,
         organization: document.getElementById("organization").value,
       };
 
@@ -162,10 +159,7 @@ export default class UI {
   startTestMode() {
     // Configurer des informations de joueur par défaut
     this.playerInfo = {
-      firstname: "Testeur",
-      lastname: "G2S",
       nickname: "TesteurG2S",
-      email: "testeur@g2s.com",
       organization: "G2S",
     };
 
@@ -353,12 +347,9 @@ export default class UI {
   // Test de l'écran de récapitulation avec des données simulées
   showTestRecap() {
     // Configurer des informations de joueur par défaut si non définies
-    if (!this.playerInfo.firstname) {
+    if (!this.playerInfo.nickname) {
       this.playerInfo = {
-        firstname: "Testeur",
-        lastname: "Récap",
         nickname: "TesteurRecap",
-        email: "recap@test.com",
         organization: "G2S",
       };
     }
