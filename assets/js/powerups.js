@@ -18,6 +18,7 @@ export default class PowerupSystem {
     this.powerupEffects = []; // Animations d'effets
     this.activeCloudMalus = null; // Nuage d'orage actif
     this.collectedPowerups = []; // Historique des bonus/malus récupérés
+    this.explosionRing = null; // Anneau d'explosion actif
 
     // Propriétés pour la fréquence progressive
     this.powerupFrequency = POWERUP_DEFAULT.createInterval; // Intervalle initial
@@ -83,6 +84,7 @@ export default class PowerupSystem {
     this.movePowerups();
     this.handleActivePowerups();
     this.updatePowerupEffects();
+    this.updateExplosionRing();
   }
 
   // Déplacement des bonus/malus
@@ -181,6 +183,7 @@ export default class PowerupSystem {
     this.drawPowerups();
     this.drawPowerupEffects();
     this.drawStormCloud();
+    this.drawExplosionRing();
   }
 
   // Dessin des bonus/malus
@@ -497,6 +500,11 @@ export default class PowerupSystem {
         cornField.recoverCorns(5);
         break;
 
+      case "EXPLOSION":
+        // Créer l'effet d'explosion
+        this.createExplosionEffect(player);
+        break;
+
       // Malus
       case "SLOW_DOWN":
         // Réduire la vitesse du joueur
@@ -576,6 +584,120 @@ export default class PowerupSystem {
       startTime: Date.now(),
       duration: effectDuration * 1.5,
     });
+  }
+
+  // Créer l'animation d'explosion concentrique
+  createExplosionEffect(player) {
+    // Paramètres de l'animation
+    const centerX = player.getCenterX();
+    const centerY = player.getCenterY();
+    const maxRadius = Math.max(this.canvas.width, this.canvas.height) * 1.5;
+    const explosionSpeed = 12 * this.scaleFactor;
+    const explosionColor = POWERUP_TYPES.EXPLOSION.color;
+
+    // Créer l'anneau d'explosion qui se propage
+    this.explosionRing = {
+      x: centerX,
+      y: centerY,
+      currentRadius: 10 * this.scaleFactor,
+      maxRadius: maxRadius,
+      speed: explosionSpeed,
+      color: explosionColor,
+      alpha: 1.0,
+      startTime: Date.now(),
+      duration: 1000,
+    };
+
+    // Ajouter des particules d'explosion qui partent dans toutes les directions
+    const particleCount = 60;
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * 50 * this.scaleFactor;
+      const x = centerX + Math.cos(angle) * distance;
+      const y = centerY + Math.sin(angle) * distance;
+
+      this.powerupEffects.push({
+        x: x,
+        y: y,
+        size: (Math.random() * 8 + 4) * this.scaleFactor,
+        speedX: Math.cos(angle) * (2 + Math.random() * 3) * this.scaleFactor,
+        speedY: Math.sin(angle) * (2 + Math.random() * 3) * this.scaleFactor,
+        color: explosionColor,
+        alpha: 1.0,
+        isGood: true,
+        type: "EXPLOSION_PARTICLE",
+        startTime: Date.now(),
+        duration: 500 + Math.random() * 300,
+      });
+    }
+
+    // Créer un texte flottant
+    this.powerupEffects.push({
+      x: centerX,
+      y: centerY - 30 * this.scaleFactor,
+      text: "BOOM!",
+      color: explosionColor,
+      alpha: 1.0,
+      speedY: -2 * this.scaleFactor,
+      isGood: true,
+      type: "TEXT",
+      startTime: Date.now(),
+      duration: 1000,
+    });
+  }
+
+  // Mettre à jour et dessiner l'anneau d'explosion s'il existe
+  updateExplosionRing() {
+    if (!this.explosionRing) return;
+
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - this.explosionRing.startTime;
+    const progress = elapsedTime / this.explosionRing.duration;
+
+    // Faire grandir l'anneau
+    this.explosionRing.currentRadius += this.explosionRing.speed;
+
+    // Diminuer l'opacité progressivement
+    this.explosionRing.alpha = Math.max(0, 1 - progress);
+
+    // Supprimer l'anneau une fois qu'il a atteint sa taille maximale ou que sa durée est écoulée
+    if (
+      this.explosionRing.currentRadius >= this.explosionRing.maxRadius ||
+      progress >= 1
+    ) {
+      this.explosionRing = null;
+    }
+  }
+
+  // Dessiner l'anneau d'explosion
+  drawExplosionRing() {
+    if (!this.explosionRing) return;
+
+    const ring = this.explosionRing;
+
+    // Dessiner l'anneau avec un dégradé
+    const gradient = this.ctx.createRadialGradient(
+      ring.x,
+      ring.y,
+      ring.currentRadius - 15 * this.scaleFactor,
+      ring.x,
+      ring.y,
+      ring.currentRadius
+    );
+
+    gradient.addColorStop(0, `${ring.color}00`); // Transparent à l'intérieur
+    gradient.addColorStop(
+      0.5,
+      `${ring.color}${Math.floor(ring.alpha * 200)
+        .toString(16)
+        .padStart(2, "0")}`
+    ); // Semi-transparent au milieu
+    gradient.addColorStop(1, `${ring.color}00`); // Transparent à l'extérieur
+
+    this.ctx.beginPath();
+    this.ctx.arc(ring.x, ring.y, ring.currentRadius, 0, Math.PI * 2);
+    this.ctx.fillStyle = gradient;
+    this.ctx.fill();
   }
 
   // Fonction utilitaire pour dessiner une étoile (pour les effets de bonus)
