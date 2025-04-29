@@ -5,7 +5,7 @@ export const BASE_WIDTH = 600; // Largeur de référence du canvas
 export const BASE_HEIGHT = 400; // Hauteur de référence du canvas
 
 // Variables de temps
-export const GAME_TIME_IN_SECS = 180; // 3 minutes de jeu
+export const GAME_TIME_IN_SECS = 90; // 3 minutes de jeu
 export const FPS = 60; // Images par seconde pour la boucle de jeu
 export const FRAME_DURATION = 1000 / FPS;
 
@@ -55,9 +55,9 @@ export const HAIL_DEFAULT = {
   minSize: 20,
   maxSize: 25,
   speed: 1,
-  createInterval: 1000, // Intervalle de création (1s)
+  createInterval: 950, // Intervalle de création (1s)
   points: 10, // Points par grêlon détruit
-  minInterval: 20, // Intervalle minimal
+  minInterval: 10, // Intervalle minimal
   intervalReduction: 500,
   color: "#6495ED", // Couleur des grêlons
   highlightColor: "#FFFFFF", // Couleur de la brillance
@@ -125,7 +125,7 @@ export const STORM_CLOUD = {
 export const POWERUP_DEFAULT = {
   size: 30,
   speed: 2,
-  createInterval: 10000, // Intervalle de création (10s)
+  createInterval: 5000, // Intervalle de création (10s)
   bonusProbability: 0.8, // 80% de chance d'obtenir un bonus vs. malus
 };
 
