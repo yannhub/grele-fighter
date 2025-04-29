@@ -5,7 +5,7 @@ export const BASE_WIDTH = 600; // Largeur de référence du canvas
 export const BASE_HEIGHT = 400; // Hauteur de référence du canvas
 
 // Variables de temps
-export const GAME_TIME_IN_SECS = 90; // 3 minutes de jeu
+export const GAME_TIME_IN_SECS = 90;
 export const FPS = 60; // Images par seconde pour la boucle de jeu
 export const FRAME_DURATION = 1000 / FPS;
 
@@ -18,7 +18,7 @@ export const PLAYER_DEFAULT = {
   width: 50,
   height: 30,
   speed: 5,
-  fireRate: 300, // Cadence de tir en ms (250ms par défaut)
+  fireRate: 300, // Cadence de tir en ms
 };
 
 // Paramètres du canon du joueur
@@ -125,8 +125,8 @@ export const STORM_CLOUD = {
 export const POWERUP_DEFAULT = {
   size: 30,
   speed: 2,
-  createInterval: 5000, // Intervalle de création (10s)
-  bonusProbability: 0.8, // 80% de chance d'obtenir un bonus vs. malus
+  createInterval: 5000, // Intervalle de création
+  minInterval: 800, // Intervalle minimal
 };
 
 // Couleurs du fond
@@ -144,34 +144,33 @@ export const UI = {
 
 // Types de bonus/malus avec leurs caractéristiques
 export const POWERUP_TYPES = {
-  // Bonus (effets positifs)
-  RAPID_FIRE: {
-    name: "Cadence Rapide",
-    color: "#32CD32",
-    good: true,
-    icon: "⚡",
-    duration: 15000,
-  },
   PARALLEL_BULLETS: {
     name: "Tirs Parallèles",
     color: "#1E90FF",
     good: true,
     icon: "⋔",
-    duration: 12000,
+    duration: 10000,
   },
-  DIAGONAL_BULLETS: {
-    name: "Tirs Diagonaux",
-    color: "#9932CC",
+  SLOW_DOWN: {
+    name: "Ralentissement",
+    color: "#B22222",
+    good: false,
+    icon: "⊗",
+    duration: 6000,
+  },
+  ROBOT_CART: {
+    name: "Chariot Robot",
+    color: "#FF8C00", // Orange foncé
     good: true,
-    icon: "✕",
-    duration: 12000,
+    icon: "⋈",
+    duration: 8000,
   },
   SPEED_UP: {
     name: "Vitesse Améliorée",
     color: "#00BFFF",
     good: true,
     icon: "➤",
-    duration: 10000,
+    duration: 8000,
   },
   RECOVER_CORN: {
     name: "Récupération de Maïs",
@@ -180,13 +179,25 @@ export const POWERUP_TYPES = {
     icon: "🌽",
     duration: 1000, // Effet immédiat
   },
-
-  // Malus (effets négatifs)
-  SLOW_DOWN: {
-    name: "Ralentissement",
-    color: "#B22222",
-    good: false,
-    icon: "⊗",
+  RAPID_FIRE: {
+    name: "Cadence Rapide",
+    color: "#32CD32",
+    good: true,
+    icon: "⚡",
+    duration: 10000,
+  },
+  EXPLOSION: {
+    name: "Explosion",
+    color: "#FF4500", // Orange-rouge
+    good: true,
+    icon: "💥",
+    duration: 1000, // Effet immédiat
+  },
+  DIAGONAL_BULLETS: {
+    name: "Tirs Diagonaux",
+    color: "#9932CC",
+    good: true,
+    icon: "✕",
     duration: 8000,
   },
   STORM_CLOUD: {

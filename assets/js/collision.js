@@ -16,9 +16,11 @@ export default class CollisionManager {
   // Vérifier toutes les collisions
   checkCollisions() {
     this.checkBulletHailCollisions();
+    this.checkRobotBulletCollisions(); // Vérifier les collisions avec les projectiles du robot
     this.checkPowerupPlayerCollisions();
     this.checkHailCornCollisions();
     this.checkCloudCollisions();
+    this.checkExplosionEffect(); // Vérifier l'effet de l'explosion
   }
 
   // Vérifier les collisions entre les balles et les grêlons
@@ -91,6 +93,89 @@ export default class CollisionManager {
             // Ajouter des points au score (moins que les grêlons normaux)
             this.score += CLOUD_DROPS_DEFAULT.points;
             this.cloudDropsDestroyed++; // Utiliser le compteur dédié aux gouttes de nuage
+
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Vérifier les collisions entre les projectiles du robot et les grêlons/gouttes
+  checkRobotBulletCollisions() {
+    // Si le robot n'est pas actif, ne rien faire
+    if (!this.powerupSystem.activeRobotCart) return;
+
+    const robotBullets = this.powerupSystem.activeRobotCart.bullets;
+    const hails = this.hailSystem.hails;
+
+    for (let i = 0; i < robotBullets.length; i++) {
+      const bullet = robotBullets[i];
+
+      // Vérifier les collisions avec les grêlons
+      for (let j = 0; j < hails.length; j++) {
+        const hail = hails[j];
+
+        // Vérifier la collision (simple boîte englobante)
+        if (
+          bullet.x < hail.x + hail.size &&
+          bullet.x + bullet.width > hail.x &&
+          bullet.y < hail.y + hail.size &&
+          bullet.y + bullet.height > hail.y
+        ) {
+          // Collision détectée
+          robotBullets.splice(i, 1);
+          i--;
+
+          // Créer une animation de particules à l'emplacement du grêlon
+          this.hailSystem.createHailParticles(hail.x, hail.y, hail.size);
+
+          // Supprimer le grêlon et augmenter le score
+          hails.splice(j, 1);
+          j--;
+
+          // Ajouter des points au score et incrémenter le compteur de grêlons détruits
+          this.score += HAIL_DEFAULT.points;
+          this.hailsDestroyed++;
+
+          break;
+        }
+      }
+
+      // Vérifier les collisions avec les gouttes du nuage d'orage
+      if (this.powerupSystem.activeCloudMalus && i < robotBullets.length) {
+        // Vérifier que le projectile existe toujours
+        const cloudDrops = this.powerupSystem.activeCloudMalus.drops;
+
+        for (let j = 0; j < cloudDrops.length; j++) {
+          const drop = cloudDrops[j];
+
+          // Vérifier la collision
+          if (
+            bullet.x < drop.x + drop.size &&
+            bullet.x + bullet.width > drop.x - drop.size &&
+            bullet.y < drop.y + drop.size &&
+            bullet.y + bullet.height > drop.y - drop.size
+          ) {
+            // Collision détectée
+            robotBullets.splice(i, 1);
+            i--;
+
+            // Créer une animation de particules à l'emplacement de la goutte
+            this.hailSystem.createHailParticles(
+              drop.x - drop.size / 2,
+              drop.y - drop.size / 2,
+              drop.size,
+              CLOUD_DROPS_DEFAULT.color
+            );
+
+            // Supprimer la goutte
+            cloudDrops.splice(j, 1);
+            j--;
+
+            // Ajouter des points au score
+            this.score += CLOUD_DROPS_DEFAULT.points;
+            this.cloudDropsDestroyed++;
 
             break;
           }
@@ -220,6 +305,84 @@ export default class CollisionManager {
             i--;
 
             break;
+          }
+        }
+      }
+    }
+  }
+
+  // Vérifier l'effet de l'explosion et détruire tous les grêlons
+  checkExplosionEffect() {
+    // Vérifier si un anneau d'explosion est actif
+    if (this.powerupSystem.explosionRing) {
+      const ring = this.powerupSystem.explosionRing;
+      const centerX = ring.x;
+      const centerY = ring.y;
+      const currentRadius = ring.currentRadius;
+
+      // Récupérer tous les grêlons
+      const hails = this.hailSystem.hails;
+
+      // Parcourir tous les grêlons pour les détruire s'ils sont atteints par l'explosion
+      for (let i = hails.length - 1; i >= 0; i--) {
+        const hail = hails[i];
+        const hailCenterX = hail.x + hail.size / 2;
+        const hailCenterY = hail.y + hail.size / 2;
+
+        // Calculer la distance entre le centre de l'explosion et le centre du grêlon
+        const dx = centerX - hailCenterX;
+        const dy = centerY - hailCenterY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Si le grêlon est à l'intérieur du rayon de l'anneau, le détruire
+        // En comparant avec currentRadius - 15 et currentRadius pour créer un effet d'anneau
+        if (
+          distance <= currentRadius &&
+          distance >= currentRadius - 15 * this.powerupSystem.scaleFactor
+        ) {
+          // Créer une animation de particules à l'emplacement du grêlon
+          this.hailSystem.createHailParticles(hail.x, hail.y, hail.size);
+
+          // Ajouter des points au score et incrémenter le compteur de grêlons détruits
+          this.score += HAIL_DEFAULT.points;
+          this.hailsDestroyed++;
+
+          // Supprimer le grêlon
+          hails.splice(i, 1);
+        }
+      }
+
+      // Faire la même chose pour les gouttes du nuage toxique si elles existent
+      if (this.powerupSystem.activeCloudMalus) {
+        const cloudDrops = this.powerupSystem.activeCloudMalus.drops;
+
+        for (let i = cloudDrops.length - 1; i >= 0; i--) {
+          const drop = cloudDrops[i];
+
+          // Calculer la distance
+          const dx = centerX - drop.x;
+          const dy = centerY - drop.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          // Si la goutte est dans le rayon d'action de l'explosion
+          if (
+            distance <= currentRadius &&
+            distance >= currentRadius - 15 * this.powerupSystem.scaleFactor
+          ) {
+            // Créer une animation de particules
+            this.hailSystem.createHailParticles(
+              drop.x - drop.size / 2,
+              drop.y - drop.size / 2,
+              drop.size,
+              CLOUD_DROPS_DEFAULT.color
+            );
+
+            // Ajouter des points au score
+            this.score += CLOUD_DROPS_DEFAULT.points;
+            this.cloudDropsDestroyed++;
+
+            // Supprimer la goutte
+            cloudDrops.splice(i, 1);
           }
         }
       }

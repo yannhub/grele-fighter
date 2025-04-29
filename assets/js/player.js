@@ -76,7 +76,7 @@ export default class Player {
     // Vérifier si espace vient d'être pressé (nouvel appui)
     const spaceJustPressed = this.keys[" "] && !this.lastKeyStates[" "];
 
-    // Vérifier si les bonus de tir parallèle et diagonal sont actifs
+    // Vérifier si les bonus sont actifs
     const parallelBonus =
       this.powerupSystem &&
       this.powerupSystem.isPowerupActive("PARALLEL_BULLETS");
@@ -108,8 +108,9 @@ export default class Player {
     const bulletHeight = BULLET_DEFAULT.height * this.scaleFactor;
     const bulletSpeed = BULLET_DEFAULT.speed * this.scaleFactor;
     const canonHeight = PLAYER_CANON.height * this.scaleFactor;
+    const canonWidth = PLAYER_CANON.width * this.scaleFactor;
 
-    // Créer une balle au centre (par défaut)
+    // Comportement normal - une seule balle au centre
     this.bullets.push({
       x: this.x + this.width / 2 - bulletWidth / 2,
       y: this.y - canonHeight,
@@ -196,10 +197,11 @@ export default class Player {
     this.ctx.fillStyle = PLAYER_DISPLAY.bodyColor;
     this.ctx.fillRect(this.x, this.y, this.width, this.height);
 
-    // Ajouter un canon sur le dessus
     const canonWidth = PLAYER_CANON.width * this.scaleFactor;
     const canonHeight = PLAYER_CANON.height * this.scaleFactor;
     this.ctx.fillStyle = PLAYER_DISPLAY.canonColor;
+
+    // Dessiner un seul canon au centre (comportement par défaut)
     this.ctx.fillRect(
       this.x + this.width / 2 - canonWidth / 2,
       this.y - canonHeight,

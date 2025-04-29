@@ -157,6 +157,11 @@ export default class Game {
     // Réinitialiser le gestionnaire de collision
     this.collisionManager.reset();
 
+    // Réinitialiser explicitement l'index de séquence des powerups
+    if (this.powerupSystem) {
+      this.powerupSystem.currentPowerupIndex = 0;
+    }
+
     // Arrêter les intervalles existants si nécessaire
     if (this.gameInterval) clearInterval(this.gameInterval);
     if (this.hailInterval) clearInterval(this.hailInterval);
@@ -292,7 +297,7 @@ export default class Game {
   drawDebugInfo() {
     // Définir le style du texte et du fond pour la fenêtre de debug
     this.ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    this.ctx.fillRect(10, 10, 220, 90);
+    this.ctx.fillRect(10, 10, 220, 110); // Augmenter la hauteur de la fenêtre pour accueillir la nouvelle ligne
     this.ctx.fillStyle = "#ffffff";
     this.ctx.font = "14px monospace";
 
@@ -307,6 +312,16 @@ export default class Game {
       `BaseFireRate: ${Math.round(this.player.baseFireRate)}ms`,
       40,
       70
+    );
+
+    // Ajouter l'intervalle des powerups
+    const powerupInterval = this.powerupSystem.updatePowerupFrequency(
+      this.gameStartTime
+    );
+    this.ctx.fillText(
+      `PowerUpInterval: ${Math.round(powerupInterval)}ms`,
+      40,
+      90
     );
   }
 

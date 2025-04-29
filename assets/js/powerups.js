@@ -6,6 +6,9 @@ import {
   PLAYER_DEFAULT,
   CLOUD_DROPS_DEFAULT,
   GAME_TIME_IN_SECS,
+  BULLET_DEFAULT,
+  PLAYER_DISPLAY,
+  PLAYER_CANON,
 } from "./constants.js";
 
 export default class PowerupSystem {
@@ -18,23 +21,27 @@ export default class PowerupSystem {
     this.powerupEffects = []; // Animations d'effets
     this.activeCloudMalus = null; // Nuage d'orage actif
     this.collectedPowerups = []; // Historique des bonus/malus récupérés
+    this.explosionRing = null; // Anneau d'explosion actif
+    this.activeRobotCart = null; // Chariot robot actif
 
     // Propriétés pour la fréquence progressive
-    this.powerupFrequency = POWERUP_DEFAULT.createInterval; // Intervalle initial
-    this.minPowerupFrequency = 1000; // Intervalle minimum (1 secondes)
+    this.powerupFrequency = POWERUP_DEFAULT.createInterval;
+
+    // Index pour le système de rotation des powerups
+    this.currentPowerupIndex = 0;
+
+    // Liste complète des types de powerups dans l'ordre
+    this.powerupSequence = Object.keys(POWERUP_TYPES);
   }
 
-  // Création d'un bonus/malus aléatoire
+  // Création d'un bonus/malus suivant séquentiellement la liste
   createPowerup() {
-    // Déterminer si c'est un bonus ou un malus
-    const isBonus = Math.random() < POWERUP_DEFAULT.bonusProbability;
+    // Sélectionner le prochain powerup dans la séquence
+    const powerupType = this.powerupSequence[this.currentPowerupIndex];
 
-    // Sélectionner un type de bonus/malus aléatoire
-    const powerupTypes = Object.keys(POWERUP_TYPES).filter(
-      (type) => POWERUP_TYPES[type].good === isBonus
-    );
-    const powerupType =
-      powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+    // Passer au prochain powerup pour la prochaine fois
+    this.currentPowerupIndex =
+      (this.currentPowerupIndex + 1) % this.powerupSequence.length;
 
     // Taille du bonus/malus
     const size = POWERUP_DEFAULT.size * this.scaleFactor;
@@ -57,14 +64,12 @@ export default class PowerupSystem {
     // Temps de jeu écoulé en millisecondes
     const elapsedTime = Date.now() - gameStartTime;
 
-    // Temps total de jeu en millisecondes (2 minutes = 120000 ms)
-    const totalGameTime = GAME_TIME_IN_SECS * 1000;
+    // Temps total de jeu en millisecondes
+    const totalGameTime = (GAME_TIME_IN_SECS - 5) * 1000;
 
-    // Intervalle initial: 5000ms (5 secondes)
-    const initialInterval = 5000;
+    const initialInterval = POWERUP_DEFAULT.createInterval;
 
-    // Intervalle minimal: 1000ms (1 seconde)
-    const minInterval = 1000;
+    const minInterval = POWERUP_DEFAULT.minInterval;
 
     // Calculer l'intervalle en fonction du temps écoulé
     // Formule linéaire: commence à initialInterval et diminue jusqu'à minInterval à la fin
@@ -83,6 +88,8 @@ export default class PowerupSystem {
     this.movePowerups();
     this.handleActivePowerups();
     this.updatePowerupEffects();
+    this.updateExplosionRing();
+    this.updateRobotCart(); // Mise à jour du chariot robot
   }
 
   // Déplacement des bonus/malus
@@ -181,6 +188,8 @@ export default class PowerupSystem {
     this.drawPowerups();
     this.drawPowerupEffects();
     this.drawStormCloud();
+    this.drawExplosionRing();
+    this.drawRobotCart(); // Dessin du chariot robot
   }
 
   // Dessin des bonus/malus
@@ -444,6 +453,138 @@ export default class PowerupSystem {
     }
   }
 
+  // Mise à jour du chariot robot
+  updateRobotCart() {
+    if (!this.activeRobotCart) return;
+
+    const robot = this.activeRobotCart;
+    const currentTime = Date.now();
+
+    // Vérifier si la durée du bonus est expirée
+    if (currentTime > robot.endTime) {
+      this.activeRobotCart = null;
+      return;
+    }
+
+    // Déplacer le robot horizontalement
+    robot.x += robot.speedX;
+
+    // Inverser la direction si le robot atteint les bords
+    if (robot.x <= 0 || robot.x + robot.width >= this.canvas.width) {
+      robot.speedX *= -1;
+    }
+
+    // Tirer des projectiles à intervalles réguliers
+    if (currentTime - robot.lastFireTime > robot.fireRate) {
+      // Créer un nouveau projectile
+      const bulletWidth = BULLET_DEFAULT.width * this.scaleFactor;
+      const bulletHeight = BULLET_DEFAULT.height * this.scaleFactor;
+
+      // Position du projectile (au centre du canon)
+      const bulletX = robot.x + robot.width / 2 - bulletWidth / 2;
+      const bulletY = robot.y - bulletHeight;
+
+      // Ajouter le projectile
+      robot.bullets.push({
+        x: bulletX,
+        y: bulletY,
+        width: bulletWidth,
+        height: bulletHeight,
+        speed: BULLET_DEFAULT.speed * this.scaleFactor,
+      });
+
+      robot.lastFireTime = currentTime;
+    }
+
+    // Mettre à jour les projectiles du robot
+    this.updateRobotBullets(robot);
+  }
+
+  // Mise à jour des projectiles du chariot robot
+  updateRobotBullets(robot) {
+    for (let i = 0; i < robot.bullets.length; i++) {
+      const bullet = robot.bullets[i];
+
+      // Déplacer le projectile vers le haut
+      bullet.y -= bullet.speed;
+
+      // Supprimer les projectiles qui sortent de l'écran
+      if (bullet.y + bullet.height < 0) {
+        robot.bullets.splice(i, 1);
+        i--;
+      }
+    }
+  }
+
+  // Dessin du chariot robot
+  drawRobotCart() {
+    if (!this.activeRobotCart) return;
+
+    const robot = this.activeRobotCart;
+
+    // Dessiner le corps du robot (rectangle)
+    this.ctx.fillStyle = "#FF8C00";
+    this.ctx.fillRect(robot.x, robot.y, robot.width, robot.height);
+
+    // Dessiner le canon du robot
+    const canonWidth = PLAYER_CANON.width * this.scaleFactor;
+    const canonHeight = PLAYER_CANON.height * this.scaleFactor;
+    const canonX = robot.x + robot.width / 2 - canonWidth / 2;
+    const canonY = robot.y - canonHeight;
+
+    this.ctx.fillStyle = PLAYER_DISPLAY.canonColor;
+    this.ctx.fillRect(canonX, canonY, canonWidth, canonHeight);
+
+    // Dessiner les roues du robot
+    const wheelRadius = PLAYER_DISPLAY.wheelRadius * this.scaleFactor;
+    const wheelOffsetX = PLAYER_DISPLAY.wheelOffsetX * this.scaleFactor;
+
+    this.ctx.fillStyle = PLAYER_DISPLAY.wheelColor;
+
+    // Roue gauche
+    this.ctx.beginPath();
+    this.ctx.arc(
+      robot.x + wheelOffsetX,
+      robot.y + robot.height,
+      wheelRadius,
+      0,
+      Math.PI * 2
+    );
+    this.ctx.fill();
+
+    // Roue droite
+    this.ctx.beginPath();
+    this.ctx.arc(
+      robot.x + robot.width - wheelOffsetX,
+      robot.y + robot.height,
+      wheelRadius,
+      0,
+      Math.PI * 2
+    );
+    this.ctx.fill();
+
+    // Dessiner les projectiles du robot
+    this.drawRobotBullets(robot);
+
+    // Ajouter un effet de clignotement près de la fin de la durée du bonus
+    const remainingTime = robot.endTime - Date.now();
+    if (remainingTime < 3000 && Math.floor(Date.now() / 200) % 2 === 0) {
+      // Dessiner un contour clignotant
+      this.ctx.strokeStyle = "#FF0000";
+      this.ctx.lineWidth = 2 * this.scaleFactor;
+      this.ctx.strokeRect(robot.x, robot.y, robot.width, robot.height);
+    }
+  }
+
+  // Dessin des projectiles du chariot robot
+  drawRobotBullets(robot) {
+    this.ctx.fillStyle = BULLET_DEFAULT.color;
+
+    for (const bullet of robot.bullets) {
+      this.ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+    }
+  }
+
   // Activation d'un bonus ou malus
   applyPowerupEffect(powerup, player, cornField) {
     const powerupInfo = POWERUP_TYPES[powerup.type];
@@ -479,6 +620,30 @@ export default class PowerupSystem {
         });
         break;
 
+      case "ROBOT_CART":
+        // Créer un chariot robot qui se déplace et tire tout seul
+        this.activeRobotCart = {
+          x: player.x - player.width / 2, // Positionner à côté du joueur
+          y: player.y + player.height / 2,
+          width: 30 * this.scaleFactor,
+          height: 20 * this.scaleFactor,
+          speedX: 2 * this.scaleFactor,
+          bullets: [],
+          lastFireTime: 0,
+          fireRate: PLAYER_DEFAULT.fireRate / 2,
+          endTime: Date.now() + powerupInfo.duration,
+        };
+
+        // Ajouter à la liste des bonus actifs avec durée
+        this.activePowerups.push({
+          type: powerup.type,
+          endTime: Date.now() + powerupInfo.duration,
+          restoreFunction: () => {
+            this.activeRobotCart = null;
+          },
+        });
+        break;
+
       case "SPEED_UP":
         // Augmenter la vitesse du joueur
         player.setSpeed(PLAYER_DEFAULT.speed * 1.5); // Vitesse augmentée
@@ -494,6 +659,11 @@ export default class PowerupSystem {
       case "RECOVER_CORN":
         // Récupérer 5 épis de maïs détruits
         cornField.recoverCorns(5);
+        break;
+
+      case "EXPLOSION":
+        // Créer l'effet d'explosion
+        this.createExplosionEffect(player);
         break;
 
       // Malus
@@ -575,6 +745,121 @@ export default class PowerupSystem {
       startTime: Date.now(),
       duration: effectDuration * 1.5,
     });
+  }
+
+  // Créer l'animation d'explosion concentrique
+  createExplosionEffect(player) {
+    // Paramètres de l'animation
+    const centerX = player.getCenterX();
+    const centerY = player.getCenterY();
+    // Réduire le rayon maximal à la moitié de l'écran au lieu de 1.5 fois
+    const maxRadius = Math.max(this.canvas.width, this.canvas.height) * 0.7;
+    const explosionSpeed = 12 * this.scaleFactor;
+    const explosionColor = POWERUP_TYPES.EXPLOSION.color;
+
+    // Créer l'anneau d'explosion qui se propage
+    this.explosionRing = {
+      x: centerX,
+      y: centerY,
+      currentRadius: 10 * this.scaleFactor,
+      maxRadius: maxRadius,
+      speed: explosionSpeed,
+      color: explosionColor,
+      alpha: 1.0,
+      startTime: Date.now(),
+      duration: 1000,
+    };
+
+    // Ajouter des particules d'explosion qui partent dans toutes les directions
+    const particleCount = 60;
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * 50 * this.scaleFactor;
+      const x = centerX + Math.cos(angle) * distance;
+      const y = centerY + Math.sin(angle) * distance;
+
+      this.powerupEffects.push({
+        x: x,
+        y: y,
+        size: (Math.random() * 8 + 4) * this.scaleFactor,
+        speedX: Math.cos(angle) * (2 + Math.random() * 3) * this.scaleFactor,
+        speedY: Math.sin(angle) * (2 + Math.random() * 3) * this.scaleFactor,
+        color: explosionColor,
+        alpha: 1.0,
+        isGood: true,
+        type: "EXPLOSION_PARTICLE",
+        startTime: Date.now(),
+        duration: 500 + Math.random() * 300,
+      });
+    }
+
+    // Créer un texte flottant
+    this.powerupEffects.push({
+      x: centerX,
+      y: centerY - 30 * this.scaleFactor,
+      text: "BOOM!",
+      color: explosionColor,
+      alpha: 1.0,
+      speedY: -2 * this.scaleFactor,
+      isGood: true,
+      type: "TEXT",
+      startTime: Date.now(),
+      duration: 1000,
+    });
+  }
+
+  // Mettre à jour et dessiner l'anneau d'explosion s'il existe
+  updateExplosionRing() {
+    if (!this.explosionRing) return;
+
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - this.explosionRing.startTime;
+    const progress = elapsedTime / this.explosionRing.duration;
+
+    // Faire grandir l'anneau
+    this.explosionRing.currentRadius += this.explosionRing.speed;
+
+    // Diminuer l'opacité progressivement
+    this.explosionRing.alpha = Math.max(0, 1 - progress);
+
+    // Supprimer l'anneau une fois qu'il a atteint sa taille maximale ou que sa durée est écoulée
+    if (
+      this.explosionRing.currentRadius >= this.explosionRing.maxRadius ||
+      progress >= 1
+    ) {
+      this.explosionRing = null;
+    }
+  }
+
+  // Dessiner l'anneau d'explosion
+  drawExplosionRing() {
+    if (!this.explosionRing) return;
+
+    const ring = this.explosionRing;
+
+    // Dessiner l'anneau avec un dégradé
+    const gradient = this.ctx.createRadialGradient(
+      ring.x,
+      ring.y,
+      ring.currentRadius - 15 * this.scaleFactor,
+      ring.x,
+      ring.y,
+      ring.currentRadius
+    );
+
+    gradient.addColorStop(0, `${ring.color}00`); // Transparent à l'intérieur
+    gradient.addColorStop(
+      0.5,
+      `${ring.color}${Math.floor(ring.alpha * 200)
+        .toString(16)
+        .padStart(2, "0")}`
+    ); // Semi-transparent au milieu
+    gradient.addColorStop(1, `${ring.color}00`); // Transparent à l'extérieur
+
+    this.ctx.beginPath();
+    this.ctx.arc(ring.x, ring.y, ring.currentRadius, 0, Math.PI * 2);
+    this.ctx.fillStyle = gradient;
+    this.ctx.fill();
   }
 
   // Fonction utilitaire pour dessiner une étoile (pour les effets de bonus)
