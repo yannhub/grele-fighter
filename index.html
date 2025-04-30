@@ -56,6 +56,13 @@
           <form id="register-form" class="register-form">
             <h3>Entrez vos informations</h3>
             <input type="text" id="nickname" placeholder="Pseudo" required />
+            <div
+              id="nickname-error"
+              class="error-message"
+              style="display: none; color: red; margin-bottom: 10px"
+            >
+              Ce pseudo est déjà pris. Veuillez en choisir un autre.
+            </div>
             <input
               type="text"
               id="organization"
@@ -154,8 +161,8 @@
               </div>
             </div>
             <div class="game-over-buttons">
-              <button id="play-again-btn">REJOUER</button>
-              <button id="home-btn">ACCUEIL</button>
+              <button id="home-btn">Nouvelle Partie</button>
+              <button id="play-again-btn">Rejouer avec le même joueur</button>
             </div>
           </div>
         </div>

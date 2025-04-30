@@ -7,10 +7,12 @@ import {
   CLOUD_DROPS_DEFAULT,
   HAIL_DEFAULT,
 } from "./constants.js";
+import Leaderboard from "./leaderboard.js";
 
 export default class UI {
   constructor(gameManager) {
     this.gameManager = gameManager;
+    this.leaderboard = new Leaderboard(this);
 
     // Éléments DOM
     this.welcomeScreen = document.getElementById("welcome-screen");
@@ -90,14 +92,34 @@ export default class UI {
       this.registerForm.style.display = "block";
     });
 
+    // Ajouter un écouteur pour cacher le message d'erreur quand l'utilisateur modifie le champ de pseudo
+    const nicknameInput = document.getElementById("nickname");
+    const nicknameError = document.getElementById("nickname-error");
+
+    nicknameInput.addEventListener("input", () => {
+      // Cacher le message d'erreur dès que l'utilisateur commence à modifier le pseudo
+      nicknameError.style.display = "none";
+    });
+
     this.registerForm.addEventListener("submit", (e) => {
       e.preventDefault();
 
       // Récupérer les informations du joueur
-      this.playerInfo = {
-        nickname: document.getElementById("nickname").value,
-        organization: document.getElementById("organization").value,
-      };
+      const nickname = document.getElementById("nickname").value;
+      const organization = document.getElementById("organization").value;
+
+      // Vérifier si le pseudo existe déjà
+      const nicknameExists = this.leaderboard.checkNicknameExists(nickname);
+      if (nicknameExists) {
+        // Afficher le message d'erreur
+        nicknameError.style.display = "block";
+        return;
+      }
+
+      // Masquer le message d'erreur s'il était visible
+      nicknameError.style.display = "none";
+
+      this.playerInfo = { nickname, organization };
 
       // Passer aux instructions
       this.registerForm.style.display = "none";
@@ -332,6 +354,27 @@ export default class UI {
   // Définir la raison de fin de jeu
   setGameEndReason(reason) {
     this.gameEndReason = reason;
+  }
+
+  // Définir ou mettre à jour les informations du joueur
+  setPlayerInfo(playerInfo) {
+    this.playerInfo = playerInfo;
+  }
+
+  // Masquer tous les écrans
+  hideAllScreens() {
+    this.welcomeScreen.style.display = "none";
+    this.registerForm.style.display = "none";
+    this.gameInstructions.style.display = "none";
+    this.gameCanvas.style.display = "none";
+    this.scoreDisplay.style.display = "none";
+    this.gameOverScreen.style.display = "none";
+  }
+
+  // Afficher l'écran de jeu
+  showGameScreen() {
+    this.gameCanvas.style.display = "block";
+    this.scoreDisplay.style.display = "block";
   }
 
   // Obtenir les informations du joueur
