@@ -41,9 +41,12 @@
   border-radius: 0.5rem;
 }
 
-.agile-logo {
+.conf-logo {
   aspect-ratio: 1 / 1;
   object-fit: contain;
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
 }
 
 .g2s-logo {
@@ -51,4 +54,5 @@
   object-fit: contain;
   background-color: white;
   border-radius: 0.5rem;
+  padding: 0.5rem;
 }
