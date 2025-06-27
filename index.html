@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Défense contre la Grêle - G2S</title>
     <link rel="stylesheet" href="./assets/css/style.css" />
+
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#4caf50" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Grêle Fighter" />
+    <link rel="apple-touch-icon" href="./assets/img/g2s-logo.png" />
   </head>
   <body>
     <div class="container">
@@ -39,9 +47,7 @@
 
             <div class="prize">
               <h3>🏆 GRAND PRIX DU JOUR 🏆</h3>
-              <p>
-                Défiez les autres joueurs et remportez un magnifique LEGO !
-              </p>
+              <p>Défiez les autres joueurs et remportez un magnifique LEGO !</p>
               <img
                 src="./assets/img/gift.png"
                 alt="L'evolution des STIM - Légo"
@@ -180,5 +186,77 @@
     </div>
 
     <script type="module" src="./assets/js/main.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+      // Enregistrement du Service Worker pour le fonctionnement hors ligne
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./sw.js")
+            .then((registration) => {
+              console.log(
+                "✅ Service Worker enregistré avec succès:",
+                registration.scope
+              );
+
+              // Vérifier les mises à jour
+              registration.addEventListener("updatefound", () => {
+                const newWorker = registration.installing;
+                if (newWorker) {
+                  newWorker.addEventListener("statechange", () => {
+                    if (
+                      newWorker.state === "installed" &&
+                      navigator.serviceWorker.controller
+                    ) {
+                      // Nouvelle version disponible
+                      console.log("🔄 Nouvelle version disponible");
+                      if (
+                        confirm(
+                          "Une nouvelle version est disponible. Voulez-vous recharger la page ?"
+                        )
+                      ) {
+                        window.location.reload();
+                      }
+                    }
+                  });
+                }
+              });
+            })
+            .catch((error) => {
+              console.error(
+                "❌ Échec de l'enregistrement du Service Worker:",
+                error
+              );
+            });
+        });
+
+        // Gérer les mises à jour du Service Worker
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          console.log("🔄 Service Worker mis à jour");
+          window.location.reload();
+        });
+      } else {
+        console.warn(
+          "⚠️ Service Workers ne sont pas supportés par ce navigateur"
+        );
+      }
+
+      // Détecter si l'app est installée
+      let deferredPrompt;
+      window.addEventListener("beforeinstallprompt", (e) => {
+        console.log("💾 L'application peut être installée");
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Vous pouvez ajouter un bouton d'installation ici si souhaité
+        // showInstallButton();
+      });
+
+      // Gérer l'installation de l'app
+      window.addEventListener("appinstalled", (evt) => {
+        console.log("✅ Application installée avec succès");
+      });
+    </script>
   </body>
 </html>
