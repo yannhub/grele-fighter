@@ -41,6 +41,14 @@
   border-radius: 0.5rem;
 }
 
-.mixit-logo {
-  margin-top: 1vh;
+.agile-logo {
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+
+.g2s-logo {
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background-color: white;
+  border-radius: 0.5rem;
 }

@@ -10,6 +10,7 @@
 body {
   background-image: url("../img/mais-background.png");
   background-repeat: repeat;
+  background-size: 16rem;
   color: #222;
   display: flex;
   flex-direction: column;

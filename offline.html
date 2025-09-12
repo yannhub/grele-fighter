@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hors ligne - Défense contre la Grêle</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #2e7d32, #4caf50);
+        color: white;
+        text-align: center;
+      }
+
+      .offline-container {
+        max-width: 400px;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+      }
+
+      .offline-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+      }
+
+      h1 {
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+
+      p {
+        margin-bottom: 2rem;
+        opacity: 0.9;
+      }
+
+      .retry-btn {
+        background: #fff;
+        color: #2e7d32;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .retry-btn:hover {
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="offline-container">
+      <div class="offline-icon">📡</div>
+      <h1>Vous êtes hors ligne</h1>
+      <p>
+        Cette page n'est pas disponible sans connexion internet. Vérifiez votre
+        connexion et réessayez.
+      </p>
+      <button class="retry-btn" onclick="window.location.reload()">
+        Réessayer
+      </button>
+    </div>
+  </body>
+</html>
