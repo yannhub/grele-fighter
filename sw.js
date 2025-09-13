@@ -33,8 +33,7 @@ const urlsToCache = [
   "./assets/img/logo-two.png",
   "./assets/img/gift.png",
   "./assets/img/sketchnote.png",
-  "./assets/img/mais-background.png",
-  "./assets/img/panier-legumes.png",
+  "./assets/img/background-tile.png",
 ];
 
 // Installation du Service Worker
