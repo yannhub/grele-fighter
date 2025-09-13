@@ -29,8 +29,8 @@ const urlsToCache = [
   "./assets/js/ui.js",
 
   // Images
-  "./assets/img/g2s-logo.png",
-  "./assets/img/logo-agile-lyon.png",
+  "./assets/img/logo-one.png",
+  "./assets/img/logo-two.png",
   "./assets/img/gift.png",
   "./assets/img/sketchnote.png",
   "./assets/img/mais-background.png",

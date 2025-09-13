@@ -39,16 +39,10 @@
   margin-bottom: 1.5vh;
   display: block;
   border-radius: 0.5rem;
-}
-
-.agile-logo {
   aspect-ratio: 1 / 1;
   object-fit: contain;
 }
 
-.g2s-logo {
-  aspect-ratio: 1 / 1;
-  object-fit: contain;
+.bg-white {
   background-color: white;
-  border-radius: 0.5rem;
 }

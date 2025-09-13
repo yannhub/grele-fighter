@@ -10,13 +10,13 @@
   "categories": ["games", "entertainment"],
   "icons": [
     {
-      "src": "./assets/img/g2s-logo.png",
+      "src": "./assets/img/logo-one.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "./assets/img/g2s-logo.png",
+      "src": "./assets/img/logo-one.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
