@@ -1,5 +1,5 @@
 // Version du cache - Mettez à jour cette valeur à chaque modification de ressources
-const CACHE_VERSION = "1.0.6"; // Incrémentez ce numéro à chaque modification
+const CACHE_VERSION = "1.0.9"; // Incrémentez ce numéro à chaque modification
 const CACHE_NAME = `grele-fighter-v${CACHE_VERSION}`;
 
 // Détection de l'environnement de développement
@@ -12,6 +12,7 @@ const urlsToCache = [
   // Pages principales
   "./",
   "./index.html",
+  "./favicon.svg",
   "./manifest.json",
   "./offline.html",
 

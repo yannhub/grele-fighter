@@ -10,7 +10,7 @@
 body {
   background-image: url("../img/background-tile.png");
   background-repeat: repeat;
-  background-size: 16rem;
+  background-size: 32rem;
   color: #222;
   display: flex;
   flex-direction: column;
