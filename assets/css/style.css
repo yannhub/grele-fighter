@@ -12,5 +12,8 @@
 @import "game-over.css";
 @import "leaderboard.css";
 
+/* Crêperie et sélecteur de jeux */
+@import "creperie-game.css";
+
 /* Media queries pour la responsivité */
 @import "responsive.css";

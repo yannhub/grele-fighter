@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Défense contre la Grêle - G2S</title>
+    <title id="page-title">Jeux G2S</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./assets/css/style.css" />
 
@@ -32,21 +32,45 @@
         </div>
 
         <div class="game-area">
+          <!-- ===== SÉLECTEUR DE JEU (page sans ?game=) ===== -->
+          <div id="game-selector" class="game-selector" style="display: none">
+            <h2 class="game-selector-title">🎮 Choisissez votre jeu</h2>
+            <p class="game-selector-sub">Sélectionnez un jeu pour commencer</p>
+            <div class="game-cards">
+              <a href="?game=grele" class="game-card">
+                <div class="game-card-emoji">🌽💧</div>
+                <h3>Grêle Fighter</h3>
+                <p>
+                  Défendez vos cultures contre la grêle et protégez les épis de
+                  maïs!
+                </p>
+                <span class="game-card-cta">JOUER →</span>
+              </a>
+              <a href="?game=creperie" class="game-card">
+                <div class="game-card-emoji">🥞👩‍🍳</div>
+                <h3>La Crêperie</h3>
+                <p>Préparez et servez un maximum de crêpes en 1min30!</p>
+                <span class="game-card-cta">JOUER →</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- ===== ÉCRAN D'ACCUEIL (partagé, contenu injecté par le jeu) ===== -->
           <div id="welcome-screen" class="welcome">
             <div class="welcome-header">
-              <div class="welcome-tagline">
+              <div class="welcome-tagline" id="welcome-tagline">
                 Défendez vos cultures, sauvez la récolte!
               </div>
             </div>
 
-            <div class="welcome-description">
+            <div class="welcome-description" id="welcome-description">
               <p>
                 Prenez les commandes du canon anti-grêle et protégez les champs
                 de maïs contre les intempéries destructrices!
               </p>
             </div>
 
-            <div class="prize">
+            <div class="prize" id="welcome-prize">
               <h3>🦖 GRAND PRIX DU JOUR 🦖</h3>
               <p>
                 Défiez les autres joueurs pour tenter de remporter les lots
@@ -90,7 +114,7 @@
           </form>
 
           <div id="game-instructions" class="instruction">
-            <h3>Comment jouer</h3>
+            <h3>Grêle Fighter — Comment jouer</h3>
 
             <div class="controls-container">
               <div class="control-item">
@@ -136,6 +160,72 @@
             <button id="play-btn">JOUER</button>
           </div>
 
+          <!-- ===== INSTRUCTIONS CRÊPERIE ===== -->
+          <div
+            id="game-instructions-creperie"
+            class="instruction"
+            style="display: none"
+          >
+            <h3>La Crêperie — Comment jouer</h3>
+
+            <div class="controls-container">
+              <div class="control-item">
+                <div class="key-visual">
+                  <div class="arrow-key left-key">◀</div>
+                  <div class="arrow-key right-key">▶</div>
+                </div>
+                <p>Se déplacer</p>
+              </div>
+              <div class="control-item">
+                <div class="key-visual">
+                  <div class="space-key">Espace</div>
+                </div>
+                <p>Interagir</p>
+              </div>
+            </div>
+
+            <div class="game-rules creperie-rules">
+              <p>
+                🥣 Mettez la <strong>pâte</strong> dans le bilig et attendez la
+                cuisson
+              </p>
+              <p>
+                🧈 Récupérez les <strong>ingrédients</strong> (max 3 en main)
+              </p>
+              <p>
+                🥞 Déposez les ingrédients sur la crêpe cuite,
+                <strong>ramassez-la</strong> puis <strong>envoyez-la</strong>
+              </p>
+              <p>
+                😊 Servez les clients avant qu'ils ne partent —
+                <strong>3 départs = Game Over!</strong>
+              </p>
+              <p>
+                🗑️ Jetez tout ce que vous tenez à la
+                <strong>poubelle</strong> si vous vous trompez
+              </p>
+              <p>
+                ⏱️ Partie de <strong>1min30</strong> — Le rythme s'accélère!
+              </p>
+
+              <div class="creperie-recipes">
+                <h4>📋 Recettes :</h4>
+                <div class="recipe-grid">
+                  <span class="recipe-tag">🧈 Beurre-Sucre — 80pts</span>
+                  <span class="recipe-tag">🍫 Chocolat — 80pts</span>
+                  <span class="recipe-tag">🍓 Fraise — 80pts</span>
+                  <span class="recipe-tag">🍋 Citron-Sucre — 100pts</span>
+                  <span class="recipe-tag">🍓🍦 Fraise-Chantilly — 150pts</span>
+                  <span class="recipe-tag">🍫🍓 Choco-Fraise — 150pts</span>
+                  <span class="recipe-tag">⭐ Complet — 180pts</span>
+                  <span class="recipe-tag">👑 Royal — 200pts</span>
+                </div>
+              </div>
+            </div>
+
+            <button id="play-btn-creperie">JOUER</button>
+          </div>
+
           <div id="score-display">
             Score: <span id="current-score">0</span> | Temps:
             <span id="timer">2:00</span>
@@ -176,6 +266,36 @@
             <div class="game-over-buttons">
               <button id="home-btn">Nouvelle Partie</button>
               <button id="play-again-btn">Rejouer avec le même joueur</button>
+            </div>
+          </div>
+
+          <!-- ===== GAME OVER CRÊPERIE ===== -->
+          <div id="game-over-creperie" style="display: none" class="game-over">
+            <h2 id="creperie-game-over-title">Partie terminée!</h2>
+            <div class="game-over-recap">
+              <div class="final-stats">
+                <p>
+                  Votre score final: <span id="creperie-final-score">0</span>
+                </p>
+                <div class="score-breakdown">
+                  <p>
+                    🥞 Crêpes servies:
+                    <span id="creperie-crepes-served">0</span>
+                  </p>
+                  <p>
+                    💔 Clients mécontents:
+                    <span id="creperie-hearts-lost">0</span>/3
+                  </p>
+                  <div class="separator"></div>
+                  <div id="creperie-recipe-breakdown"></div>
+                </div>
+              </div>
+            </div>
+            <div class="game-over-buttons">
+              <button id="creperie-home-btn">Nouvelle Partie</button>
+              <button id="creperie-play-again-btn">
+                Rejouer avec le même joueur
+              </button>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 // Version du cache - Mettez à jour cette valeur à chaque modification de ressources
-const CACHE_VERSION = "1.0.9"; // Incrémentez ce numéro à chaque modification
+const CACHE_VERSION = "1.1.0"; // Incrémentez ce numéro à chaque modification
 const CACHE_NAME = `grele-fighter-v${CACHE_VERSION}`;
 
 // Détection de l'environnement de développement
@@ -25,6 +25,7 @@ const urlsToCache = [
   "./assets/css/leaderboard.css",
   "./assets/css/responsive.css",
   "./assets/css/welcome.css",
+  "./assets/css/creperie-game.css",
 
   // JavaScript
   "./assets/js/main.js",
@@ -37,6 +38,13 @@ const urlsToCache = [
   "./assets/js/leaderboard.js",
   "./assets/js/powerups.js",
   "./assets/js/ui.js",
+  // Jeu Crêperie
+  "./assets/js/games/creperie/creperie-game.js",
+  "./assets/js/games/creperie/creperie-constants.js",
+  "./assets/js/games/creperie/creperie-stations.js",
+  "./assets/js/games/creperie/creperie-player.js",
+  "./assets/js/games/creperie/creperie-customers.js",
+  "./assets/js/games/creperie/creperie-renderer.js",
   // Images
   "./assets/img/logo-one.png",
   "./assets/img/logo-two.png",
@@ -62,7 +70,7 @@ self.addEventListener("install", (event) => {
       })
       .catch((error) => {
         console.error("[SW] Erreur lors de la mise en cache:", error);
-      })
+      }),
   );
 });
 
@@ -80,7 +88,7 @@ self.addEventListener("activate", (event) => {
               console.log("[SW] Suppression de l'ancien cache:", cacheName);
               return caches.delete(cacheName);
             }
-          })
+          }),
         );
       })
       .then(() => {
@@ -95,7 +103,7 @@ self.addEventListener("activate", (event) => {
           });
         });
         return self.clients.claim();
-      })
+      }),
   );
 });
 
@@ -129,7 +137,7 @@ self.addEventListener("fetch", (event) => {
         // Sinon, faire la requête réseau
         console.log(
           "[SW] Fichier récupéré depuis le réseau:",
-          event.request.url
+          event.request.url,
         );
         return fetch(event.request).then((response) => {
           // Vérifier si la réponse est valide
@@ -162,7 +170,7 @@ self.addEventListener("fetch", (event) => {
 
         // Pour les autres ressources, servir la page offline si disponible
         return caches.match("./offline.html");
-      })
+      }),
   );
 });
 

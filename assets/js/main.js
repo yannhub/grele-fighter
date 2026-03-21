@@ -1,32 +1,83 @@
-// main.js - Point d'entrée de l'application
+// main.js - Point d'entrée de l'application avec routage par ?game=
 
 import Game from "./game.js";
-import UI from "./ui.js";
+import CreperieGame from "./games/creperie/creperie-game.js";
 import Leaderboard from "./leaderboard.js";
+import UI from "./ui.js";
 
-// Attendre que le DOM soit chargé
 document.addEventListener("DOMContentLoaded", () => {
-  // Créer une référence temporaire pour l'UI et le Game
+  const params = new URLSearchParams(location.search);
+  const gameId = params.get("game");
+
+  if (!gameId) {
+    // Aucun jeu sélectionné : afficher le sélecteur de jeu
+    document.getElementById("game-selector").style.display = "block";
+    return;
+  }
+
+  if (gameId === "grele") {
+    initGreleGame();
+  } else if (gameId === "creperie") {
+    initCreperieGame();
+  } else {
+    // Identifiant de jeu inconnu, rediriger vers le sélecteur
+    window.location.href = "./index.html";
+  }
+});
+
+function initGreleGame() {
+  document.title = "Grêle Fighter — G2S";
+
   let game;
+  const ui = new UI(
+    {
+      startGame: () => game.startGame(),
+      endGame: () => game.endGame(),
+      triggerStormCloud: () => game.triggerStormCloud(),
+      resizeGame: () => game.resizeGame(),
+    },
+    "grele",
+  );
 
-  // Créer l'interface utilisateur et lui passer une référence au gestionnaire de jeu
-  const ui = new UI({
-    startGame: () => game.startGame(),
-    endGame: () => game.endGame(),
-    triggerStormCloud: () => game.triggerStormCloud(),
-    resizeGame: () => game.resizeGame(),
-  });
-
-  // Créer le gestionnaire de jeu
   game = new Game(ui);
 
-  // Mettre à jour l'affichage du classement avec référence à l'UI
-  const leaderboard = new Leaderboard(ui);
+  const leaderboard = new Leaderboard(ui, "grele");
   leaderboard.updateDisplay();
 
-  // Référencer le leaderboard dans le jeu
   game.leaderboard = leaderboard;
-
-  // Au chargement initial de la page, s'assurer que le canvas est adapté à la taille de son conteneur
   game.resizeGame();
-});
+}
+
+function initCreperieGame() {
+  document.title = "La Crêperie — G2S";
+
+  // Personnaliser l'écran d'accueil pour la crêperie
+  const tagline = document.getElementById("welcome-tagline");
+  const description = document.getElementById("welcome-description");
+  const prize = document.getElementById("welcome-prize");
+  if (tagline) tagline.textContent = "Bienvenue dans votre crêperie !";
+  if (description)
+    description.innerHTML =
+      "<p>Préparez et servez un maximum de crêpes délicieuses à vos clients en 1 minute 30 !</p>";
+  if (prize) prize.style.display = "none";
+
+  const creperieGame = new CreperieGame();
+
+  const ui = new UI(
+    {
+      startGame: () => creperieGame.startGame(),
+      endGame: () => creperieGame.endGame(),
+      triggerStormCloud: () => {},
+      resizeGame: () => creperieGame.resizeGame(),
+    },
+    "creperie",
+  );
+
+  creperieGame.setUI(ui);
+
+  const leaderboard = new Leaderboard(ui, "creperie");
+  leaderboard.updateDisplay();
+
+  creperieGame.leaderboard = leaderboard;
+  creperieGame.resizeGame();
+}

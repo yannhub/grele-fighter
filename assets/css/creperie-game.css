@@ -1,0 +1,196 @@
+/* creperie-game.css — Styles spécifiques au jeu La Crêperie et au sélecteur de jeux */
+
+/* ═══════════════════════════════════════════════════════════════
+   SÉLECTEUR DE JEU
+═══════════════════════════════════════════════════════════════ */
+.game-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.game-selector-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.game-selector-sub {
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+}
+
+.game-cards {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.game-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 2px solid #e0e0e0;
+  border-radius: 1rem;
+  padding: 1.5rem 2rem;
+  width: clamp(180px, 30vw, 260px);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+}
+
+.game-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-color: #4caf50;
+}
+
+.game-card:nth-child(2):hover {
+  border-color: #ff8c00;
+}
+
+.game-card-emoji {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+  line-height: 1;
+}
+
+.game-card h3 {
+  font-size: 1.1rem;
+  color: #2c3e50;
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+}
+
+.game-card p {
+  font-size: 0.82rem;
+  color: #666;
+  margin: 0 0 1rem;
+  line-height: 1.4;
+}
+
+.game-card-cta {
+  display: inline-block;
+  background: #4caf50;
+  color: white;
+  padding: 0.4rem 1.2rem;
+  border-radius: 2rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  transition: background 0.2s;
+}
+
+.game-card:nth-child(2) .game-card-cta {
+  background: #ff8c00;
+}
+
+.game-card:hover .game-card-cta,
+.game-card:nth-child(2):hover .game-card-cta {
+  filter: brightness(1.1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INSTRUCTIONS CRÊPERIE
+═══════════════════════════════════════════════════════════════ */
+.creperie-rules {
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.creperie-rules p {
+  margin: 0.3rem 0;
+}
+
+.creperie-recipes {
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.creperie-recipes h4 {
+  font-size: 0.92rem;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.recipe-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.recipe-tag {
+  background: #fff3e0;
+  border: 1px solid #ffb74d;
+  color: #e65100;
+  border-radius: 1rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME OVER CRÊPERIE
+═══════════════════════════════════════════════════════════════ */
+#game-over-creperie {
+  display: none;
+  text-align: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.4s ease;
+}
+
+#game-over-creperie h2 {
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+#game-over-creperie #creperie-final-score {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #e67e22;
+}
+
+#game-over-creperie .score-breakdown p {
+  font-size: 0.95rem;
+  margin: 0.3rem 0;
+  color: #444;
+}
+
+#creperie-recipe-breakdown {
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  color: #555;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CANVAS CRÊPERIE (même taille que grêle, rien à surcharger)
+═══════════════════════════════════════════════════════════════ */
+
+/* Focus outline supprimé sur le canvas pour éviter le rectangle bleu */
+#game-canvas:focus {
+  outline: none;
+}

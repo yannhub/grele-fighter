@@ -3,10 +3,13 @@
 import { STORAGE_KEY } from "./constants.js";
 
 export default class Leaderboard {
-  constructor(ui = null) {
+  constructor(ui = null, gameId = "grele") {
     this.leaderboardElement = document.getElementById("leaderboard-list");
     this.tooltipElement = null;
-    this.ui = ui; // Référence à l'UI pour permettre de lancer une partie
+    this.ui = ui;
+    // Clé de stockage séparée par jeu (rétro-compatible : grele garde l'ancienne clé)
+    this.storageKey =
+      gameId === "grele" ? STORAGE_KEY : `${STORAGE_KEY}_${gameId}`;
     this.initTooltip();
   }
 
@@ -23,7 +26,7 @@ export default class Leaderboard {
 
   // Récupérer les scores depuis le stockage local
   getLeaderboard() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    return JSON.parse(localStorage.getItem(this.storageKey)) || [];
   }
 
   // Récupérer uniquement les meilleurs scores par joueur
@@ -77,7 +80,7 @@ export default class Leaderboard {
     // Vérifier si ce joueur a déjà joué précédemment (insensible à la casse)
     // Si oui, utiliser le même format de nickname pour la cohérence visuelle
     let existingEntry = leaderboard.find(
-      (entry) => entry.nickname.toLowerCase() === lowercaseNickname
+      (entry) => entry.nickname.toLowerCase() === lowercaseNickname,
     );
 
     // Créer une entrée pour le nouveau score
@@ -102,7 +105,7 @@ export default class Leaderboard {
     leaderboard.sort((a, b) => b.score - a.score);
 
     // Sauvegarder dans le localStorage
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(leaderboard));
+    localStorage.setItem(this.storageKey, JSON.stringify(leaderboard));
 
     // Mettre à jour l'affichage
     this.updateDisplay();
@@ -144,7 +147,7 @@ export default class Leaderboard {
           organisation: entry.organization,
           score: entry.score,
           date: new Date(entry.date).toLocaleDateString("fr-FR"),
-        })
+        }),
       );
 
       // Ajouter la classe pour le style de la tooltip
@@ -229,7 +232,7 @@ export default class Leaderboard {
               <div class="score-item">
                 <span class="score-value">${historyEntry.score}</span>
                 <span class="score-date">${new Date(
-                  historyEntry.date
+                  historyEntry.date,
                 ).toLocaleDateString("fr-FR")}</span>
               </div>
             `;
