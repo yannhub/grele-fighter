@@ -120,6 +120,8 @@ export class CreperieRenderer {
     heartsLeft,
     maxHearts,
     deliveryFeedback,
+    autoPlayer = null,
+    bonusTimer = null,
   ) {
     const W = canvas.width;
     const H = canvas.height;
@@ -135,9 +137,11 @@ export class CreperieRenderer {
     this._drawCounter(W, counterY, counterH);
     this._drawStations(stations, counterY, counterH);
     this._drawPlayer(player, counterY, counterH);
+    if (autoPlayer) this._drawAutoPlayer(autoPlayer, counterY);
     this._drawParticles();
     this._drawDeliveryFeedback(deliveryFeedback);
     this._drawHUD(ctx, W, H, score, timeLeft, heartsLeft, maxHearts);
+    if (bonusTimer !== null) this._drawBonusIndicator(ctx, W, H, bonusTimer);
   }
 
   // ── Arrière-plan ────────────────────────────────────────────────────────────
@@ -404,10 +408,10 @@ export class CreperieRenderer {
   _drawSpeechBubble(customer) {
     if (customer.state !== "seated") return;
     const ctx = this.ctx;
-    const bx = 14,
-      by = -52;
-    const bw = 70,
-      bh = 44;
+    const bw = 90,
+      bh = 56;
+    const bx = -bw / 2,
+      by = 52; // en dessous de la table
 
     // Ombre
     ctx.shadowBlur = 6;
@@ -420,11 +424,11 @@ export class CreperieRenderer {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Queue de bulle
+    // Queue de bulle (pointe vers le haut)
     ctx.beginPath();
-    ctx.moveTo(bx + 4, by + bh);
-    ctx.lineTo(bx - 6, by + bh + 8);
-    ctx.lineTo(bx + 12, by + bh);
+    ctx.moveTo(bx + bw / 2 - 6, by);
+    ctx.lineTo(bx + bw / 2, by - 8);
+    ctx.lineTo(bx + bw / 2 + 6, by);
     ctx.closePath();
     ctx.fillStyle = COL.BUBBLE_BG;
     ctx.fill();
@@ -454,7 +458,7 @@ export class CreperieRenderer {
 
     // Icônes de la recette
     const icons = customer.recipe.toppings.map((t) => ITEM_ICONS[t] || "?");
-    const iconSize = 16;
+    const iconSize = 22;
     const totalW = icons.length * (iconSize + 4) - 4;
     const startX = bx + (bw - totalW) / 2;
     ctx.font = `${iconSize}px serif`;
@@ -472,7 +476,7 @@ export class CreperieRenderer {
     ctx.fillStyle = "#555";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(customer.recipe.label, bx + bw / 2 - 8, by + 8);
+    ctx.fillText(customer.recipe.label, bx + bw / 2, by + 10);
   }
 
   // ── Comptoir ────────────────────────────────────────────────────────────────
@@ -813,6 +817,128 @@ export class CreperieRenderer {
     ctx.fillText("🗑️", cx, sy + sh * 0.55);
   }
 
+  // ── Joueur auto (Assurance G2S) ───────────────────────────────────────────
+  _drawAutoPlayer(ap, counterY) {
+    const ctx = this.ctx;
+    const px = ap.x;
+    const py = ap.y;
+    const sz = ap.size;
+
+    ctx.save();
+
+    // Halo pulsant rouge
+    const pulse = 0.55 + 0.45 * Math.abs(Math.sin(Date.now() / 350));
+    ctx.save();
+    ctx.globalAlpha = 0.28 * pulse;
+    ctx.beginPath();
+    ctx.ellipse(px, py + sz * 0.55, sz * 0.7, sz * 0.15, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#E30613";
+    ctx.fill();
+    ctx.restore();
+
+    // Ombre
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.beginPath();
+    ctx.ellipse(px, py + sz * 0.55, sz * 0.32, sz * 0.08, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+    ctx.restore();
+
+    const walk = ap.isMoving ? Math.sin((ap.walkFrame / 4) * Math.PI * 2) : 0;
+
+    // Jupe rouge G2S
+    ctx.beginPath();
+    ctx.moveTo(px - sz * 0.28, py + sz * 0.22);
+    ctx.lineTo(px + sz * 0.28, py + sz * 0.22);
+    ctx.lineTo(px + sz * 0.32, py + sz * 0.5);
+    ctx.lineTo(px - sz * 0.32, py + sz * 0.5);
+    ctx.closePath();
+    ctx.fillStyle = "#E30613";
+    ctx.fill();
+
+    // Jambes
+    const legW = sz * 0.13, legH = sz * 0.28, legY = py + sz * 0.22;
+    ctx.fillStyle = "#FDBCB4";
+    roundRect(ctx, px - sz * 0.14, legY + walk * sz * 0.07, legW, legH, 3); ctx.fill();
+    roundRect(ctx, px + sz * 0.01, legY - walk * sz * 0.07, legW, legH, 3); ctx.fill();
+    ctx.fillStyle = "#C00000";
+    ctx.beginPath(); ctx.ellipse(px - sz*0.07, legY+legH+walk*sz*0.07+sz*0.03, legW*0.7, sz*0.055, 0.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(px + sz*0.07, legY+legH-walk*sz*0.07+sz*0.03, legW*0.7, sz*0.055, -0.2, 0, Math.PI*2); ctx.fill();
+
+    // Corps (blouse blanche avec logo G2S rouge)
+    const bW = sz * 0.54, bH = sz * 0.42, bX = px - bW / 2, bY = py - sz * 0.18;
+    roundRect(ctx, bX, bY, bW, bH, sz * 0.1);
+    ctx.fillStyle = "#FFFFFF"; ctx.fill();
+    ctx.strokeStyle = "#E30613"; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.font = `bold ${sz * 0.2}px Arial`;
+    ctx.fillStyle = "#E30613";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("G2S", px, bY + bH * 0.5);
+
+    // Bras
+    const aW = sz * 0.11, aH = sz * 0.3, aY = bY + sz * 0.05;
+    ctx.save(); ctx.translate(bX - aW*0.4, aY - walk*sz*0.05); ctx.rotate(-0.15 + walk*0.2);
+    roundRect(ctx, 0, 0, aW, aH, 4); ctx.fillStyle = "#FDBCB4"; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.translate(bX + bW + aW*0.4 - aW, aY + walk*sz*0.05); ctx.rotate(0.15 - walk*0.2);
+    roundRect(ctx, 0, 0, aW, aH, 4); ctx.fillStyle = "#FDBCB4"; ctx.fill(); ctx.restore();
+
+    // Tête
+    const hR = sz * 0.22, hX = px, hY = bY - hR * 0.7;
+    ctx.fillStyle = "#FDBCB4";
+    ctx.fillRect(px - sz*0.07, hY + hR*0.6, sz*0.14, sz*0.16);
+    ctx.beginPath(); ctx.arc(hX, hY, hR, 0, Math.PI*2);
+    ctx.fillStyle = "#FDBCB4"; ctx.fill();
+    ctx.strokeStyle = "#E0A090"; ctx.lineWidth = 0.8; ctx.stroke();
+    // Cheveux brun foncé
+    ctx.beginPath(); ctx.ellipse(hX, hY - hR*0.55, hR*1.02, hR*0.55, 0, Math.PI, 0);
+    ctx.fillStyle = "#4A2800"; ctx.fill();
+    // Casquette rouge G2S
+    ctx.fillStyle = "#E30613";
+    ctx.beginPath(); ctx.ellipse(hX, hY - hR*0.75, hR*1.05, hR*0.35, 0, Math.PI, 0); ctx.fill();
+    ctx.fillRect(hX - hR*1.1, hY - hR*0.78, hR*2.2, hR*0.22);
+    ctx.font = `bold ${hR*0.42}px sans-serif`;
+    ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(",", hX, hY - hR*0.68);
+    // Yeux
+    const eOff = ap.direction * hR * 0.12, eY2 = hY + hR*0.05;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath(); ctx.ellipse(hX+eOff-hR*0.22, eY2, hR*0.16, hR*0.13, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(hX+eOff+hR*0.18, eY2, hR*0.16, hR*0.13, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#3A2000";
+    ctx.beginPath(); ctx.arc(hX+eOff-hR*0.22, eY2, hR*0.09, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(hX+eOff+hR*0.18, eY2, hR*0.09, 0, Math.PI*2); ctx.fill();
+
+    // Items tenus
+    this._drawHeldItems(ap, px, hY - hR - sz * 0.25, sz);
+
+    ctx.restore();
+  }
+
+  // ── Indicateur bonus Assurance G2S ────────────────────────────────────────
+  _drawBonusIndicator(ctx, W, H, bonusTimer) {
+    const x = 12, y = H - 70, bw = 180, bh = 38;
+    const frac = Math.max(0, bonusTimer / 15);
+    const pulse = 0.85 + 0.15 * Math.abs(Math.sin(Date.now() / 300));
+
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    roundRect(ctx, x, y, bw, bh, 8);
+    ctx.fillStyle = "#2D2B45"; ctx.fill();
+
+    roundRect(ctx, x + 4, y + bh - 10, (bw - 8) * frac, 6, 3);
+    ctx.fillStyle = frac > 0.4 ? "#E30613" : "#FF6B6B";
+    ctx.globalAlpha = pulse; ctx.fill(); ctx.globalAlpha = 0.9;
+
+    ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 12px Arial";
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText("\uD83D\uDEE1\uFE0F Assurance G2S", x + 8, y + bh * 0.4);
+    ctx.fillStyle = "#FFCDD2"; ctx.font = "11px Arial";
+    ctx.fillText(`${Math.ceil(bonusTimer)}s`, x + bw - 28, y + bh * 0.4);
+    ctx.restore();
+  }
+
   // ── Joueur (Cerise) ─────────────────────────────────────────────────────────
   _drawPlayer(player, counterY, counterH) {
     const ctx = this.ctx;
@@ -824,215 +950,236 @@ export class CreperieRenderer {
 
     // Ombre portée
     ctx.save();
-    ctx.globalAlpha = 0.25;
+    ctx.globalAlpha = 0.2;
     ctx.beginPath();
-    ctx.ellipse(px, py + sz * 0.52, sz * 0.38, sz * 0.1, 0, 0, Math.PI * 2);
+    ctx.ellipse(px, py + sz * 0.55, sz * 0.32, sz * 0.08, 0, 0, Math.PI * 2);
     ctx.fillStyle = "#000";
     ctx.fill();
     ctx.restore();
 
-    // ─── Corps de Cerise (mascotte Groupama) ─────────────────
-    // Forme en double bosse (deux cerises)
-    const r1 = sz * 0.28,
-      r2 = sz * 0.26;
-    const cx1 = px - sz * 0.12,
-      cy1 = py - sz * 0.05;
-    const cx2 = px + sz * 0.14,
-      cy2 = py - sz * 0.1;
+    const walk = player.isMoving
+      ? Math.sin((player.walkFrame / 4) * Math.PI * 2)
+      : 0;
 
-    // Corps principale (double cerise)
+    // ── Jambes ──────────────────────────────────────────────────
+    const legW = sz * 0.13;
+    const legH = sz * 0.28;
+    const legY = py + sz * 0.22;
+    const legLX = px - sz * 0.14;
+    const legRX = px + sz * 0.01;
+    const legOffL = walk * sz * 0.07;
+    const legOffR = -walk * sz * 0.07;
+
+    // Jupe/robe blanche à pois verts — triangle
     ctx.beginPath();
-    ctx.arc(cx1, cy1, r1, 0, Math.PI * 2);
-    ctx.fillStyle = "#E30613"; // rouge Groupama
+    ctx.moveTo(px - sz * 0.28, py + sz * 0.22);
+    ctx.lineTo(px + sz * 0.28, py + sz * 0.22);
+    ctx.lineTo(px + sz * 0.32, py + sz * 0.5);
+    ctx.lineTo(px - sz * 0.32, py + sz * 0.5);
+    ctx.closePath();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+    ctx.strokeStyle = "#CCCCCC";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    // Pois verts
+    ctx.fillStyle = "#4CAF50";
+    const dotPositions = [
+      [-sz*0.18, sz*0.28], [0, sz*0.32], [sz*0.16, sz*0.28],
+      [-sz*0.1, sz*0.42], [sz*0.08, sz*0.45],
+    ];
+    dotPositions.forEach(([dx, dy]) => {
+      ctx.beginPath();
+      ctx.arc(px + dx, py + dy, sz * 0.038, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Jambes (chair)
+    ctx.fillStyle = "#FDBCB4";
+    roundRect(ctx, legLX, legY + legOffL, legW, legH, 3);
+    ctx.fill();
+    roundRect(ctx, legRX, legY + legOffR, legW, legH, 3);
     ctx.fill();
 
+    // Chaussures rouges
+    ctx.fillStyle = "#C00000";
     ctx.beginPath();
-    ctx.arc(cx2, cy2, r2, 0, Math.PI * 2);
-    ctx.fillStyle = "#CC0000";
+    ctx.ellipse(legLX + legW / 2, legY + legH + legOffL + sz * 0.03, legW * 0.7, sz * 0.055, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(legRX + legW / 2, legY + legH + legOffR + sz * 0.03, legW * 0.7, sz * 0.055, -0.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Reflets sur corps
+    // ── Corps (blouse blanche à pois verts) ──────────────────────
+    const bodyW = sz * 0.54;
+    const bodyH = sz * 0.42;
+    const bodyX = px - bodyW / 2;
+    const bodyY = py - sz * 0.18;
+    roundRect(ctx, bodyX, bodyY, bodyW, bodyH, sz * 0.1);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+    ctx.strokeStyle = "#CCCCCC";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Pois verts sur la blouse
+    ctx.fillStyle = "#4CAF50";
+    [
+      [-sz*0.14, sz*0.06], [sz*0.1, sz*0.04],
+      [-sz*0.06, sz*0.2], [sz*0.15, sz*0.22],
+      [-sz*0.17, sz*0.32], [sz*0.04, sz*0.34],
+    ].forEach(([dx, dy]) => {
+      ctx.beginPath();
+      ctx.arc(px + dx, bodyY + dy, sz * 0.04, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // ── Bras ─────────────────────────────────────────────────────
+    const armW = sz * 0.11;
+    const armH = sz * 0.3;
+    const armY = bodyY + sz * 0.05;
+    const armOffL = -walk * sz * 0.05;
+    const armOffR = walk * sz * 0.05;
+
+    // Bras gauche
     ctx.save();
-    ctx.globalAlpha = 0.3;
-    ctx.beginPath();
-    ctx.arc(cx1 - r1 * 0.3, cy1 - r1 * 0.3, r1 * 0.35, 0, Math.PI * 2);
+    ctx.translate(bodyX - armW * 0.4, armY + armOffL);
+    ctx.rotate(-0.15 + walk * 0.2);
+    roundRect(ctx, 0, 0, armW, armH, 4);
     ctx.fillStyle = "#FFFFFF";
     ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx2 - r2 * 0.25, cy2 - r2 * 0.3, r2 * 0.3, 0, Math.PI * 2);
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fill();
+    ctx.strokeStyle = "#CCCCCC";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    // Pois verts bras gauche
+    ctx.fillStyle = "#4CAF50";
+    [[armW*0.5, armH*0.2],[armW*0.3, armH*0.55],[armW*0.65, armH*0.68]].forEach(([dx,dy])=>{
+      ctx.beginPath(); ctx.arc(dx, dy, armW*0.22, 0, Math.PI*2); ctx.fill();
+    });
     ctx.restore();
 
-    // Joindre les deux cerises
-    const joinX = (cx1 + cx2) / 2,
-      joinY = Math.max(cy1, cy2) + (r1 + r2) * 0.05;
+    // Bras droit
+    ctx.save();
+    ctx.translate(bodyX + bodyW + armW * 0.4 - armW, armY + armOffR);
+    ctx.rotate(0.15 - walk * 0.2);
+    roundRect(ctx, 0, 0, armW, armH, 4);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+    ctx.strokeStyle = "#CCCCCC";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    // Pois verts bras droit
+    ctx.fillStyle = "#4CAF50";
+    [[armW*0.5, armH*0.2],[armW*0.3, armH*0.55],[armW*0.65, armH*0.68]].forEach(([dx,dy])=>{
+      ctx.beginPath(); ctx.arc(dx, dy, armW*0.22, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+
+    // ── Tête ─────────────────────────────────────────────────────
+    const headR = sz * 0.22;
+    const headCX = px;
+    const headCY = bodyY - headR * 0.7;
+
+    // Cou
+    ctx.fillStyle = "#FDBCB4";
+    ctx.fillRect(px - sz * 0.07, headCY + headR * 0.6, sz * 0.14, sz * 0.16);
+
+    // Tête
     ctx.beginPath();
-    ctx.arc(joinX, joinY, sz * 0.12, 0, Math.PI * 2);
-    ctx.fillStyle = "#C00000";
+    ctx.arc(headCX, headCY, headR, 0, Math.PI * 2);
+    ctx.fillStyle = "#FDBCB4";
+    ctx.fill();
+    ctx.strokeStyle = "#E0A090";
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Cheveux blonds
+    ctx.beginPath();
+    ctx.ellipse(headCX, headCY - headR * 0.55, headR * 1.05, headR * 0.58, 0, Math.PI, 0);
+    ctx.fillStyle = "#F5C518";
+    ctx.fill();
+    // Mèches latérales blondes
+    ctx.beginPath();
+    ctx.ellipse(headCX - headR * 0.85, headCY + headR * 0.12, headR * 0.3, headR * 0.46, -0.25, 0, Math.PI * 2);
+    ctx.fillStyle = "#F5C518";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(headCX + headR * 0.85, headCY + headR * 0.12, headR * 0.3, headR * 0.46, 0.25, 0, Math.PI * 2);
+    ctx.fillStyle = "#F5C518";
     ctx.fill();
 
-    // Tiges vertes
-    this._drawStem(ctx, cx1, cy1 - r1, sz);
-    this._drawStem(ctx, cx2, cy2 - r2, sz);
-
-    // Visage sur la cerise principale (la plus grosse)
-    this._drawCeriseFace(ctx, cx1, cy1, r1, player.direction);
-
-    // Tablier de chef (blanc)
-    const aprW = sz * 0.38,
-      aprH = sz * 0.22;
-    ctx.save();
-    ctx.globalAlpha = 0.85;
-    roundRect(ctx, px - aprW / 2, py - sz * 0.02, aprW, aprH, 3);
-    ctx.fillStyle = "#F8F8F8";
+    // Toque de chef blanche
+    const hatW = headR * 1.7;
+    const hatBandH = headR * 0.22;
+    const hatHatH = headR * 0.65;
+    const hatX = headCX - hatW / 2;
+    const hatBandY = headCY - headR * 0.72;
+    const hatHatY = hatBandY - hatHatH;
+    // Bandeau rouge Groupama
+    ctx.fillStyle = "#E30613";
+    ctx.fillRect(hatX, hatBandY, hatW, hatBandH);
+    // Corps de la toque
+    ctx.fillStyle = "#FFFFFF";
+    roundRect(ctx, hatX + hatW * 0.05, hatHatY, hatW * 0.9, hatHatH + 2, 3);
+    ctx.fill();
+    // Bosse du haut
+    ctx.beginPath();
+    ctx.ellipse(headCX, hatHatY + 2, hatW * 0.38, headR * 0.28, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#FFFFFF";
     ctx.fill();
     ctx.strokeStyle = "#DDD";
     ctx.lineWidth = 0.5;
     ctx.stroke();
-    // Cordon tablier
-    ctx.strokeStyle = "#FFF";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(px - aprW / 2, py);
-    ctx.lineTo(px - aprW * 0.7, py - sz * 0.1);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(px + aprW / 2, py);
-    ctx.lineTo(px + aprW * 0.7, py - sz * 0.1);
-    ctx.stroke();
-    ctx.restore();
 
-    // Petites jambes (animation marche)
-    this._drawLegs(
-      ctx,
-      px,
-      py + sz * 0.3,
-      sz,
-      player.walkFrame,
-      player.isMoving,
-    );
-
-    // Items tenus en main (affiché au-dessus)
-    this._drawHeldItems(player, px, py - sz * 0.75, sz);
-
-    ctx.restore();
-  }
-
-  _drawStem(ctx, x, y, sz) {
-    ctx.save();
-    ctx.strokeStyle = "#2E7D32";
-    ctx.lineWidth = sz * 0.05;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.bezierCurveTo(
-      x + sz * 0.08,
-      y - sz * 0.12,
-      x + sz * 0.16,
-      y - sz * 0.12,
-      x + sz * 0.14,
-      y - sz * 0.22,
-    );
-    ctx.stroke();
-
-    // Petite feuille
-    ctx.beginPath();
-    ctx.ellipse(
-      x + sz * 0.16,
-      y - sz * 0.2,
-      sz * 0.08,
-      sz * 0.04,
-      -0.5,
-      0,
-      Math.PI * 2,
-    );
-    ctx.fillStyle = "#388E3C";
-    ctx.fill();
-    ctx.restore();
-  }
-
-  _drawCeriseFace(ctx, cx, cy, r, direction) {
     // Yeux
-    const eyeOffX = direction * r * 0.25;
+    const eyeOffX = player.direction * headR * 0.12;
+    const eyeY = headCY + headR * 0.05;
     ctx.fillStyle = "#FFFFFF";
     ctx.beginPath();
-    ctx.arc(cx + eyeOffX - r * 0.1, cy - r * 0.1, r * 0.18, 0, Math.PI * 2);
+    ctx.ellipse(headCX + eyeOffX - headR * 0.22, eyeY, headR * 0.16, headR * 0.13, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(cx + eyeOffX + r * 0.2, cy - r * 0.1, r * 0.18, 0, Math.PI * 2);
+    ctx.ellipse(headCX + eyeOffX + headR * 0.18, eyeY, headR * 0.16, headR * 0.13, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#3A2000";
+    ctx.beginPath();
+    ctx.arc(headCX + eyeOffX - headR * 0.22, eyeY, headR * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(headCX + eyeOffX + headR * 0.18, eyeY, headR * 0.09, 0, Math.PI * 2);
+    ctx.fill();
+    // Reflet œil
+    ctx.fillStyle = "#FFF";
+    ctx.beginPath();
+    ctx.arc(headCX + eyeOffX - headR * 0.19, eyeY - headR * 0.04, headR * 0.03, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(headCX + eyeOffX + headR * 0.21, eyeY - headR * 0.04, headR * 0.03, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#111";
-    ctx.beginPath();
-    ctx.arc(cx + eyeOffX - r * 0.05, cy - r * 0.1, r * 0.1, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx + eyeOffX + r * 0.24, cy - r * 0.1, r * 0.1, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Joues
+    // Joues roses
     ctx.save();
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = "#FF6B6B";
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#FF8888";
     ctx.beginPath();
-    ctx.arc(cx - r * 0.3, cy + r * 0.05, r * 0.2, 0, Math.PI * 2);
+    ctx.ellipse(headCX - headR * 0.42, eyeY + headR * 0.2, headR * 0.22, headR * 0.13, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(cx + r * 0.3, cy + r * 0.05, r * 0.2, 0, Math.PI * 2);
+    ctx.ellipse(headCX + headR * 0.42, eyeY + headR * 0.2, headR * 0.22, headR * 0.13, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
     // Sourire
-    ctx.strokeStyle = "#8B0000";
-    ctx.lineWidth = r * 0.1;
+    ctx.strokeStyle = "#C05050";
+    ctx.lineWidth = headR * 0.1;
+    ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.arc(cx, cy + r * 0.05, r * 0.3, 0.2, Math.PI - 0.2);
+    ctx.arc(headCX, eyeY + headR * 0.25, headR * 0.28, 0.25, Math.PI - 0.25);
     ctx.stroke();
 
-    // Toque de chef (sur le dessus)
-    const hatX = cx - r * 0.45,
-      hatY = cy - r * 1.05;
-    const hatW = r * 0.9,
-      hatH = r * 0.55;
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(hatX, hatY, hatW, hatH);
-    // Bandeau
-    ctx.fillStyle = "#E30613";
-    ctx.fillRect(hatX, hatY + hatH - r * 0.12, hatW, r * 0.12);
-    // Bosse de la toque
-    ctx.beginPath();
-    ctx.ellipse(cx, hatY - r * 0.1, hatW * 0.45, r * 0.25, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fill();
-  }
+    // Items tenus en main (affiché au-dessus)
+    this._drawHeldItems(player, px, headCY - headR - sz * 0.35, sz);
 
-  _drawLegs(ctx, px, py, sz, walkFrame, isMoving) {
-    const legW = sz * 0.08,
-      legH = sz * 0.15;
-    const offset = isMoving
-      ? Math.sin((walkFrame / 4) * Math.PI * 2) * sz * 0.06
-      : 0;
-
-    ctx.fillStyle = "#E30613";
-    // Jambe gauche
-    ctx.fillRect(px - sz * 0.12, py + offset, legW, legH);
-    // Jambe droite
-    ctx.fillRect(px + sz * 0.04, py - offset, legW, legH);
-
-    // Pieds
-    ctx.fillStyle = "#222";
-    ctx.fillRect(
-      px - sz * 0.14,
-      py + legH - sz * 0.02 + offset,
-      legW + sz * 0.06,
-      sz * 0.06,
-    );
-    ctx.fillRect(
-      px + sz * 0.02,
-      py + legH - sz * 0.02 - offset,
-      legW + sz * 0.06,
-      sz * 0.06,
-    );
+    ctx.restore();
   }
 
   _drawHeldItems(player, cx, topY, sz) {

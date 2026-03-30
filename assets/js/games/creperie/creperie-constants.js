@@ -2,17 +2,22 @@
 
 export const GAME_DURATION = 90; // secondes
 export const MAX_HEARTS = 3;
-export const BILIG_COOK_TIME = 8500; // ms de cuisson
+export const BILIG_COOK_TIME = 5500; // ms de cuisson
 
 // Ratios de mise en page (fraction de la hauteur du canvas)
 export const COUNTER_Y_RATIO = 0.48; // bord supérieur du comptoir
 export const COUNTER_HEIGHT_RATIO = 0.18; // hauteur du comptoir
-export const PLAYER_Y_RATIO = 0.8; // centre Y du joueur (en dessous du comptoir)
+export const PLAYER_Y_RATIO = 0.74; // centre Y du joueur (en dessous du comptoir)
 
 // Joueur
-export const PLAYER_SPEED = 280; // px/sec
+export const PLAYER_SPEED = 560; // px/sec
 export const MAX_HANDS = 3;
-export const PLAYER_SIZE = 44; // px (hauteur du sprite)
+export const PLAYER_SIZE = 92; // px (hauteur du sprite)
+
+// Bonus Assurance G2S
+export const BONUS_DURATION = 15;       // secondes
+export const BONUS_COOK_SPEEDUP = 2.5;  // multiplicateur de vitesse de cuisson
+export const BONUS_AUTO_SPEED_RATIO = 0.85; // vitesse relative du joueur auto
 
 // Types de postes
 export const ST = {
@@ -126,12 +131,12 @@ export const RECIPES = [
 
 // Paliers de difficulté (elapsed en secondes → paramètres)
 export const DIFFICULTY_STEPS = [
-  { at: 0, spawnInterval: 22000, patienceDuration: 32000 },
-  { at: 15, spawnInterval: 18000, patienceDuration: 28000 },
-  { at: 30, spawnInterval: 14000, patienceDuration: 24000 },
-  { at: 45, spawnInterval: 11000, patienceDuration: 20000 },
-  { at: 60, spawnInterval: 9000, patienceDuration: 17000 },
-  { at: 75, spawnInterval: 7000, patienceDuration: 14000 },
+  { at: 0, spawnInterval: 14000, patienceDuration: 32000 },
+  { at: 15, spawnInterval: 11000, patienceDuration: 28000 },
+  { at: 30, spawnInterval: 9000, patienceDuration: 24000 },
+  { at: 45, spawnInterval: 7000, patienceDuration: 20000 },
+  { at: 60, spawnInterval: 5500, patienceDuration: 17000 },
+  { at: 75, spawnInterval: 4500, patienceDuration: 14000 },
 ];
 
 // Positions des tables dans la salle (ratios relatifs à la zone restaurant = haut du canvas)

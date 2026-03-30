@@ -34,7 +34,7 @@ export class Customer {
 
   update(dt) {
     if (this.state === "arriving") {
-      this.arrivalProgress = Math.min(1, this.arrivalProgress + dt / 800);
+      this.arrivalProgress = Math.min(1, this.arrivalProgress + dt / 400);
       if (this.arrivalProgress >= 1) this.state = "seated";
       return;
     }
@@ -61,10 +61,11 @@ export class Customer {
 }
 
 export class CustomerManager {
-  constructor(onGameOver) {
+  constructor(onGameOver, onAngryLeave) {
     this.customers = [];
     this.occupiedTables = new Set(); // indices de tables occupées
     this.onGameOver = onGameOver;
+    this.onAngryLeave = onAngryLeave || null;
     this.unhappyCount = 0;
 
     // Spawn timer
@@ -73,7 +74,7 @@ export class CustomerManager {
     this.patienceDuration = DIFFICULTY_STEPS[0].patienceDuration;
 
     // Spawn immédiat du premier client après 2s
-    this.spawnTimer = -this.spawnInterval + 2000;
+    this.spawnTimer = this.spawnInterval - 2000;
   }
 
   update(dt, elapsed) {
@@ -86,6 +87,7 @@ export class CustomerManager {
       c.update(dt);
       if (c.state === "leaving_angry" && c.isDone) {
         this.unhappyCount++;
+        if (this.onAngryLeave) this.onAngryLeave();
         toRemove.push(c);
         if (this.unhappyCount >= 3) {
           this.onGameOver();

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background -->
+  <rect width="200" height="200" rx="28" fill="#2D2B45"/>
+
+  <!-- White left chevron/X stroke (bottom-left to top-right, left part) -->
+  <polygon points="22,170 62,170 108,100 62,30 22,30 68,100" fill="#FFFFFF"/>
+
+  <!-- Gray triangle (top-right) -->
+  <polygon points="100,30 155,30 155,92" fill="#8A8A9A"/>
+
+  <!-- Orange triangle (bottom-right) -->
+  <polygon points="100,170 155,170 155,108" fill="#E8752A"/>
+</svg>

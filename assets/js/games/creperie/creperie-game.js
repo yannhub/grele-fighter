@@ -7,11 +7,14 @@ import {
   MAX_HANDS,
   MAX_HEARTS,
   STATION_LAYOUT,
+  BONUS_DURATION,
+  BONUS_COOK_SPEEDUP,
 } from "./creperie-constants.js";
 import { CustomerManager } from "./creperie-customers.js";
 import { CreperiePlayer } from "./creperie-player.js";
 import { CreperieRenderer } from "./creperie-renderer.js";
 import { createStations } from "./creperie-stations.js";
+import { AssuranceAutoPlayer } from "./creperie-auto-player.js";
 
 export default class CreperieGame {
   constructor() {
@@ -35,6 +38,12 @@ export default class CreperieGame {
     // Input
     this.keys = { left: false, right: false, space: false };
     this._spaceConsumed = false;
+
+    // Bonus Assurance G2S
+    this.bonusActive = false;
+    this.bonusTimer = 0;     // secondes restantes
+    this.bonusUsed = false;  // une seule utilisation par partie
+    this.autoPlayer = null;
 
     // Sous-systèmes (créés dans startGame)
     this.stations = [];
@@ -80,6 +89,10 @@ export default class CreperieGame {
     this.lastTimestamp = 0;
     this.keys = { left: false, right: false, space: false };
     this._spaceConsumed = false;
+    this.bonusActive = false;
+    this.bonusTimer = 0;
+    this.bonusUsed = false;
+    this.autoPlayer = null;
 
     // S'assurer que le canvas est correctement dimensionné maintenant qu'il est visible
     this.resizeGame();
@@ -87,7 +100,10 @@ export default class CreperieGame {
     // Créer les sous-systèmes
     this.stations = createStations(STATION_LAYOUT);
     this.player = new CreperiePlayer(this.canvas.width / 2, this.canvas.height);
-    this.customerManager = new CustomerManager(() => this._onUnhappyGameOver());
+    this.customerManager = new CustomerManager(
+      () => this._onUnhappyGameOver(),
+      () => { this.heartsLeft = Math.max(0, this.heartsLeft - 1); this._updateDOM(); },
+    );
     this.renderer = new CreperieRenderer(this.ctx);
 
     this._layoutStations();
@@ -143,8 +159,21 @@ export default class CreperieGame {
 
     const elapsed = GAME_DURATION - this.timeLeft;
 
+    // Mise à jour du bonus Assurance G2S
+    const cookMult = this.bonusActive ? BONUS_COOK_SPEEDUP : 1;
+    if (this.bonusActive) {
+      this.bonusTimer -= dt / 1000;
+      if (this.bonusTimer <= 0) {
+        this.bonusActive = false;
+        this.bonusTimer = 0;
+        this.autoPlayer = null;
+      } else if (this.autoPlayer) {
+        this.autoPlayer.update(dt, this.stations, this.customerManager, this);
+      }
+    }
+
     // Mise à jour des sous-systèmes
-    this.stations.forEach((s) => s.update(dt));
+    this.stations.forEach((s) => s.update(dt, cookMult));
     this.player.update(dt, this.keys);
     this.customerManager.update(dt, elapsed);
 
@@ -181,6 +210,8 @@ export default class CreperieGame {
       this.heartsLeft,
       MAX_HEARTS,
       this.deliveryFeedback,
+      this.autoPlayer,
+      this.bonusActive ? this.bonusTimer : null,
     );
 
     // Afficher l'indicateur de station disponible (surimpression)
@@ -216,12 +247,16 @@ export default class CreperieGame {
     const timeStr = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
     const hearts =
       "❤️".repeat(this.heartsLeft) + "🖤".repeat(MAX_HEARTS - this.heartsLeft);
+    const bonusHint = !this.bonusUsed
+      ? ` &nbsp;<span style="color:#E30613;font-weight:bold">[A] 🛡️</span>`
+      : "";
 
     if (this.ui.scoreDisplay) {
       this.ui.scoreDisplay.innerHTML =
         `Score: <span id="current-score">${this.score}</span> &nbsp;` +
         `${hearts} &nbsp;` +
-        `Temps: <span id="timer">${timeStr}</span>`;
+        `Temps: <span id="timer">${timeStr}</span>` +
+        bonusHint;
     }
   }
 
@@ -379,6 +414,16 @@ export default class CreperieGame {
         this.keys.space = true;
         this._spaceConsumed = false; // nouvelle pression
       }
+      e.preventDefault();
+    }
+    if ((e.key === "a" || e.key === "A") && !this.bonusUsed && this.isRunning) {
+      this.bonusUsed = true;
+      this.bonusActive = true;
+      this.bonusTimer = BONUS_DURATION;
+      this.autoPlayer = new AssuranceAutoPlayer(
+        this.canvas.width,
+        this.canvas.height,
+      );
       e.preventDefault();
     }
   }

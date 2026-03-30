@@ -1,4 +1,4 @@
-﻿// ui.js - Gestion de l'interface utilisateur et la navigation entre Ã©crans
+// ui.js - Gestion de l'interface utilisateur et la navigation entre écrans
 
 import {
   CLOUD_DROPS_DEFAULT,
@@ -15,7 +15,7 @@ export default class UI {
     this.gameId = gameId;
     this.leaderboard = new Leaderboard(this, gameId);
 
-    // Ã‰lÃ©ments DOM partagÃ©s
+    // Éléments DOM partagés
     this.welcomeScreen = document.getElementById("welcome-screen");
     this.registerForm = document.getElementById("register-form");
     this.gameCanvas = document.getElementById("game-canvas");
@@ -23,7 +23,7 @@ export default class UI {
     this.currentScoreEl = document.getElementById("current-score");
     this.timerDisplay = document.getElementById("timer");
 
-    // Ã‰lÃ©ments spÃ©cifiques au jeu actif
+    // Éléments spécifiques au jeu actif
     if (gameId === "grele") {
       this.gameInstructions = document.getElementById("game-instructions");
       this.gameOverScreen = document.getElementById("game-over");
@@ -34,7 +34,7 @@ export default class UI {
       this.testModeBtn = document.getElementById("test-mode-btn");
       this.testRecapBtn = document.getElementById("test-recap-btn");
     } else {
-      // CrÃªperie ou autre jeu
+      // Crêperie ou autre jeu
       this.gameInstructions = document.getElementById(
         "game-instructions-creperie",
       );
@@ -45,7 +45,7 @@ export default class UI {
       this.playAgainBtn = document.getElementById("creperie-play-again-btn");
       this.testModeBtn = null;
       this.testRecapBtn = null;
-      // Masquer les boutons de test spÃ©cifiques Ã  grÃªle
+      // Masquer les boutons de test spécifiques à grêle
       const testBtn = document.getElementById("test-mode-btn");
       if (testBtn) testBtn.style.display = "none";
       const testRecapBtn = document.getElementById("test-recap-btn");
@@ -56,20 +56,20 @@ export default class UI {
     this.timeRemaining = GAME_TIME_IN_SECS;
     this.timerInterval = null;
 
-    // Ã‰tat du jeu
+    // État du jeu
     this.playerInfo = {};
     this.gameEndReason = "";
 
-    // Initialiser les valeurs d'interface depuis les constantes (grÃªle uniquement)
+    // Initialiser les valeurs d'interface depuis les constantes (grêle uniquement)
     if (gameId === "grele") {
       this.initializeUIValues();
     }
 
-    // Initialiser les Ã©vÃ©nements
+    // Initialiser les événements
     this.setupEventListeners();
   }
 
-  // Initialise les valeurs de l'interface Ã  partir des constantes (grÃªle)
+  // Initialise les valeurs de l'interface à partir des constantes (grêle)
   initializeUIValues() {
     const hailPointsEl = document.getElementById("hail-points");
     const cloudPointsEl = document.getElementById("cloud-points");
@@ -97,7 +97,7 @@ export default class UI {
       this.timerDisplay.textContent = `${gameTimeInMinutes}:00`;
   }
 
-  // Configuration des Ã©couteurs d'Ã©vÃ©nements
+  // Configuration des écouteurs d'événements
   setupEventListeners() {
     const startBtn = document.getElementById("start-btn");
     if (startBtn) {
@@ -171,7 +171,7 @@ export default class UI {
     });
   }
 
-  // Mode test pour dÃ©marrer rapidement (grÃªle)
+  // Mode test pour démarrer rapidement (grêle)
   startTestMode() {
     this.playerInfo = { nickname: "TesteurG2S", organization: "G2S" };
     this.welcomeScreen.style.display = "none";
@@ -180,7 +180,7 @@ export default class UI {
     this.gameManager.startGame();
   }
 
-  // DÃ©marrer le timer (utilisÃ© par le jeu grÃªle uniquement)
+  // Démarrer le timer (utilisé par le jeu grêle uniquement)
   startTimer() {
     this.timeRemaining = GAME_TIME_IN_SECS;
     this.updateTimer();
@@ -198,7 +198,7 @@ export default class UI {
     }, 1000);
   }
 
-  // Mettre Ã  jour l'affichage du timer (grÃªle â€” utilise this.timeRemaining)
+  // Mettre à jour l'affichage du timer (grêle — utilise this.timeRemaining)
   updateTimer() {
     const minutes = Math.floor(this.timeRemaining / 60);
     const seconds = this.timeRemaining % 60;
@@ -209,7 +209,7 @@ export default class UI {
     }
   }
 
-  // Mettre Ã  jour le timer avec une valeur externe (crÃªperie)
+  // Mettre à jour le timer avec une valeur externe (crêperie)
   setTimerDisplay(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds) % 60;
@@ -218,12 +218,12 @@ export default class UI {
     }
   }
 
-  // Mettre Ã  jour le score affichÃ©
+  // Mettre à jour le score affiché
   updateScore(score) {
     if (this.currentScoreEl) this.currentScoreEl.textContent = score;
   }
 
-  // Afficher l'Ã©cran de fin de jeu (grÃªle)
+  // Afficher l'écran de fin de jeu (grêle)
   showGameOver(
     score,
     hailsDestroyed,
@@ -253,19 +253,19 @@ export default class UI {
 
     const gameOverTitle = document.querySelector("#game-over h2");
     if (this.gameEndReason === "time") {
-      gameOverTitle.textContent = "Temps Ã©coulÃ©!";
+      gameOverTitle.textContent = "Temps écoulé!";
     } else if (this.gameEndReason === "corn") {
-      gameOverTitle.textContent = "Tous vos maÃ¯s sont dÃ©truits!";
+      gameOverTitle.textContent = "Tous vos maïs sont détruits!";
     }
 
     this.addPowerupsRecap(collectedPowerups);
 
-    // Note: le score est sauvegardÃ© par game.js (this.leaderboard.saveScore)
+    // Note: le score est sauvegardé par game.js (this.leaderboard.saveScore)
 
     return finalScore;
   }
 
-  // Afficher l'Ã©cran de fin de jeu (crÃªperie)
+  // Afficher l'écran de fin de jeu (crêperie)
   showCreperieGameOver(stats) {
     // stats = { score, crepesServed, heartsLost, reason }
     clearInterval(this.timerInterval);
@@ -283,9 +283,9 @@ export default class UI {
     const title = document.getElementById("creperie-game-over-title");
     if (title) {
       if (stats.reason === "time") {
-        title.textContent = "â±ï¸ Temps Ã©coulÃ© !";
+        title.textContent = "⏱️ Temps écoulé !";
       } else {
-        title.textContent = "ðŸ’” Trop de clients mÃ©contents !";
+        title.textContent = "💔 Trop de clients mécontents !";
       }
     }
 
@@ -299,7 +299,7 @@ export default class UI {
       breakdown.innerHTML = stats.recipeBreakdown
         .map(
           (r) =>
-            `<p>${r.label} Ã— ${r.count} = <strong>${r.points} pts</strong></p>`,
+            `<p>${r.label} × ${r.count} = <strong>${r.points} pts</strong></p>`,
         )
         .join("");
     }
@@ -308,7 +308,7 @@ export default class UI {
     this.leaderboard.saveScore(this.playerInfo, stats.score);
   }
 
-  // Ajouter le rÃ©capitulatif des bonus/malus (grÃªle)
+  // Ajouter le récapitulatif des bonus/malus (grêle)
   addPowerupsRecap(collectedPowerups) {
     if (collectedPowerups.length === 0) return;
 
@@ -387,7 +387,7 @@ export default class UI {
     clearInterval(this.timerInterval);
   }
 
-  // Test de l'Ã©cran de rÃ©capitulation (grÃªle)
+  // Test de l'écran de récapitulation (grêle)
   showTestRecap() {
     if (!this.playerInfo.nickname) {
       this.playerInfo = { nickname: "TesteurRecap", organization: "G2S" };

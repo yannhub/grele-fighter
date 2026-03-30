@@ -44,9 +44,9 @@ export class Station {
     this.flashColor = null;
   }
 
-  update(dt) {
+  update(dt, cookMultiplier = 1) {
     if (this.type === ST.BILIG && this.biligState === BILIG_STATE.COOKING) {
-      this.cookTimer += dt;
+      this.cookTimer += dt * cookMultiplier;
       this.cookProgress = Math.min(1, this.cookTimer / BILIG_COOK_TIME);
       if (this.cookTimer >= BILIG_COOK_TIME) {
         this.biligState = BILIG_STATE.READY;
