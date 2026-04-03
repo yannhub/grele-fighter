@@ -98,27 +98,21 @@ export class Station {
       }
 
       case BILIG_STATE.COOKING: {
-        // Déposer des ingrédients sur le bilig pendant la cuisson
-        const toppings = playerHands.filter((i) => TOPPING_TYPES.has(i.type));
-        if (
-          toppings.length > 0 &&
-          this.biligToppings.length + toppings.length <= 3
-        ) {
-          this.biligToppings.push(...toppings.map((t) => t.type));
-          return { action: "deposit_toppings", toppingItems: toppings };
+        // Déposer UN ingrédient à la fois sur le bilig pendant la cuisson
+        const topping = playerHands.find((i) => TOPPING_TYPES.has(i.type));
+        if (topping && this.biligToppings.length < 3) {
+          this.biligToppings.push(topping.type);
+          return { action: "deposit_toppings", toppingItems: [topping] };
         }
         return { action: "none" }; // encore en cuisson
       }
 
       case BILIG_STATE.READY: {
-        // Déposer d'autres ingrédients avant de récupérer
-        const toppings = playerHands.filter((i) => TOPPING_TYPES.has(i.type));
-        if (
-          toppings.length > 0 &&
-          this.biligToppings.length + toppings.length <= 3
-        ) {
-          this.biligToppings.push(...toppings.map((t) => t.type));
-          return { action: "deposit_toppings", toppingItems: toppings };
+        // Déposer UN ingrédient à la fois avant de récupérer
+        const topping = playerHands.find((i) => TOPPING_TYPES.has(i.type));
+        if (topping && this.biligToppings.length < 3) {
+          this.biligToppings.push(topping.type);
+          return { action: "deposit_toppings", toppingItems: [topping] };
         }
         // Ramasser la crêpe (avec ou sans ingrédients)
         if (playerHands.length >= 3) return { action: "none" }; // mains pleines
