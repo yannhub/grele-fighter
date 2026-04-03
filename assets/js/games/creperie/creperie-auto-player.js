@@ -1,11 +1,11 @@
 // creperie-auto-player.js — Joueur automatique du bonus "Assurance G2S"
 
 import {
+  BONUS_AUTO_SPEED_RATIO,
   IT,
-  ST,
   PLAYER_SPEED,
   PLAYER_Y_RATIO,
-  BONUS_AUTO_SPEED_RATIO,
+  ST,
 } from "./creperie-constants.js";
 import { BILIG_STATE } from "./creperie-stations.js";
 
@@ -24,14 +24,14 @@ export class AssuranceAutoPlayer {
     this.y = canvasHeight * PLAYER_Y_RATIO;
     this.hands = [];
     this.speed = PLAYER_SPEED * BONUS_AUTO_SPEED_RATIO;
-    this.size = 48;
+    this.size = 60;
     this.direction = 1;
     this.isMoving = false;
     this.walkFrame = 0;
 
     // State
     this.targetStation = null; // station to move toward
-    this.myBilig = null;       // bilig currently claimed
+    this.myBilig = null; // bilig currently claimed
     this.pendingToppings = []; // toppings still to collect for current recipe
     this.interactCooldown = 0; // ms before next interaction attempt
   }
@@ -57,7 +57,10 @@ export class AssuranceAutoPlayer {
 
   // ── Mouvement ────────────────────────────────────────────────────────────────
   _move(dt) {
-    if (!this.targetStation) { this.isMoving = false; return false; }
+    if (!this.targetStation) {
+      this.isMoving = false;
+      return false;
+    }
     const tx = this.targetStation.x + this.targetStation.w / 2;
     const dx = tx - this.x;
     if (Math.abs(dx) < 4) {
@@ -65,7 +68,8 @@ export class AssuranceAutoPlayer {
       this.x = tx;
       return true;
     }
-    const step = Math.sign(dx) * Math.min(Math.abs(dx), this.speed * dt / 1000);
+    const step =
+      Math.sign(dx) * Math.min(Math.abs(dx), (this.speed * dt) / 1000);
     this.x += step;
     this.direction = Math.sign(dx);
     this.isMoving = true;
@@ -127,6 +131,12 @@ export class AssuranceAutoPlayer {
           const fy = s.y - 20;
           game._showDeliveryFeedback(`+${pts} pts 🛡️`, "#E30613", fx, fy);
           game.renderer.addParticles(fx, fy, "#E30613", 12);
+          // Serveur NPC livre la crêpe
+          if (game.waiter) {
+            game.waiter.addDelivery(match, result.crepe);
+          } else {
+            match.state = "leaving_happy";
+          }
         } else {
           s.rejectDelivery();
           // Récupère la crêpe pour la jeter
@@ -156,7 +166,10 @@ export class AssuranceAutoPlayer {
     // Priorité 1 : livrer la crêpe prête
     if (this.hands.some((h) => h.type === IT.ASSEMBLED_CREPE)) {
       const delivery = stations.find((s) => s.type === ST.DELIVERY);
-      if (delivery) { this.targetStation = delivery; return; }
+      if (delivery) {
+        this.targetStation = delivery;
+        return;
+      }
     }
 
     // Priorité 2 : mon bilig est PRÊT → aller récupérer
@@ -184,7 +197,10 @@ export class AssuranceAutoPlayer {
     ) {
       const nextTopping = this.pendingToppings[0];
       const toppingStation = stations.find((s) => s.type === nextTopping);
-      if (toppingStation) { this.targetStation = toppingStation; return; }
+      if (toppingStation) {
+        this.targetStation = toppingStation;
+        return;
+      }
       // ingrédient introuvable → on skip
       this.pendingToppings.shift();
       return;
@@ -215,7 +231,10 @@ export class AssuranceAutoPlayer {
     const seated = customerManager.customers.filter(
       (c) => c.state === "seated",
     );
-    if (seated.length === 0) { this.interactCooldown = 400; return; }
+    if (seated.length === 0) {
+      this.interactCooldown = 400;
+      return;
+    }
 
     seated.sort((a, b) => a.patienceRemaining - b.patienceRemaining);
     const target = seated[0];

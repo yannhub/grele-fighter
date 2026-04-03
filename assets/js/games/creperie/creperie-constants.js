@@ -5,18 +5,18 @@ export const MAX_HEARTS = 3;
 export const BILIG_COOK_TIME = 5500; // ms de cuisson
 
 // Ratios de mise en page (fraction de la hauteur du canvas)
-export const COUNTER_Y_RATIO = 0.48; // bord supérieur du comptoir
-export const COUNTER_HEIGHT_RATIO = 0.18; // hauteur du comptoir
-export const PLAYER_Y_RATIO = 0.74; // centre Y du joueur (en dessous du comptoir)
+export const COUNTER_Y_RATIO = 0.55; // bord supérieur du comptoir
+export const COUNTER_HEIGHT_RATIO = 0.15; // hauteur du comptoir
+export const PLAYER_Y_RATIO = 0.82; // centre Y du joueur (en dessous du comptoir)
 
 // Joueur
 export const PLAYER_SPEED = 560; // px/sec
 export const MAX_HANDS = 3;
-export const PLAYER_SIZE = 92; // px (hauteur du sprite)
+export const PLAYER_SIZE = 110; // px (hauteur du sprite)
 
 // Bonus Assurance G2S
-export const BONUS_DURATION = 15;       // secondes
-export const BONUS_COOK_SPEEDUP = 2.5;  // multiplicateur de vitesse de cuisson
+export const BONUS_DURATION = 15; // secondes
+export const BONUS_COOK_SPEEDUP = 2.5; // multiplicateur de vitesse de cuisson
 export const BONUS_AUTO_SPEED_RATIO = 0.85; // vitesse relative du joueur auto
 
 // Types de postes
@@ -130,22 +130,28 @@ export const RECIPES = [
 ];
 
 // Paliers de difficulté (elapsed en secondes → paramètres)
+// patienceDuration augmentée pour compenser le temps de marche du serveur
 export const DIFFICULTY_STEPS = [
-  { at: 0, spawnInterval: 14000, patienceDuration: 32000 },
-  { at: 15, spawnInterval: 11000, patienceDuration: 28000 },
-  { at: 30, spawnInterval: 9000, patienceDuration: 24000 },
-  { at: 45, spawnInterval: 7000, patienceDuration: 20000 },
-  { at: 60, spawnInterval: 5500, patienceDuration: 17000 },
-  { at: 75, spawnInterval: 4500, patienceDuration: 14000 },
+  { at: 0, spawnInterval: 14000, patienceDuration: 36000 },
+  { at: 15, spawnInterval: 11000, patienceDuration: 32000 },
+  { at: 30, spawnInterval: 9000, patienceDuration: 28000 },
+  { at: 45, spawnInterval: 7000, patienceDuration: 24000 },
+  { at: 60, spawnInterval: 5500, patienceDuration: 20000 },
+  { at: 75, spawnInterval: 4500, patienceDuration: 17000 },
 ];
 
 // Positions des tables dans la salle (ratios relatifs à la zone restaurant = haut du canvas)
+// 5 tables sur 2 rangées staggerées (style Overcooked)
 export const TABLE_POSITIONS = [
-  { xRatio: 0.12, yRatio: 0.22 },
-  { xRatio: 0.35, yRatio: 0.22 },
-  { xRatio: 0.58, yRatio: 0.22 },
-  { xRatio: 0.8, yRatio: 0.22 },
+  { xRatio: 0.15, yRatio: 0.2 }, // rangée du fond, gauche
+  { xRatio: 0.5, yRatio: 0.2 }, // rangée du fond, centre
+  { xRatio: 0.85, yRatio: 0.2 }, // rangée du fond, droite
+  { xRatio: 0.32, yRatio: 0.58 }, // rangée devant, gauche
+  { xRatio: 0.68, yRatio: 0.58 }, // rangée devant, droite
 ];
+
+// Vitesse du serveur NPC
+export const WAITER_SPEED = 380; // px/sec
 
 // Couleurs des items
 export const ITEM_COLORS = {

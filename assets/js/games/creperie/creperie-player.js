@@ -1,6 +1,10 @@
 // creperie-player.js — Joueur (Cerise) avec déplacement horizontal
 
-import { PLAYER_SIZE, PLAYER_SPEED } from "./creperie-constants.js";
+import {
+  PLAYER_SIZE,
+  PLAYER_SPEED,
+  PLAYER_Y_RATIO,
+} from "./creperie-constants.js";
 
 const WALK_FRAME_COUNT = 4;
 const WALK_FRAME_DURATION = 120; // ms par frame
@@ -8,7 +12,7 @@ const WALK_FRAME_DURATION = 120; // ms par frame
 export class CreperiePlayer {
   constructor(startX, canvasHeight) {
     this.x = startX;
-    this.y = canvasHeight * 0.8;
+    this.y = canvasHeight * PLAYER_Y_RATIO;
     this.size = PLAYER_SIZE;
     this.minX = 20;
     this.maxX = 800 - 20;
@@ -31,7 +35,7 @@ export class CreperiePlayer {
 
   onResize(canvasWidth, canvasHeight) {
     this.maxX = canvasWidth - 20;
-    this.y = canvasHeight * 0.8;
+    this.y = canvasHeight * PLAYER_Y_RATIO;
     // Reclamper x
     this.x = Math.max(this.minX, Math.min(this.maxX, this.x));
   }

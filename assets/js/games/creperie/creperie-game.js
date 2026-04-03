@@ -1,20 +1,21 @@
 // creperie-game.js — Coordinateur principal du jeu Crêperie
 
+import { AssuranceAutoPlayer } from "./creperie-auto-player.js";
 import {
+  BONUS_COOK_SPEEDUP,
+  BONUS_DURATION,
   COUNTER_HEIGHT_RATIO,
   COUNTER_Y_RATIO,
   GAME_DURATION,
   MAX_HANDS,
   MAX_HEARTS,
   STATION_LAYOUT,
-  BONUS_DURATION,
-  BONUS_COOK_SPEEDUP,
 } from "./creperie-constants.js";
 import { CustomerManager } from "./creperie-customers.js";
 import { CreperiePlayer } from "./creperie-player.js";
 import { CreperieRenderer } from "./creperie-renderer.js";
 import { createStations } from "./creperie-stations.js";
-import { AssuranceAutoPlayer } from "./creperie-auto-player.js";
+import { CreperieWaiter } from "./creperie-waiter.js";
 
 export default class CreperieGame {
   constructor() {
@@ -41,9 +42,12 @@ export default class CreperieGame {
 
     // Bonus Assurance G2S
     this.bonusActive = false;
-    this.bonusTimer = 0;     // secondes restantes
-    this.bonusUsed = false;  // une seule utilisation par partie
+    this.bonusTimer = 0; // secondes restantes
+    this.bonusUsed = false; // une seule utilisation par partie
     this.autoPlayer = null;
+
+    // Serveur NPC
+    this.waiter = null;
 
     // Sous-systèmes (créés dans startGame)
     this.stations = [];
@@ -75,6 +79,8 @@ export default class CreperieGame {
     if (this.player)
       this.player.onResize(this.canvas.width, this.canvas.height);
     if (this.renderer) this.renderer.onResize();
+    if (this.waiter)
+      this.waiter.onResize(this.canvas.width, this.canvas.height);
   }
 
   startGame() {
@@ -93,6 +99,7 @@ export default class CreperieGame {
     this.bonusTimer = 0;
     this.bonusUsed = false;
     this.autoPlayer = null;
+    this.waiter = null;
 
     // S'assurer que le canvas est correctement dimensionné maintenant qu'il est visible
     this.resizeGame();
@@ -102,9 +109,13 @@ export default class CreperieGame {
     this.player = new CreperiePlayer(this.canvas.width / 2, this.canvas.height);
     this.customerManager = new CustomerManager(
       () => this._onUnhappyGameOver(),
-      () => { this.heartsLeft = Math.max(0, this.heartsLeft - 1); this._updateDOM(); },
+      () => {
+        this.heartsLeft = Math.max(0, this.heartsLeft - 1);
+        this._updateDOM();
+      },
     );
     this.renderer = new CreperieRenderer(this.ctx);
+    this.waiter = new CreperieWaiter(this.canvas.width, this.canvas.height);
 
     this._layoutStations();
     this.player.onResize(this.canvas.width, this.canvas.height);
@@ -130,7 +141,7 @@ export default class CreperieGame {
     const counterH = H * COUNTER_HEIGHT_RATIO;
 
     // Largeur d'un poste : ~8% de la largeur du canvas (min 50px)
-    const stationW = Math.max(50, W * 0.078);
+    const stationW = Math.max(58, W * 0.087);
     const stationH = counterH * 0.85;
 
     this.stations.forEach((s) => {
@@ -177,6 +188,11 @@ export default class CreperieGame {
     this.player.update(dt, this.keys);
     this.customerManager.update(dt, elapsed);
 
+    // Mise à jour du serveur NPC
+    if (this.waiter) {
+      this.waiter.update(dt, this.canvas.width, this.canvas.height);
+    }
+
     // Détecter la station active (chevauchement horizontal avec Cerise)
     this.player.currentStation = this._detectStation();
 
@@ -212,6 +228,7 @@ export default class CreperieGame {
       this.deliveryFeedback,
       this.autoPlayer,
       this.bonusActive ? this.bonusTimer : null,
+      this.waiter,
     );
 
     // Afficher l'indicateur de station disponible (surimpression)
@@ -227,16 +244,41 @@ export default class CreperieGame {
     const cx = s.x + s.w / 2;
     const counterY = H * COUNTER_Y_RATIO;
 
-    ctx.save();
-    ctx.font = "bold 11px Arial";
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-    ctx.strokeStyle = "rgba(0,0,0,0.6)";
-    ctx.lineWidth = 3;
+    // Animated badge
+    const t = Date.now();
+    const bob = Math.sin(t / 400) * 2;
     const hint = "[ ESPACE ]";
-    ctx.strokeText(hint, cx, counterY - 4);
-    ctx.fillText(hint, cx, counterY - 4);
+    ctx.save();
+    ctx.font = "bold 12px Arial";
+    const tw = ctx.measureText(hint).width;
+    const bw = tw + 16,
+      bh = 22;
+    const bx = cx - bw / 2,
+      by = counterY - 8 + bob - bh;
+
+    // Badge background
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.beginPath();
+    ctx.moveTo(bx + 6, by);
+    ctx.lineTo(bx + bw - 6, by);
+    ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + 6);
+    ctx.lineTo(bx + bw, by + bh - 6);
+    ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - 6, by + bh);
+    ctx.lineTo(bx + 6, by + bh);
+    ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - 6);
+    ctx.lineTo(bx, by + 6);
+    ctx.quadraticCurveTo(bx, by, bx + 6, by);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Text
+    ctx.fillStyle = "#333";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(hint, cx, by + bh / 2);
     ctx.restore();
   }
 
@@ -326,6 +368,14 @@ export default class CreperieGame {
           const fy = station.y - 20;
           this._showDeliveryFeedback(`+${pts} pts 🎉`, "#2ECC71", fx, fy);
           this.renderer.addParticles(fx, fy, "#FFD700", 10);
+
+          // Le serveur NPC livre la crêpe à la table du client
+          if (this.waiter) {
+            this.waiter.addDelivery(match, result.crepe);
+          } else {
+            // Fallback si pas de serveur : le client part directement
+            match.state = "leaving_happy";
+          }
         } else {
           station.rejectDelivery();
           const fx = station.x + station.w / 2;

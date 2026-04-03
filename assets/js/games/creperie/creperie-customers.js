@@ -15,7 +15,7 @@ export class Customer {
     this.recipe = recipe;
     this.maxPatience = maxPatience;
     this.patienceRemaining = maxPatience;
-    this.state = "arriving"; // "arriving" | "seated" | "leaving_happy" | "leaving_angry"
+    this.state = "arriving"; // "arriving" | "seated" | "served" | "leaving_happy" | "leaving_angry"
 
     // Animation d'arrivée (évolue de 0→1)
     this.arrivalProgress = 0;
@@ -46,6 +46,9 @@ export class Customer {
       }
       return;
     }
+
+    // Served: patience is frozen, waiting for waiter to deliver
+    if (this.state === "served") return;
 
     if (this.state === "leaving_happy" || this.state === "leaving_angry") {
       this.leavingTimer += dt;
@@ -162,7 +165,7 @@ export class CustomerManager {
       if (c.state !== "seated") continue;
       const recipeKey = [...c.recipe.toppings].sort().join(",");
       if (recipeKey === key) {
-        c.state = "leaving_happy";
+        c.state = "served";
         return c;
       }
     }
