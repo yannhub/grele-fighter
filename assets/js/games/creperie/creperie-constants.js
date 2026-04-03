@@ -132,12 +132,12 @@ export const RECIPES = [
 // Paliers de difficulté (elapsed en secondes → paramètres)
 // patienceDuration augmentée pour compenser le temps de marche du serveur
 export const DIFFICULTY_STEPS = [
-  { at: 0, spawnInterval: 14000, patienceDuration: 36000 },
-  { at: 15, spawnInterval: 11000, patienceDuration: 32000 },
-  { at: 30, spawnInterval: 9000, patienceDuration: 28000 },
-  { at: 45, spawnInterval: 7000, patienceDuration: 24000 },
-  { at: 60, spawnInterval: 5500, patienceDuration: 20000 },
-  { at: 75, spawnInterval: 4500, patienceDuration: 17000 },
+  { at: 0, spawnInterval: 14000, patienceDuration: 55000 },
+  { at: 15, spawnInterval: 11000, patienceDuration: 48000 },
+  { at: 30, spawnInterval: 9000, patienceDuration: 40000 },
+  { at: 45, spawnInterval: 7000, patienceDuration: 32000 },
+  { at: 60, spawnInterval: 5500, patienceDuration: 26000 },
+  { at: 75, spawnInterval: 4500, patienceDuration: 20000 },
 ];
 
 // Positions des tables dans la salle (ratios relatifs à la zone restaurant = haut du canvas)

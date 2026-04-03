@@ -229,7 +229,7 @@ export function drawCustomerBody(ctx, customer, time) {
 export function drawSpeechBubble(ctx, customer, time) {
   if (customer.state !== "seated" && customer.state !== "served") return;
   const bw = 130,
-    bh = 78;
+    bh = 68;
   const bx = -bw / 2,
     by = 58;
 
@@ -283,14 +283,61 @@ export function drawSpeechBubble(ctx, customer, time) {
   ctx.textBaseline = "middle";
   ctx.fillText(recipe.label, bx + bw / 2, by + 14);
 
-  // Recipe icons in little circles
+  // Patience timer — cerⶄle flottant juste au-dessus de la bulle
+  const pf = customer.patienceFraction;
+  const timerR = 12;
+  const timerX = 0; // centré sur le client
+  const timerY = by - timerR - 8; // au-dessus de la flèche
+  const tColor = pf > 0.5 ? "#2ECC71" : pf > 0.25 ? "#F39C12" : "#E74C3C";
+
+  // Anneau de fond
+  ctx.beginPath();
+  ctx.arc(timerX, timerY, timerR, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(0,0,0,0.12)";
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(timerX, timerY, timerR, 0, Math.PI * 2);
+  ctx.strokeStyle = "#EEE";
+  ctx.lineWidth = 4.5;
+  ctx.stroke();
+
+  // Arc rempli
+  ctx.beginPath();
+  ctx.arc(
+    timerX,
+    timerY,
+    timerR,
+    -Math.PI / 2,
+    -Math.PI / 2 + Math.PI * 2 * pf,
+  );
+  ctx.strokeStyle = tColor;
+  ctx.lineWidth = 4.5;
+  ctx.lineCap = "round";
+  ctx.stroke();
+  ctx.lineCap = "butt";
+
+  // Pulsation quand le temps est presque écoulé
+  if (pf < 0.25) {
+    const pulse = Math.abs(Math.sin(time / 250));
+    ctx.save();
+    ctx.globalAlpha = pulse * 0.4;
+    ctx.beginPath();
+    ctx.arc(timerX, timerY, timerR + 3, 0, Math.PI * 2);
+    ctx.strokeStyle = "#E74C3C";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Icônes de recette
   const icons = recipe.toppings.map((t) => ITEM_ICONS[t] || "?");
   const iconSize = 28;
   const totalW = icons.length * (iconSize + 6) - 6;
   const startX = bx + (bw - totalW) / 2;
   icons.forEach((icon, i) => {
     const ix = startX + i * (iconSize + 6) + iconSize / 2;
-    const iy = by + bh / 2 + 10;
+    const iy = by + bh / 2 + 6;
     // Circle background
     ctx.beginPath();
     ctx.arc(ix, iy, iconSize / 2 + 2, 0, Math.PI * 2);
@@ -305,60 +352,4 @@ export function drawSpeechBubble(ctx, customer, time) {
     ctx.textBaseline = "middle";
     ctx.fillText(icon, ix, iy);
   });
-
-  // Patience timer (larger, gradient-filled arc)
-  const pf = customer.patienceFraction;
-  const timerR = 14;
-  const timerX = bx + bw - timerR - 6;
-  const timerY = by + timerR + 6;
-  const tColor = pf > 0.5 ? "#2ECC71" : pf > 0.25 ? "#F39C12" : "#E74C3C";
-
-  // Background ring
-  ctx.beginPath();
-  ctx.arc(timerX, timerY, timerR, 0, Math.PI * 2);
-  ctx.strokeStyle = "#EEE";
-  ctx.lineWidth = 5;
-  ctx.stroke();
-
-  // Filled arc
-  ctx.beginPath();
-  ctx.arc(
-    timerX,
-    timerY,
-    timerR,
-    -Math.PI / 2,
-    -Math.PI / 2 + Math.PI * 2 * pf,
-  );
-  ctx.strokeStyle = tColor;
-  ctx.lineWidth = 5;
-  ctx.lineCap = "round";
-  ctx.stroke();
-  ctx.lineCap = "butt";
-
-  // Pulsing when low
-  if (pf < 0.25) {
-    const pulse = Math.abs(Math.sin(time / 250));
-    ctx.save();
-    ctx.globalAlpha = pulse * 0.4;
-    ctx.beginPath();
-    ctx.arc(timerX, timerY, timerR + 3, 0, Math.PI * 2);
-    ctx.strokeStyle = "#E74C3C";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  // Topping count badge
-  ctx.beginPath();
-  ctx.arc(bx + timerR + 6, by + timerR + 6, 9, 0, Math.PI * 2);
-  ctx.fillStyle = recipe.color || "#888";
-  ctx.fill();
-  ctx.strokeStyle = "#FFF";
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.font = "bold 10px Arial";
-  ctx.fillStyle = "#FFF";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(`${recipe.toppings.length}`, bx + timerR + 6, by + timerR + 6);
 }

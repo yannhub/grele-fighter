@@ -8,6 +8,7 @@ import {
   roundRect,
   vGrad,
 } from "./renderer-colors.js";
+import { drawAssembledCrepe } from "./renderer-crepe.js";
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  PLAYER (Cerise) — Cel-shading outlines, gradients, enriched visuals
@@ -681,23 +682,16 @@ export function drawHeldItems(ctx, player, cx, topY, sz) {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    if (item.type === IT.ASSEMBLED_CREPE && item.toppings?.length > 0) {
-      ctx.font = `${itemSize * 0.55}px serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(ITEM_ICONS.ASSEMBLED_CREPE, ix, iy);
-      const tSize = itemSize * 0.3;
-      item.toppings.slice(0, 3).forEach((topping, ti) => {
-        const ta =
-          (ti / Math.max(1, item.toppings.length)) * Math.PI * 2 - Math.PI / 2;
-        const tr = itemSize * 0.28;
-        ctx.font = `${tSize}px serif`;
-        ctx.fillText(
-          ITEM_ICONS[topping] || "?",
-          ix + Math.cos(ta) * tr,
-          iy + Math.sin(ta) * tr,
-        );
-      });
+    if (item.type === IT.ASSEMBLED_CREPE) {
+      // Beautiful drawn crepe with toppings
+      drawAssembledCrepe(
+        ctx,
+        ix,
+        iy,
+        itemSize * 0.44,
+        item.toppings ?? [],
+        itemSize * 0.42,
+      );
     } else {
       ctx.font = `${itemSize * 0.62}px serif`;
       ctx.textAlign = "center";

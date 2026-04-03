@@ -3,6 +3,7 @@
 import { ITEM_ICONS, ST } from "../creperie-constants.js";
 import { BILIG_STATE } from "../creperie-stations.js";
 import { COL, hGrad, lerpColor, roundRect, vGrad } from "./renderer-colors.js";
+import { drawAssembledCrepe } from "./renderer-crepe.js";
 
 export function drawStations(ctx, stations, counterY, counterH, time) {
   stations.forEach((s) => drawStation(ctx, s, counterY, counterH, time));
@@ -136,55 +137,14 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
 
   // Crêpe on bilig (READY state)
   if (s.biligState === BILIG_STATE.READY) {
-    ctx.beginPath();
-    const cr = r - 7;
-    const segments = 12;
-    for (let i = 0; i <= segments; i++) {
-      const angle = (i / segments) * Math.PI * 2;
-      const wave = Math.sin(angle * 5 + 1.5) * 2.5;
-      const px2 = cx + Math.cos(angle) * (cr + wave);
-      const py2 = cy + Math.sin(angle) * (cr * 0.8 + wave);
-      if (i === 0) ctx.moveTo(px2, py2);
-      else ctx.lineTo(px2, py2);
-    }
-    ctx.closePath();
-    const crepeGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, cr);
-    crepeGrad.addColorStop(0, "#E8C870");
-    crepeGrad.addColorStop(1, "#C89838");
-    ctx.fillStyle = crepeGrad;
-    ctx.fill();
-    ctx.strokeStyle = "#A07828";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Brown spots (cooked texture)
-    ctx.fillStyle = "rgba(120,80,30,0.25)";
-    for (let i = 0; i < 7; i++) {
-      const ang = (i / 7) * Math.PI * 2 + 0.3;
-      const pr2 = (cr - 6) * 0.55;
-      ctx.beginPath();
-      ctx.arc(
-        cx + Math.cos(ang) * pr2,
-        cy + Math.sin(ang) * pr2 * 0.8,
-        2.5,
-        0,
-        Math.PI * 2,
-      );
-      ctx.fill();
-    }
-
-    // Topping icons on crepe
-    s.biligToppings.forEach((tt, i) => {
-      const angle = (i / 3) * Math.PI * 2 - Math.PI / 2;
-      ctx.font = `${Math.max(12, sw * 0.24)}px serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(
-        ITEM_ICONS[tt] || "?",
-        cx + Math.cos(angle) * (r - 14),
-        cy + Math.sin(angle) * (r - 14),
-      );
-    });
+    drawAssembledCrepe(
+      ctx,
+      cx,
+      cy,
+      r - 7,
+      s.biligToppings,
+      Math.max(16, sw * 0.3),
+    );
 
     // Pulsing glow
     const glow = Math.sin(t / 300) * 0.3 + 0.5;
@@ -278,70 +238,154 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
 }
 
 export function drawBatterStation(ctx, s, sx, sy, sw, sh) {
-  const cx = sx + sw / 2,
-    cy = sy + sh * 0.42;
+  const cx = sx + sw / 2;
+  const bowlW = sw - 6;
+  const bowlH = sh * 0.53;
+  const bowlY = sy + sh * 0.26;
+  const innerRX = bowlW / 2 - 5;
+  const innerRY = bowlH * 0.36;
+  const innerCY = bowlY + bowlH * 0.5;
 
-  // Bidon (trapézoïdal, gradient + reflet)
+  // ── Corps extérieur du bol (céramique bleue) ────────────────────────────────
   ctx.beginPath();
-  ctx.moveTo(sx + 8, sy + 6);
-  ctx.lineTo(sx + sw - 8, sy + 6);
-  ctx.lineTo(sx + sw - 5, sy + sh * 0.72);
-  ctx.lineTo(sx + 5, sy + sh * 0.72);
+  ctx.moveTo(sx + 3, bowlY);
+  ctx.quadraticCurveTo(sx + 1, bowlY + bowlH, cx, bowlY + bowlH + 4);
+  ctx.quadraticCurveTo(sx + sw - 1, bowlY + bowlH, sx + sw - 3, bowlY);
+  ctx.lineTo(sx + 3, bowlY);
   ctx.closePath();
-  const bidonGrad = vGrad(ctx, sy + 6, sy + sh * 0.72, "#D8C890", "#A89060");
-  ctx.fillStyle = bidonGrad;
+  const bowlG = vGrad(ctx, bowlY, bowlY + bowlH + 4, "#5B9BD5", "#2C5F90");
+  ctx.fillStyle = bowlG;
   ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
+  ctx.strokeStyle = "#1A4070";
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Specular reflection on left side
+  // ── Pâte à crêpe visible à l'intérieur du bol ──────────────────────────────
+  // On clip sur l'ellipse intérieure pour que la pâte reste dans le bol
   ctx.save();
-  ctx.globalAlpha = 0.15;
-  ctx.fillStyle = "#FFF";
-  ctx.fillRect(sx + 9, sy + 10, 4, sh * 0.55);
+  ctx.beginPath();
+  ctx.ellipse(cx, innerCY, innerRX, innerRY, 0, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Fond sombre (fond du bol)
+  ctx.fillStyle = "#3B7AB0";
+  ctx.fillRect(cx - innerRX, innerCY - innerRY, innerRX * 2, innerRY * 2);
+
+  // Remplissage pâte (beige doré, couvre les 80% inférieurs)
+  const batterTop = innerCY - innerRY * 0.62;
+  const batterG = vGrad(
+    ctx,
+    batterTop,
+    innerCY + innerRY,
+    "#F5E5A0",
+    "#C8A43A",
+  );
+  ctx.fillStyle = batterG;
+  ctx.fillRect(cx - innerRX, batterTop, innerRX * 2, innerRY * 2);
+
+  // Surface de la pâte : ellipse brillante simulant le niveau liquide
+  ctx.beginPath();
+  ctx.ellipse(
+    cx,
+    batterTop + 3,
+    innerRX * 0.92,
+    innerRY * 0.18,
+    0,
+    0,
+    Math.PI * 2,
+  );
+  const surfG = ctx.createRadialGradient(
+    cx - innerRX * 0.2,
+    batterTop,
+    1,
+    cx,
+    batterTop + 2,
+    innerRX * 0.9,
+  );
+  surfG.addColorStop(0, "#FFF8CC");
+  surfG.addColorStop(0.6, "#EDD060");
+  surfG.addColorStop(1, "#C8A43A");
+  ctx.fillStyle = surfG;
+  ctx.fill();
+
+  // Petite brillance sur la surface (reflet)
+  ctx.save();
+  ctx.globalAlpha = 0.45;
+  ctx.beginPath();
+  ctx.ellipse(
+    cx - innerRX * 0.28,
+    batterTop + 1,
+    innerRX * 0.22,
+    innerRY * 0.07,
+    0,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = "#FFFADC";
+  ctx.fill();
   ctx.restore();
 
-  // Handle (arc on right side)
-  ctx.strokeStyle = "#907848";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(sx + sw - 4, cy, sh * 0.18, -0.8, 0.8);
-  ctx.stroke();
+  ctx.restore(); // end clip
 
-  // Lid (gradient)
-  const lidGrad = hGrad(ctx, sx + 3, sx + sw - 3, "#9A7F4A", "#7A6230");
-  roundRect(ctx, sx + 3, sy + 2, sw - 6, sh * 0.15, 4);
-  ctx.fillStyle = lidGrad;
+  // ── Reflet latéral sur le corps bleu ───────────────────────────────────────
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = "#FFF";
+  ctx.fillRect(sx + 5, bowlY + 6, 3, bowlH * 0.45);
+  ctx.restore();
+
+  // ── Rebord supérieur ────────────────────────────────────────────────────────
+  ctx.beginPath();
+  ctx.ellipse(cx, bowlY, bowlW / 2, 5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#70AEE0";
   ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
+  ctx.strokeStyle = "#1A4070";
   ctx.lineWidth = 1.5;
   ctx.stroke();
-  // Lid handle
-  ctx.fillStyle = "#8B7340";
+  ctx.save();
+  ctx.globalAlpha = 0.28;
   ctx.beginPath();
-  ctx.arc(cx, sy + 2, 4, Math.PI, 0);
-  ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
-  ctx.lineWidth = 1;
+  ctx.ellipse(cx, bowlY - 1, bowlW / 2 - 4, 2.5, 0, Math.PI + 0.3, -0.3);
+  ctx.strokeStyle = "#FFF";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Louche (manche + tête ronde)
+  const scoopX = sx + sw * 0.24;
+  const scoopY = bowlY - Math.max(5, sw * 0.1);
+  const handleEndX = sx + sw - 2;
+  const handleEndY = sy + sh * 0.08;
+  const ladleR = Math.max(6, sw * 0.15);
+
+  // Manche en bois
+  ctx.strokeStyle = "#7B4A20";
+  ctx.lineWidth = Math.max(2.5, sw * 0.07);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(scoopX, scoopY);
+  ctx.lineTo(handleEndX, handleEndY);
   ctx.stroke();
 
-  // Batter splashes (decorative)
-  ctx.fillStyle = "rgba(200,180,130,0.35)";
-  [
-    [sx + 3, sy + sh * 0.68, 3],
-    [sx + sw - 6, sy + sh * 0.55, 2.5],
-  ].forEach(([dx, dy, dr]) => {
-    ctx.beginPath();
-    ctx.arc(dx, dy, dr, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  // Icon
-  ctx.font = `${sw * 0.42}px serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("🥣", cx, cy + sh * 0.12);
+  // Tête de la louche (cuillère ronde avec pâte)
+  ctx.beginPath();
+  ctx.arc(scoopX, scoopY, ladleR, 0, Math.PI * 2);
+  const ladleG = ctx.createRadialGradient(
+    scoopX - ladleR * 0.25,
+    scoopY - ladleR * 0.25,
+    1,
+    scoopX,
+    scoopY,
+    ladleR,
+  );
+  ladleG.addColorStop(0, "#EEE0A0");
+  ladleG.addColorStop(0.75, "#D4B860");
+  ladleG.addColorStop(1, "#A88844");
+  ctx.fillStyle = ladleG;
+  ctx.fill();
+  ctx.strokeStyle = "#7B4A20";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 }
 
 export function drawIngredientStation(ctx, s, sx, sy, sw, sh) {
@@ -509,26 +553,50 @@ export function drawDeliveryStation(ctx, s, sx, sy, sw, sh, time) {
     ctx.lineWidth = 1;
     ctx.stroke();
   } else {
-    ctx.font = `${Math.max(16, sw * 0.35)}px serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(hasRejected ? "❌" : "🥞", cx, sy + sh * 0.5);
+    // Flash + ✕ dessinés AVANT la crêpe pour ne pas masquer le contenu
+    if (hasRejected) {
+      const flash = Math.abs(Math.sin(t / 250));
+      ctx.save();
+      ctx.globalAlpha = flash;
+      roundRect(ctx, sx - 1, sy + 1, sw + 2, sh + 2, 9);
+      ctx.strokeStyle = "#E74C3C";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = 0.9;
+      ctx.font = `bold ${Math.max(12, sw * 0.28)}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#E74C3C";
+      ctx.fillText("✕", cx + Math.min(sw, sh) * 0.16, sy + sh * 0.3);
+      ctx.restore();
+    }
+
+    // Crêpe (disque + toppings + icônes) toujours au premier plan
+    const toppings = s.deliveryCrepe?.toppings ?? [];
+    drawAssembledCrepe(
+      ctx,
+      cx,
+      sy + sh * 0.52,
+      Math.min(sw, sh) * 0.22,
+      toppings,
+      Math.max(16, sw * 0.3),
+    );
   }
 
-  // Rejected flash
-  if (hasRejected) {
-    const flash = Math.abs(Math.sin(t / 250));
-    ctx.save();
-    ctx.globalAlpha = flash * 0.3;
-    roundRect(ctx, sx, sy + 2, sw, sh, 8);
-    ctx.fillStyle = "#E74C3C";
-    ctx.fill();
-    ctx.restore();
-  }
+  // (flash et ✕ déplacés avant le rendu de la crêpe ci-dessus)
 }
 
 export function drawTrash(ctx, s, sx, sy, sw, sh) {
   const cx = sx + sw / 2;
+
+  // Scale visually down to avoid the trash dominating the UI
+  ctx.save();
+  ctx.translate(cx, sy + sh * 0.5);
+  ctx.scale(0.72, 0.72);
+  ctx.translate(-cx, -(sy + sh * 0.5));
 
   // Can body (cylindrical tapered shape with gradient)
   const bodyTop = sy + sh * 0.25;
@@ -604,4 +672,6 @@ export function drawTrash(ctx, s, sx, sy, sw, sh) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("🗑️", cx, bodyTop + bodyH * 0.45);
+
+  ctx.restore(); // end scale
 }
