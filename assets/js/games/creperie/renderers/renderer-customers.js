@@ -1,16 +1,86 @@
-// renderer-customers.js — Rendu des clients et de leurs bulles de commande
+// renderer-customers.js — Rendu des clients — style kawaii cartoon 3D
 
 import { ITEM_ICONS, TABLE_POSITIONS } from "../creperie-constants.js";
-import { COL, dropShadow, roundRect, vGrad } from "./renderer-colors.js";
+import {
+  COL,
+  dropShadow,
+  lightenColor,
+  roundRect,
+  vGrad,
+} from "./renderer-colors.js";
+
+// ── Kawaii helpers (local) ──────────────────────────────────────────────────
+function kEye(ctx, cx, cy, rw, rh, irisColor) {
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rw, rh, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#FBFBFB";
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+  const ig = ctx.createRadialGradient(
+    cx,
+    cy - rh * 0.1,
+    0,
+    cx,
+    cy + rh * 0.1,
+    rh * 0.65,
+  );
+  ig.addColorStop(0, lightenColor(irisColor, 55));
+  ig.addColorStop(0.5, irisColor);
+  ig.addColorStop(1, "#0A0A18");
+  ctx.beginPath();
+  ctx.arc(cx, cy + rh * 0.08, rh * 0.62, 0, Math.PI * 2);
+  ctx.fillStyle = ig;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy + rh * 0.12, rh * 0.34, 0, Math.PI * 2);
+  ctx.fillStyle = "#0D0D0D";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(
+    cx - rw * 0.26,
+    cy - rh * 0.26,
+    rw * 0.26,
+    rh * 0.22,
+    -0.35,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = "rgba(255,255,255,0.96)";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + rw * 0.18, cy + rh * 0.1, rh * 0.11, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.60)";
+  ctx.fill();
+}
+
+function kCheek(ctx, cx, cy, r) {
+  const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  g.addColorStop(0, "rgba(255,90,100,0.48)");
+  g.addColorStop(1, "rgba(255,90,100,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, r, r * 0.62, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// 5 outfit configs: [bodyLight, bodyDark, hairLight, hairDark, irisColor, accent]
+const OUTFITS = [
+  ["#5A9FE8", "#2E70C0", "#5A3010", "#2A1208", "#3A7FCC", "#FFD700"], // blue + brown hair
+  ["#F0A040", "#C07020", "#1A1A1A", "#0A0A0A", "#8B4513", "#FFFFFF"], // orange + black hair
+  ["#A060D0", "#7030A0", "#FFDE22", "#C89010", "#9040C0", "#FFB0E8"], // purple + blonde
+  ["#40B870", "#208850", "#C84030", "#901020", "#206830", "#FFE080"], // green + red hair
+  ["#E85050", "#B02020", "#4A90E8", "#2060B0", "#C02020", "#FFE0D0"], // red + blue hair
+];
 
 export function drawCustomers(ctx, W, counterY, customers, time) {
   const rH = counterY;
   customers.forEach((c) => {
     const tablePos = TABLE_POSITIONS[c.tableIndex];
     if (!tablePos) return;
-
     const tx = W * tablePos.xRatio;
-    const ty = rH * tablePos.yRatio - 28; // above the chair
+    const ty = rH * tablePos.yRatio - 30;
 
     let alpha = 1,
       scale = 1;
@@ -34,194 +104,322 @@ export function drawCustomers(ctx, W, counterY, customers, time) {
 }
 
 export function drawCustomerBody(ctx, customer, time) {
+  const outfit = OUTFITS[customer.tableIndex % 5];
+  const [bodyA, bodyB, hairA, hairB, irisColor, accent] = outfit;
+
   const isAngry =
     customer.state === "leaving_angry" ||
     (customer.state === "seated" && customer.patienceFraction < 0.25);
   const isHappy =
     customer.state === "leaving_happy" || customer.state === "served";
   const t = time;
-
-  // 5 outfit colors
-  const outfitColors = [
-    ["#4A90D9", "#3570B0"],
-    ["#E67E22", "#C06818"],
-    ["#8E44AD", "#6E2490"],
-    ["#27AE60", "#1A8A48"],
-    ["#E74C3C", "#C03030"],
-  ];
-  const [bodyA, bodyB] = outfitColors[customer.tableIndex % 5];
-
-  // 5 hair styles (color + shape hint)
-  const hairColors = ["#4A2800", "#1A1A1A", "#D4A030", "#8B3A00", "#666"];
-  const hairColor = hairColors[customer.tableIndex % 5];
+  const bob = Math.sin(t / 2500 + customer.tableIndex * 1.7) * 1.2;
 
   // Drop shadow
-  dropShadow(ctx, 0, 18, 14, 4, 0.15);
-
-  // Idle micro-animation (subtle head bob)
-  const bob = Math.sin(t / 2500 + customer.tableIndex * 1.7) * 1.2;
+  dropShadow(ctx, 0, 20, 16, 5, 0.15);
 
   ctx.save();
   ctx.translate(0, bob);
 
-  // ── Body (ellipse, gradient, outlined) ──
+  // ── BODY (chubby egg, kawaii) ──
   ctx.beginPath();
   ctx.ellipse(0, 0, 15, 18, 0, 0, Math.PI * 2);
-  const bodyGrad = vGrad(ctx, -18, 18, bodyA, bodyB);
-  ctx.fillStyle = bodyGrad;
+  const bodyG = ctx.createRadialGradient(-5, -6, 1, 0, 0, 20);
+  bodyG.addColorStop(0, bodyA);
+  bodyG.addColorStop(0.6, bodyB);
+  bodyG.addColorStop(1, "#00000020");
+  ctx.fillStyle = bodyG;
   ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
-  ctx.lineWidth = COL.OUTLINE_W;
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1.8;
   ctx.stroke();
-
-  // Subtle pattern on body (horizontal stripes)
+  // Body specular
+  ctx.beginPath();
+  ctx.ellipse(-6, -8, 5, 3.5, -0.5, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.30)";
+  ctx.fill();
+  // Accent stripe / decoration
   ctx.save();
-  ctx.clip();
-  ctx.globalAlpha = 0.08;
-  ctx.strokeStyle = "#FFF";
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = accent;
   ctx.lineWidth = 2;
-  for (let sy = -14; sy < 18; sy += 6) {
-    ctx.beginPath();
-    ctx.moveTo(-15, sy);
-    ctx.lineTo(15, sy);
-    ctx.stroke();
-  }
+  ctx.beginPath();
+  ctx.arc(0, 0, 12, 0.4, Math.PI - 0.4);
+  ctx.stroke();
   ctx.restore();
 
-  // ── Head (gradient radial, outlined) ──
-  const headR = 16;
-  const headY = -28;
-  ctx.beginPath();
-  ctx.arc(0, headY, headR, 0, Math.PI * 2);
-  const faceGrad = ctx.createRadialGradient(0, headY - 3, 2, 0, headY, headR);
-  faceGrad.addColorStop(0, "#FFD5C5");
-  faceGrad.addColorStop(1, "#E8AB95");
-  ctx.fillStyle = faceGrad;
-  ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
-  ctx.lineWidth = COL.OUTLINE_W;
-  ctx.stroke();
+  // ── HEAD (big round kawaii) ──
+  const headR = 19;
+  const headY = -30;
 
-  // ── Hair ──
+  // Hair back (big fluffy blob)
   ctx.beginPath();
-  ctx.ellipse(0, headY - headR * 0.5, headR * 1.1, headR * 0.62, 0, Math.PI, 0);
-  ctx.fillStyle = hairColor;
+  ctx.arc(0, headY, headR * 1.12, 0, Math.PI * 2);
+  const hairBG = ctx.createRadialGradient(
+    -headR * 0.2,
+    headY - headR * 0.3,
+    headR * 0.1,
+    0,
+    headY,
+    headR * 1.12,
+  );
+  hairBG.addColorStop(0, hairA);
+  hairBG.addColorStop(1, hairB);
+  ctx.fillStyle = hairBG;
   ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
+  ctx.strokeStyle = "#333";
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // ── Eyes ──
-  if (isHappy) {
-    ctx.strokeStyle = "#333";
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = "round";
-    [-5, 5].forEach((ex) => {
+  // Face sphere
+  ctx.beginPath();
+  ctx.arc(0, headY, headR, 0, Math.PI * 2);
+  const faceG = ctx.createRadialGradient(
+    -headR * 0.25,
+    headY - headR * 0.25,
+    headR * 0.04,
+    0,
+    headY,
+    headR,
+  );
+  faceG.addColorStop(0, "#FFE8D4");
+  faceG.addColorStop(0.55, "#FFD0BC");
+  faceG.addColorStop(1, "#E8A88A");
+  ctx.fillStyle = faceG;
+  ctx.fill();
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  // Face specular
+  ctx.beginPath();
+  ctx.ellipse(
+    -headR * 0.22,
+    headY - headR * 0.22,
+    headR * 0.17,
+    headR * 0.11,
+    -0.4,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = "rgba(255,255,255,0.40)";
+  ctx.fill();
+
+  // Hair fringe
+  ctx.beginPath();
+  ctx.ellipse(
+    0,
+    headY - headR * 0.56,
+    headR * 1.08,
+    headR * 0.55,
+    0,
+    Math.PI,
+    0,
+  );
+  const fringeG = vGrad(
+    ctx,
+    headY - headR * 1.08,
+    headY - headR * 0.1,
+    hairA,
+    hairB,
+  );
+  ctx.fillStyle = fringeG;
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // ── ACCESSORY (per variant) ──
+  switch (customer.tableIndex % 5) {
+    case 0: // Round glasses
+      [-5.5, 5.5].forEach((ex) => {
+        ctx.beginPath();
+        ctx.arc(ex, headY - 1, 4.5, 0, Math.PI * 2);
+        ctx.strokeStyle = "#4A3010";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
       ctx.beginPath();
-      ctx.arc(ex, headY - 1, 3.5, Math.PI + 0.3, -0.3);
+      ctx.moveTo(-1, headY - 1);
+      ctx.lineTo(1, headY - 1);
       ctx.stroke();
-    });
-  } else if (isAngry) {
-    ctx.fillStyle = "#FFF";
-    [-5, 5].forEach((ex) => {
+      break;
+    case 1: // Cute ear studs (tiny circles)
+      [-headR * 1.05, headR * 1.05].forEach((ex) => {
+        ctx.beginPath();
+        ctx.arc(ex, headY + 3, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#FFD700";
+        ctx.fill();
+        ctx.strokeStyle = "#B8860B";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+      break;
+    case 2: // Bow on top
+      ctx.save();
+      ctx.translate(headR * 0.25, headY - headR * 0.95);
+      [
+        [-1, -0.1],
+        [1, 0.1],
+      ].forEach(([s, rot]) => {
+        ctx.save();
+        ctx.translate(s * 4, 0);
+        ctx.rotate(rot);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(s * 6, -3);
+        ctx.lineTo(s * 6, 3);
+        ctx.closePath();
+        ctx.fillStyle = "#FF80C0";
+        ctx.fill();
+        ctx.restore();
+      });
       ctx.beginPath();
-      ctx.arc(ex, headY - 1, 4, 0, Math.PI * 2);
+      ctx.arc(0, 0, 2, 0, Math.PI * 2);
+      ctx.fillStyle = "#FF40A0";
       ctx.fill();
-    });
-    ctx.fillStyle = "#C03030";
-    [-5, 5].forEach((ex) => {
+      ctx.restore();
+      break;
+    case 3: // Baseball cap (accent color)
       ctx.beginPath();
-      ctx.arc(ex, headY - 1, 2.5, 0, Math.PI * 2);
+      ctx.moveTo(-headR * 0.9, headY - headR * 0.55);
+      ctx.lineTo(headR * 0.9, headY - headR * 0.55);
+      ctx.quadraticCurveTo(
+        headR * 0.9,
+        headY - headR * 1.08,
+        0,
+        headY - headR * 1.1,
+      );
+      ctx.quadraticCurveTo(
+        -headR * 0.9,
+        headY - headR * 1.08,
+        -headR * 0.9,
+        headY - headR * 0.55,
+      );
+      ctx.closePath();
+      ctx.fillStyle = accent;
       ctx.fill();
-    });
-    // Angry brows
-    ctx.strokeStyle = "#333";
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(-8, headY - 7);
-    ctx.lineTo(-3, headY - 5);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(8, headY - 7);
-    ctx.lineTo(3, headY - 5);
-    ctx.stroke();
-  } else {
-    // Normal eyes (white + iris + reflet)
-    [-5, 5].forEach((ex) => {
-      ctx.fillStyle = "#FFF";
-      ctx.beginPath();
-      ctx.ellipse(ex, headY - 1, 4.5, 3.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = COL.OUTLINE;
+      ctx.strokeStyle = "#333";
       ctx.lineWidth = 1.5;
       ctx.stroke();
-      // Iris
-      ctx.fillStyle = "#3A2000";
       ctx.beginPath();
-      ctx.arc(ex, headY - 0.5, 2.2, 0, Math.PI * 2);
-      ctx.fill();
-      // Reflet
-      ctx.fillStyle = "#FFF";
-      ctx.beginPath();
-      ctx.arc(ex - 1, headY - 2, 1, 0, Math.PI * 2);
-      ctx.fill();
-    });
+      ctx.moveTo(-headR * 0.9, headY - headR * 0.55);
+      ctx.lineTo(-headR * 1.2, headY - headR * 0.5);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = accent;
+      ctx.stroke();
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = "#333";
+      ctx.stroke();
+      break;
+    case 4: // Star hairpin
+      ctx.save();
+      ctx.translate(headR * 0.7, headY - headR * 0.78);
+      ctx.font = "10px serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("⭐", 0, 0);
+      ctx.restore();
+      break;
   }
 
-  // ── Mouth ──
+  // ── EYES ──
+  const eyeW = headR * 0.26,
+    eyeH = headR * 0.22,
+    eyeYPos = headY - 1;
+
   if (isHappy) {
-    ctx.fillStyle = "#C05050";
+    // Crescent happy eyes (^_^)
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
+    [-6, 6].forEach((ex) => {
+      ctx.beginPath();
+      ctx.arc(ex, eyeYPos + 1, eyeW * 0.8, Math.PI + 0.3, -0.3);
+      ctx.stroke();
+    });
+    ctx.lineCap = "butt";
+  } else if (isAngry) {
+    // Angry eyes (red pupils + V brows)
+    [-6, 6].forEach((ex) => {
+      ctx.beginPath();
+      ctx.ellipse(ex, eyeYPos, eyeW * 0.8, eyeH * 0.8, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFF";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(ex, eyeYPos, eyeH * 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#CC2020";
+      ctx.fill();
+    });
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.arc(0, headY + 7, 5, 0, Math.PI);
-    ctx.fill();
-    ctx.strokeStyle = COL.OUTLINE;
-    ctx.lineWidth = 1.5;
+    ctx.moveTo(-10, eyeYPos - 7);
+    ctx.lineTo(-4, eyeYPos - 4);
     ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(10, eyeYPos - 7);
+    ctx.lineTo(4, eyeYPos - 4);
+    ctx.stroke();
+    ctx.lineCap = "butt";
+  } else {
+    // Normal kawaii eyes
+    [-6, 6].forEach((ex) => kEye(ctx, ex, eyeYPos, eyeW, eyeH, irisColor));
+  }
+
+  // ── CHEEKS ──
+  kCheek(ctx, -headR * 0.54, eyeYPos + headR * 0.22, headR * 0.18);
+  kCheek(ctx, headR * 0.54, eyeYPos + headR * 0.22, headR * 0.18);
+
+  // ── MOUTH ──
+  if (isHappy) {
+    ctx.beginPath();
+    ctx.arc(0, headY + 9, 5.5, 0.1, Math.PI - 0.1);
+    ctx.fillStyle = "#C06060";
+    ctx.fill();
+    ctx.strokeStyle = "#444";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    // Tongue peeking
+    ctx.beginPath();
+    ctx.arc(0, headY + 13, 3, 0, Math.PI);
+    ctx.fillStyle = "#FF8888";
+    ctx.fill();
   } else if (isAngry) {
     ctx.strokeStyle = "#C03030";
     ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.moveTo(-4, headY + 8);
-    ctx.lineTo(-1, headY + 6);
-    ctx.lineTo(2, headY + 8);
-    ctx.lineTo(4, headY + 6);
+    ctx.moveTo(-5, headY + 9);
+    ctx.lineTo(-2, headY + 7);
+    ctx.lineTo(2, headY + 9);
+    ctx.lineTo(5, headY + 7);
     ctx.stroke();
-    // Steam puffs above head
+    ctx.lineCap = "butt";
+    // Steam puffs
     ctx.save();
     ctx.globalAlpha = 0.3;
     ctx.fillStyle = "#AAA";
     const steam = Math.sin(t / 400) * 3;
     [
-      [-6, -48 + steam, 3],
-      [0, -54 + steam * 0.7, 4],
-      [5, -50 + steam * 1.2, 3],
+      [-7, -50, 3],
+      [0, -56, 4],
+      [6, -52, 3],
     ].forEach(([sx, sy, sr]) => {
       ctx.beginPath();
-      ctx.arc(sx, headY + sy + 40, sr, 0, Math.PI * 2);
+      ctx.arc(sx, headY + sy + 40 + steam, sr, 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.restore();
   } else {
     ctx.strokeStyle = "#A05050";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.8;
     ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.arc(0, headY + 5, 4, 0.2, Math.PI - 0.2);
+    ctx.arc(0, headY + 6, 4, 0.25, Math.PI - 0.25);
     ctx.stroke();
+    ctx.lineCap = "butt";
   }
-
-  // Rosy cheeks
-  ctx.save();
-  ctx.globalAlpha = 0.25;
-  ctx.fillStyle = "#FF8888";
-  [-8, 8].forEach((cx2) => {
-    ctx.beginPath();
-    ctx.ellipse(cx2, headY + 4, 4, 2.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  ctx.restore();
 
   ctx.restore(); // end bob
 }
