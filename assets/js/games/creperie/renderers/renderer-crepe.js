@@ -12,6 +12,16 @@ import { ITEM_ICONS } from "../creperie-constants.js";
  * @param {number} iconSize   taille des icônes emoji sous la crêpe (0 = aucune)
  */
 export function drawAssembledCrepe(ctx, cx, cy, cr, toppings, iconSize = 14) {
+  // ── Contact shadow beneath crêpe ──────────────────────────────────────────
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.shadowBlur = 14;
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + cr * 0.58, cr * 0.88, cr * 0.2, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#000";
+  ctx.fill();
+  ctx.restore();
   // ── Disque crêpe (légèrement elliptique, bord ondulé) ──────────────────────
   ctx.save();
   ctx.beginPath();
@@ -44,6 +54,22 @@ export function drawAssembledCrepe(ctx, cx, cy, cr, toppings, iconSize = 14) {
   ctx.strokeStyle = "#9A7020";
   ctx.lineWidth = Math.max(1, cr * 0.045);
   ctx.stroke();
+
+  // Soft top sheen — clip to crêpe shape, then paint a highlight gradient
+  ctx.clip();
+  const sheen = ctx.createRadialGradient(
+    cx - cr * 0.18,
+    cy - cr * 0.3,
+    cr * 0.04,
+    cx - cr * 0.06,
+    cy - cr * 0.12,
+    cr * 0.82,
+  );
+  sheen.addColorStop(0, "rgba(255,255,240,0.24)");
+  sheen.addColorStop(0.55, "rgba(255,255,220,0.07)");
+  sheen.addColorStop(1, "rgba(255,255,200,0)");
+  ctx.fillStyle = sheen;
+  ctx.fillRect(cx - cr * 1.2, cy - cr, cr * 2.4, cr * 2);
 
   // Taches de cuisson
   ctx.save();

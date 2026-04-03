@@ -167,7 +167,7 @@ export const ITEM_COLORS = {
 
 // Icônes emoji des items
 export const ITEM_ICONS = {
-  BATTER: "💧",
+  BATTER: "🥣",
   ASSEMBLED_CREPE: "🥞",
   BUTTER: "🧈",
   SUGAR: "🍬",

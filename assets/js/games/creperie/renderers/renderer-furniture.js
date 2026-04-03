@@ -70,18 +70,21 @@ export function drawTable(ctx, cx, cy, customer, tableIdx) {
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  // Nappe à carreaux (losange central rouge/blanc style Overcooked)
+  // Tablecloth — crisp red/white small diamond at centre (Overcooked vibe)
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(Math.PI / 4);
-  const clothS = 22;
-  ctx.globalAlpha = 0.12;
-  ctx.fillStyle = "#CC3030";
-  ctx.fillRect(-clothS / 2, -clothS / 2, clothS, clothS);
+  const cs = 18;
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = "#CC2020";
+  ctx.fillRect(-cs, -cs, cs * 2, cs * 2);
   ctx.fillStyle = "#FFF";
-  const cs2 = clothS / 2;
-  ctx.fillRect(-cs2, -cs2, cs2, cs2);
-  ctx.fillRect(0, 0, cs2, cs2);
+  ctx.fillRect(-cs, -cs, cs, cs);
+  ctx.fillRect(0, 0, cs, cs);
+  // Inner highlight on cloth
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = "#FFF";
+  ctx.fillRect(-cs * 0.5, -cs * 0.5, cs, cs);
   ctx.restore();
 
   // Assiettes (2 petits cercles blancs)

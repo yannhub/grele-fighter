@@ -247,20 +247,19 @@ export function drawSpeechBubble(ctx, customer, time) {
   ctx.stroke();
   ctx.restore();
 
-  // Pointer arrow (up)
+  // Pointer arrow — bezier tail (rounder feel)
   ctx.beginPath();
-  ctx.moveTo(bx + bw / 2 - 8, by);
-  ctx.lineTo(bx + bw / 2, by - 10);
-  ctx.lineTo(bx + bw / 2 + 8, by);
+  ctx.moveTo(bx + bw / 2 - 9, by);
+  ctx.quadraticCurveTo(bx + bw / 2, by - 12, bx + bw / 2 + 9, by);
   ctx.closePath();
   ctx.fillStyle = COL.BUBBLE_TOP;
   ctx.fill();
   ctx.strokeStyle = COL.BUBBLE_BORDER;
   ctx.lineWidth = 2;
   ctx.stroke();
-  // Cover the line inside
+  // Cover seam
   ctx.fillStyle = COL.BUBBLE_TOP;
-  ctx.fillRect(bx + bw / 2 - 7, by, 14, 3);
+  ctx.fillRect(bx + bw / 2 - 8, by, 16, 3);
 
   // If served: show checkmark instead of recipe
   if (customer.state === "served") {

@@ -63,7 +63,14 @@ export class CreperieRenderer {
     drawCustomers(ctx, W, counterY, customerManager.customers, this._time);
     if (waiter) drawWaiter(ctx, waiter, W, H, counterY, counterH, this._time);
     drawCounter(ctx, W, counterY, counterH);
-    drawStations(ctx, stations, counterY, counterH, this._time);
+    drawStations(
+      ctx,
+      stations,
+      counterY,
+      counterH,
+      this._time,
+      player.currentStation,
+    );
     drawPlayer(ctx, player, counterY, counterH, this._time);
     if (autoPlayer) drawAutoPlayer(ctx, autoPlayer, counterY, this._time);
     drawParticles(ctx, this.particles);

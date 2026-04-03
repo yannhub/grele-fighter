@@ -16,6 +16,19 @@ export function drawHUD(ctx, W, H, score, timeLeft, heartsLeft, maxHearts) {
 
     if (isFull) {
       heartPath(ctx, hx + heartSize / 2, heartY, heartSize * 0.5);
+      // Outer glow when only 1 heart left
+      if (heartsLeft === 1) {
+        const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 220);
+        ctx.save();
+        ctx.shadowBlur = 18 * pulse;
+        ctx.shadowColor = `rgba(255,60,60,${0.6 * pulse})`;
+        ctx.fillStyle = "transparent";
+        ctx.strokeStyle = `rgba(255,80,80,${0.4 * pulse})`;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+        heartPath(ctx, hx + heartSize / 2, heartY, heartSize * 0.5);
+      }
       const hGrad2 = ctx.createRadialGradient(
         hx + heartSize / 2 - 3,
         heartY - 4,
@@ -98,6 +111,24 @@ export function drawParticles(ctx, particles) {
 
     if (p.isStar) {
       ctx.fillStyle = p.color;
+      // Outer glow halo below star
+      ctx.save();
+      ctx.globalAlpha = p.life * 0.3;
+      ctx.shadowBlur = p.size * 3;
+      ctx.shadowColor = p.color;
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (i * Math.PI * 2) / 5 - Math.PI / 2;
+        const r = p.size;
+        const ir = p.size * 0.4;
+        ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+        const midAngle = angle + Math.PI / 5;
+        ctx.lineTo(Math.cos(midAngle) * ir, Math.sin(midAngle) * ir);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      // Crisp star on top
       ctx.beginPath();
       for (let i = 0; i < 5; i++) {
         const angle = (i * Math.PI * 2) / 5 - Math.PI / 2;

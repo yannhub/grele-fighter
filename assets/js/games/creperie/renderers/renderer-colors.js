@@ -237,3 +237,40 @@ export function lightenColor(hex, amount) {
   b = Math.min(255, b + amount);
   return `rgb(${r},${g},${b})`;
 }
+
+// ─── New Juice Helpers ────────────────────────────────────────────────────────
+
+/**
+ * Radial glow — ideal for ready states, interactive highlights, hot surfaces.
+ * hexColor must be a 6-digit hex string (#RRGGBB).
+ */
+export function glowCircle(ctx, cx, cy, r, hexColor, alpha = 0.35) {
+  const R = parseInt(hexColor.slice(1, 3), 16) || 200;
+  const G = parseInt(hexColor.slice(3, 5), 16) || 180;
+  const B = parseInt(hexColor.slice(5, 7), 16) || 60;
+  ctx.save();
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  grad.addColorStop(0, `rgba(${R},${G},${B},${alpha})`);
+  grad.addColorStop(1, `rgba(${R},${G},${B},0)`);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * Arc specular highlight on a circle — simulates top-left rim light.
+ * Call immediately after the circle has been filled + stroked.
+ */
+export function circleHighlight(ctx, cx, cy, r, alpha = 0.28) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.76, Math.PI * 1.08, Math.PI * 1.9);
+  ctx.strokeStyle = "#FFFFFF";
+  ctx.lineWidth = r * 0.2;
+  ctx.lineCap = "round";
+  ctx.stroke();
+  ctx.restore();
+}

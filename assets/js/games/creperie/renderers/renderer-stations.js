@@ -2,14 +2,38 @@
 
 import { ITEM_ICONS, ST } from "../creperie-constants.js";
 import { BILIG_STATE } from "../creperie-stations.js";
-import { COL, hGrad, lerpColor, roundRect, vGrad } from "./renderer-colors.js";
+import {
+  COL,
+  circleHighlight,
+  glowCircle,
+  hGrad,
+  lerpColor,
+  roundRect,
+  vGrad,
+} from "./renderer-colors.js";
 import { drawAssembledCrepe } from "./renderer-crepe.js";
 
-export function drawStations(ctx, stations, counterY, counterH, time) {
-  stations.forEach((s) => drawStation(ctx, s, counterY, counterH, time));
+export function drawStations(
+  ctx,
+  stations,
+  counterY,
+  counterH,
+  time,
+  currentStation = null,
+) {
+  stations.forEach((s) =>
+    drawStation(ctx, s, counterY, counterH, time, s === currentStation),
+  );
 }
 
-export function drawStation(ctx, s, counterY, counterH, time) {
+export function drawStation(
+  ctx,
+  s,
+  counterY,
+  counterH,
+  time,
+  isActive = false,
+) {
   const { w: sw, h: sh, x: sx, y: sy } = s;
 
   // Interaction flash
@@ -62,6 +86,77 @@ export function drawStation(ctx, s, counterY, counterH, time) {
   ctx.fillStyle = COL.TEXT_LABEL;
   ctx.fillText(labelText, sx + sw / 2, badgeY + badgeH / 2);
   ctx.restore();
+
+  // ── Halo de surbrillance — dessiné PAR-DESSUS tout le contenu ─────────────
+  if (isActive) {
+    // Oscillation lente, plancher à 0.60 → effet jamais invisible
+    const pulse = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(time / 380));
+    // Glint : oscillation plus rapide, déphasée
+    const gP = 0.5 + 0.5 * Math.sin(time / 190 + Math.PI / 3);
+
+    // Marges généreuses pour rester dans la station
+    const m = 6;
+    const hx = sx + m,
+      hy = sy + m;
+    const hw = sw - m * 2,
+      hh = sh - m * 2;
+    const rr = 7;
+
+    ctx.save();
+
+    // ── Couche 1 : halo large très transparent (glow externe) ────────────────
+    ctx.strokeStyle = `rgba(255,215,30,${0.13 * pulse})`;
+    ctx.lineWidth = 14;
+    roundRect(ctx, hx, hy, hw, hh, rr);
+    ctx.stroke();
+
+    // ── Couche 2 : halo intermédiaire ────────────────────────────────────────
+    ctx.strokeStyle = `rgba(255,230,50,${0.3 * pulse})`;
+    ctx.lineWidth = 7;
+    roundRect(ctx, hx, hy, hw, hh, rr);
+    ctx.stroke();
+
+    // ── Couche 3 : trait fin lumineux avec shadowBlur ─────────────────────────
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = `rgba(255,215,20,${0.95 * pulse})`;
+    ctx.strokeStyle = `rgba(255,250,130,${0.95 * pulse})`;
+    ctx.lineWidth = 1.8;
+    roundRect(ctx, hx, hy, hw, hh, rr);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // ── Voile intérieur : lumière descendante (reflet depuis le haut) ─────────
+    const fillG = ctx.createLinearGradient(hx, hy, hx, hy + hh);
+    fillG.addColorStop(0, `rgba(255,255,180,${0.22 * pulse})`);
+    fillG.addColorStop(0.4, `rgba(255,235,70,${0.08 * pulse})`);
+    fillG.addColorStop(1, `rgba(255,200,0,0)`);
+    ctx.fillStyle = fillG;
+    roundRect(ctx, hx, hy, hw, hh, rr);
+    ctx.fill();
+
+    // ── Glints aux 4 coins (crochets « ⌐ » pointant vers l'intérieur) ────────
+    const gs = Math.min(hw, hh) * 0.2; // longueur max = 20 % de la petite dim
+    ctx.strokeStyle = `rgba(255,255,210,${0.9 * gP * pulse})`;
+    ctx.lineWidth = 1.8;
+    ctx.lineCap = "round";
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = `rgba(255,255,160,${0.8 * gP})`;
+
+    [
+      { cx: hx, cy: hy, dx: 1, dy: 1 }, // top-left
+      { cx: hx + hw, cy: hy, dx: -1, dy: 1 }, // top-right
+      { cx: hx, cy: hy + hh, dx: 1, dy: -1 }, // bottom-left
+      { cx: hx + hw, cy: hy + hh, dx: -1, dy: -1 }, // bottom-right
+    ].forEach(({ cx: cx_, cy: cy_, dx, dy }) => {
+      ctx.beginPath();
+      ctx.moveTo(cx_ + dx * gs, cy_);
+      ctx.lineTo(cx_, cy_);
+      ctx.lineTo(cx_, cy_ + dy * gs);
+      ctx.stroke();
+    });
+
+    ctx.restore();
+  }
 }
 
 export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
@@ -85,18 +180,19 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Cooking surface — outer ring (metal brush effect)
+  // Cooking surface — outer ring (metal brush effect + specular arc)
   ctx.beginPath();
   ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
   const ringGrad = ctx.createRadialGradient(cx, cy, r - 2, cx, cy, r + 4);
   ringGrad.addColorStop(0, COL.BILIG_METAL_B);
-  ringGrad.addColorStop(0.5, "#AAA");
+  ringGrad.addColorStop(0.5, "#BBB");
   ringGrad.addColorStop(1, COL.BILIG_METAL_C);
   ctx.fillStyle = ringGrad;
   ctx.fill();
   ctx.strokeStyle = COL.OUTLINE;
   ctx.lineWidth = 2;
   ctx.stroke();
+  circleHighlight(ctx, cx, cy, r + 4, 0.3); // metallic rim light
 
   // Inner cooking surface (radial gradient for convex effect)
   let surfA, surfB;
@@ -125,6 +221,7 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
   surfGrad.addColorStop(1, surfB);
   ctx.fillStyle = surfGrad;
   ctx.fill();
+  circleHighlight(ctx, cx, cy, r, 0.16); // surface sheen
 
   // Concentric grooves
   ctx.strokeStyle = "rgba(0,0,0,0.10)";
@@ -146,25 +243,33 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
       Math.max(16, sw * 0.3),
     );
 
-    // Pulsing glow
-    const glow = Math.sin(t / 300) * 0.3 + 0.5;
+    // Warm radial background glow + animated ring
+    const glow = Math.sin(t / 300) * 0.35 + 0.65;
+    glowCircle(ctx, cx, cy, r * 1.9, COL.BILIG_GLOW, glow * 0.28);
     ctx.save();
-    ctx.globalAlpha = glow * 0.4;
+    ctx.shadowBlur = 14 * glow;
+    ctx.shadowColor = `rgba(255,210,60,${glow * 0.55})`;
+    ctx.globalAlpha = glow * 0.55;
     ctx.beginPath();
-    ctx.arc(cx, cy, r + 6, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r + 7, 0, Math.PI * 2);
     ctx.strokeStyle = COL.BILIG_GLOW;
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.globalAlpha = glow * 0.25;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 15, 0, Math.PI * 2);
+    ctx.lineWidth = 3;
     ctx.stroke();
     ctx.restore();
 
-    // Ready badge
+    // Ready check badge
     ctx.save();
     ctx.font = `bold ${Math.max(10, sw * 0.2)}px Arial`;
     ctx.fillStyle = COL.BILIG_GLOW;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.shadowBlur = 6;
-    ctx.shadowColor = "rgba(255,200,60,0.6)";
+    ctx.shadowBlur = 10 * glow;
+    ctx.shadowColor = "rgba(255,200,60,0.75)";
     ctx.fillText("✓", cx, cy + r + 13);
     ctx.restore();
   }

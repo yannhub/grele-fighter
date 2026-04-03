@@ -29,22 +29,51 @@ export function drawCounter(ctx, W, counterY, counterH) {
   ctx.fillStyle = faceGrad;
   ctx.fillRect(0, faceY, W, faceH);
 
-  // Wood plank lines
+  // Wood plank dividers — vertical with slight bezier wobble (organic feel)
   ctx.strokeStyle = COL.COUNTER_WOOD_GRAIN;
   ctx.lineWidth = 1.5;
   for (let lx = 0; lx < W; lx += 65) {
     ctx.beginPath();
     ctx.moveTo(lx, faceY);
-    ctx.lineTo(lx, faceY + faceH);
+    ctx.bezierCurveTo(
+      lx + 2,
+      faceY + faceH * 0.33,
+      lx - 1,
+      faceY + faceH * 0.67,
+      lx,
+      faceY + faceH,
+    );
     ctx.stroke();
   }
-  // Wood knots (deterministic positions)
+  // Horizontal grain lines — sine-wave wobble for natural wood feel
+  ctx.save();
+  ctx.strokeStyle = "rgba(0,0,0,0.05)";
+  ctx.lineWidth = 0.7;
+  for (let ly = faceY + 7; ly < faceY + faceH - 3; ly += 8) {
+    ctx.beginPath();
+    ctx.moveTo(0, ly);
+    for (let wx = 0; wx < W; wx += 24) {
+      ctx.lineTo(wx, ly + Math.sin((wx / W) * Math.PI * 4 + ly * 0.3) * 1.3);
+    }
+    ctx.lineTo(W, ly);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // Wood knots with concentric ring detail
   ctx.fillStyle = COL.COUNTER_WOOD_KNOT;
   for (let kx = 30; kx < W; kx += 130) {
     const ky = faceY + faceH * 0.4 + (kx % 7) * 3;
     ctx.beginPath();
-    ctx.ellipse(kx, ky, 5, 3, 0.3, 0, Math.PI * 2);
+    ctx.ellipse(kx, ky, 6, 3.5, 0.3, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.06)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(kx, ky, 11, 6, 0.3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(kx, ky, 17, 8.5, 0.3, 0, Math.PI * 2);
+    ctx.stroke();
   }
 
   // Molding bottom (thick with shadow)

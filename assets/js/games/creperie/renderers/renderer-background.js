@@ -114,48 +114,107 @@ export function drawBackground(ctx, W, H, counterY, counterH, time) {
 }
 
 export function drawPlant(ctx, cx, baseY) {
-  // Pot
-  ctx.fillStyle = "#A06840";
+  // ── Ground shadow ──
+  ctx.save();
+  ctx.globalAlpha = 0.1;
+  ctx.beginPath();
+  ctx.ellipse(cx, baseY + 3, 15, 4, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#000";
+  ctx.fill();
+  ctx.restore();
+
+  // ── Pot body — gradient trapezoid with bezier sides ──
+  const potGrd = ctx.createLinearGradient(cx - 13, 0, cx + 13, 0);
+  potGrd.addColorStop(0, "#904A20");
+  potGrd.addColorStop(0.35, "#D08848");
+  potGrd.addColorStop(1, "#904A20");
   ctx.beginPath();
   ctx.moveTo(cx - 10, baseY);
-  ctx.lineTo(cx + 10, baseY);
-  ctx.lineTo(cx + 8, baseY - 16);
-  ctx.lineTo(cx - 8, baseY - 16);
+  ctx.bezierCurveTo(cx - 11, baseY + 5, cx - 9, baseY + 14, cx - 7, baseY + 15);
+  ctx.lineTo(cx + 7, baseY + 15);
+  ctx.bezierCurveTo(cx + 9, baseY + 14, cx + 11, baseY + 5, cx + 10, baseY);
   ctx.closePath();
+  ctx.fillStyle = potGrd;
   ctx.fill();
   ctx.strokeStyle = "#7A4A28";
   ctx.lineWidth = 1.5;
   ctx.stroke();
-  // Rim
-  ctx.fillStyle = "#8B5830";
-  ctx.fillRect(cx - 10, baseY - 18, 20, 4);
-  // Foliage (3 triangles)
-  ctx.fillStyle = "#3A8A3A";
-  [
-    [-6, -18, 12],
-    [0, -28, 14],
-    [5, -20, 11],
-  ].forEach(([ox, oy, sz]) => {
+  // Pot highlight strip
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = "#FFF";
+  ctx.fillRect(cx - 8, baseY + 3, 3, 10);
+  ctx.restore();
+
+  // ── Pot rim (ellipse + inner highlight) ──
+  ctx.beginPath();
+  ctx.ellipse(cx, baseY, 11, 3.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#CC7840";
+  ctx.fill();
+  ctx.strokeStyle = "#7A4A28";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.beginPath();
+  ctx.ellipse(cx, baseY - 0.5, 7, 1.5, 0, Math.PI + 0.3, -0.3);
+  ctx.strokeStyle = "#FFF";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // ── Soil ──
+  ctx.beginPath();
+  ctx.ellipse(cx, baseY - 0.5, 8, 2.5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#5A3416";
+  ctx.fill();
+
+  // ── Organic bezier leaves (gradient petal shapes) ──
+  const leaf = (ox, oy, angle, size, c1, c2) => {
+    ctx.save();
+    ctx.translate(cx + ox, baseY + oy);
+    ctx.rotate(angle);
+    const lg = ctx.createLinearGradient(0, 0, 0, -size);
+    lg.addColorStop(0, c2);
+    lg.addColorStop(1, c1);
     ctx.beginPath();
-    ctx.moveTo(cx + ox, baseY + oy);
-    ctx.lineTo(cx + ox - sz / 2, baseY + oy + sz);
-    ctx.lineTo(cx + ox + sz / 2, baseY + oy + sz);
-    ctx.closePath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(
+      -size * 0.38,
+      -size * 0.42,
+      -size * 0.32,
+      -size * 0.88,
+      0,
+      -size,
+    );
+    ctx.bezierCurveTo(
+      size * 0.32,
+      -size * 0.88,
+      size * 0.38,
+      -size * 0.42,
+      0,
+      0,
+    );
+    ctx.fillStyle = lg;
     ctx.fill();
-  });
-  // Darker leaves
-  ctx.fillStyle = "#2A7A2A";
-  [
-    [-3, -22, 8],
-    [3, -15, 7],
-  ].forEach(([ox, oy, sz]) => {
+    ctx.strokeStyle = "#1E5A1E";
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    // Midrib
+    ctx.globalAlpha = 0.28;
     ctx.beginPath();
-    ctx.moveTo(cx + ox, baseY + oy);
-    ctx.lineTo(cx + ox - sz / 2, baseY + oy + sz);
-    ctx.lineTo(cx + ox + sz / 2, baseY + oy + sz);
-    ctx.closePath();
-    ctx.fill();
-  });
+    ctx.moveTo(0, -1);
+    ctx.lineTo(0, -size * 0.82);
+    ctx.strokeStyle = "#1B4D1B";
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+    ctx.restore();
+  };
+  leaf(-8, -16, -0.45, 17, "#6EC96E", "#2E7D32");
+  leaf(7, -14, 0.55, 15, "#81C784", "#388E3C");
+  leaf(0, -22, -0.05, 20, "#57B857", "#2E7D32");
+  leaf(-4, -19, -0.9, 13, "#9DCE9D", "#43A047");
+  leaf(10, -17, 1.0, 14, "#6BC46B", "#388E3C");
 }
 
 export function drawLamps(ctx, W, rH, time) {
@@ -165,7 +224,9 @@ export function drawLamps(ctx, W, rH, time) {
 
   lampPositions.forEach((xr) => {
     const lx = W * xr;
-    // Fil
+    const bulbPulse = 0.9 + 0.1 * Math.sin(t / 1500 + xr * 10);
+
+    // ── Suspension wire ──
     const wireGrad = ctx.createLinearGradient(0, 0, 0, lampY - 10);
     wireGrad.addColorStop(0, "#8B7355");
     wireGrad.addColorStop(1, "#6B5335");
@@ -176,9 +237,31 @@ export function drawLamps(ctx, W, rH, time) {
     ctx.lineTo(lx, lampY - 14);
     ctx.stroke();
 
-    // Halo lumineux sous la lampe
+    // ── Warm light cone below lamp (volumetric feel) ──
     ctx.save();
-    const haloR = 85;
+    const coneH = rH * 0.36;
+    const coneGrad = ctx.createLinearGradient(
+      lx,
+      lampY + 12,
+      lx,
+      lampY + 12 + coneH,
+    );
+    coneGrad.addColorStop(0, "rgba(255,215,120,0.12)");
+    coneGrad.addColorStop(0.5, "rgba(255,200,100,0.04)");
+    coneGrad.addColorStop(1, "rgba(255,200,100,0)");
+    ctx.fillStyle = coneGrad;
+    ctx.beginPath();
+    ctx.moveTo(lx - 9, lampY + 12);
+    ctx.lineTo(lx - coneH * 0.7, lampY + 12 + coneH);
+    ctx.lineTo(lx + coneH * 0.7, lampY + 12 + coneH);
+    ctx.lineTo(lx + 9, lampY + 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // ── Wide ambient halo ──
+    ctx.save();
+    const haloR = 95;
     const haloGrad = ctx.createRadialGradient(
       lx,
       lampY + 14,
@@ -187,55 +270,74 @@ export function drawLamps(ctx, W, rH, time) {
       lampY + 14,
       haloR,
     );
-    haloGrad.addColorStop(0, "rgba(255,220,130,0.10)");
+    haloGrad.addColorStop(0, "rgba(255,220,130,0.13)");
     haloGrad.addColorStop(1, "rgba(255,220,130,0)");
     ctx.fillStyle = haloGrad;
     ctx.fillRect(lx - haloR, lampY - haloR + 14, haloR * 2, haloR * 2);
     ctx.restore();
 
-    // Abat-jour (gradient trapézoïdal)
+    // ── Lampshade — bell shape (bezier, more organic than flat trapezoid) ──
     ctx.beginPath();
-    ctx.moveTo(lx - 24, lampY - 14);
-    ctx.lineTo(lx + 24, lampY - 14);
-    ctx.lineTo(lx + 16, lampY + 10);
-    ctx.lineTo(lx - 16, lampY + 10);
-    ctx.closePath();
-    const shadeGrad = ctx.createRadialGradient(
-      lx,
-      lampY - 2,
-      2,
-      lx,
-      lampY - 2,
-      28,
+    ctx.moveTo(lx - 25, lampY - 14);
+    ctx.lineTo(lx + 25, lampY - 14);
+    ctx.bezierCurveTo(
+      lx + 25,
+      lampY - 6,
+      lx + 18,
+      lampY + 6,
+      lx + 15,
+      lampY + 11,
     );
-    shadeGrad.addColorStop(0, "#E8C040");
-    shadeGrad.addColorStop(1, "#A07020");
+    ctx.lineTo(lx - 15, lampY + 11);
+    ctx.bezierCurveTo(
+      lx - 18,
+      lampY + 6,
+      lx - 25,
+      lampY - 6,
+      lx - 25,
+      lampY - 14,
+    );
+    ctx.closePath();
+    const shadeGrad = ctx.createLinearGradient(
+      lx - 24,
+      lampY - 14,
+      lx + 24,
+      lampY - 14,
+    );
+    shadeGrad.addColorStop(0, "#5A3E18");
+    shadeGrad.addColorStop(0.5, "#C09030");
+    shadeGrad.addColorStop(1, "#5A3E18");
     ctx.fillStyle = shadeGrad;
     ctx.fill();
-    ctx.strokeStyle = "#805818";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#3A2810";
+    ctx.lineWidth = 1.5;
     ctx.stroke();
-    // Highlight band on top
-    ctx.fillStyle = "rgba(255,255,255,0.15)";
-    ctx.fillRect(lx - 22, lampY - 14, 44, 3);
-
-    // Ampoule avec glow
+    // Inner warm glow on shade
     ctx.save();
-    const bulbPulse = 0.9 + 0.1 * Math.sin(t / 1500 + xr * 10);
-    ctx.shadowBlur = 18 * bulbPulse;
-    ctx.shadowColor = "rgba(255,220,100,0.6)";
+    ctx.globalAlpha = 0.18 * bulbPulse;
+    ctx.fillStyle = "#FFD080";
+    ctx.fill();
+    ctx.restore();
+    // Top rim highlight
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    ctx.fillRect(lx - 23, lampY - 14, 46, 2.5);
+
+    // ── Bulb with animated glow ──
+    ctx.save();
+    ctx.shadowBlur = 20 * bulbPulse;
+    ctx.shadowColor = "rgba(255,220,100,0.7)";
     ctx.beginPath();
-    ctx.arc(lx, lampY + 16, 6, 0, Math.PI * 2);
+    ctx.arc(lx, lampY + 2, 5, 0, Math.PI * 2);
     const bulbGrad = ctx.createRadialGradient(
       lx - 1,
-      lampY + 14,
+      lampY,
       1,
       lx,
-      lampY + 16,
-      6,
+      lampY + 2,
+      5,
     );
-    bulbGrad.addColorStop(0, "#FFFEF0");
-    bulbGrad.addColorStop(1, "#FFE870");
+    bulbGrad.addColorStop(0, "#FFFEF8");
+    bulbGrad.addColorStop(1, "#FFE060");
     ctx.fillStyle = bulbGrad;
     ctx.fill();
     ctx.restore();
