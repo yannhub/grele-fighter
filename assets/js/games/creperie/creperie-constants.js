@@ -48,17 +48,17 @@ export const IT = {
 // Disposition des postes : de gauche à droite le long du comptoir
 // xRatio = centre x en fraction de la largeur du canvas
 export const STATION_LAYOUT = [
-  { type: ST.BATTER, label: "Pâte", xRatio: 0.06 },
-  { type: ST.BILIG, label: "Bilig 1", xRatio: 0.18 },
-  { type: ST.BILIG, label: "Bilig 2", xRatio: 0.3 },
-  { type: ST.BUTTER, label: "Beurre", xRatio: 0.4 },
-  { type: ST.SUGAR, label: "Sucre", xRatio: 0.48 },
-  { type: ST.CHOCOLATE, label: "Chocolat", xRatio: 0.56 },
-  { type: ST.STRAWBERRY, label: "Fraise", xRatio: 0.64 },
-  { type: ST.LEMON, label: "Citron", xRatio: 0.72 },
-  { type: ST.WHIPPED_CREAM, label: "Chantilly", xRatio: 0.8 },
-  { type: ST.DELIVERY, label: "Envoi", xRatio: 0.89 },
-  { type: ST.TRASH, label: "Poubelle", xRatio: 0.97 },
+  { type: ST.BATTER, label: "Pâte", xRatio: 0.05 },
+  { type: ST.BILIG, label: "Bilig 1", xRatio: 0.14 },
+  { type: ST.BILIG, label: "Bilig 2", xRatio: 0.23 },
+  { type: ST.BUTTER, label: "Beurre", xRatio: 0.34 },
+  { type: ST.SUGAR, label: "Sucre", xRatio: 0.42 },
+  { type: ST.CHOCOLATE, label: "Chocolat", xRatio: 0.5 },
+  { type: ST.STRAWBERRY, label: "Fraise", xRatio: 0.58 },
+  { type: ST.LEMON, label: "Citron", xRatio: 0.66 },
+  { type: ST.WHIPPED_CREAM, label: "Chantilly", xRatio: 0.74 },
+  { type: ST.DELIVERY, label: "Envoi", xRatio: 0.85 },
+  { type: ST.TRASH, label: "Poubelle", xRatio: 0.96 },
 ];
 
 // Recettes : ordre des toppings non significatif pour le match

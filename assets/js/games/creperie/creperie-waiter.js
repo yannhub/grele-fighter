@@ -8,7 +8,7 @@ import {
 
 export class CreperieWaiter {
   constructor(canvasWidth, canvasHeight) {
-    this.homeX = canvasWidth * 0.89;
+    this.homeX = canvasWidth * 0.85;
     this.homeY = canvasHeight * COUNTER_Y_RATIO - 35;
     this.x = this.homeX;
     this.y = this.homeY;
@@ -30,7 +30,7 @@ export class CreperieWaiter {
   }
 
   onResize(W, H) {
-    this.homeX = W * 0.89;
+    this.homeX = W * 0.85;
     this.homeY = H * COUNTER_Y_RATIO - 35;
     if (this.state === "idle") {
       this.x = this.homeX;
