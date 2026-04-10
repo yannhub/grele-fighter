@@ -6,7 +6,7 @@ import {
   GAME_TIME_IN_SECS,
   HAIL_DEFAULT,
   POWERUP_TYPES,
-} from "./constants.js";
+} from "./games/grele/grele-constants.js";
 import Leaderboard from "./leaderboard.js";
 
 export default class UI {

@@ -1,8 +1,8 @@
-// collision.js - Gestion des collisions entre objets du jeu
+// grele-collision.js - Gestion des collisions entre objets du jeu
 
-import { HAIL_DEFAULT, CLOUD_DROPS_DEFAULT } from "./constants.js";
+import { CLOUD_DROPS_DEFAULT, HAIL_DEFAULT } from "./grele-constants.js";
 
-export default class CollisionManager {
+export default class GreleCollisionManager {
   constructor(player, hailSystem, cornField, powerupSystem) {
     this.player = player;
     this.hailSystem = hailSystem;
@@ -10,7 +10,7 @@ export default class CollisionManager {
     this.powerupSystem = powerupSystem;
     this.score = 0;
     this.hailsDestroyed = 0;
-    this.cloudDropsDestroyed = 0; // Nouveau compteur pour les gouttes de nuage
+    this.cloudDropsDestroyed = 0; // Compteur pour les gouttes de nuage
   }
 
   // Vérifier toutes les collisions
@@ -83,7 +83,7 @@ export default class CollisionManager {
               drop.x - drop.size / 2,
               drop.y - drop.size / 2,
               drop.size,
-              CLOUD_DROPS_DEFAULT.color
+              CLOUD_DROPS_DEFAULT.color,
             );
 
             // Supprimer la goutte
@@ -92,7 +92,7 @@ export default class CollisionManager {
 
             // Ajouter des points au score (moins que les grêlons normaux)
             this.score += CLOUD_DROPS_DEFAULT.points;
-            this.cloudDropsDestroyed++; // Utiliser le compteur dédié aux gouttes de nuage
+            this.cloudDropsDestroyed++;
 
             break;
           }
@@ -166,7 +166,7 @@ export default class CollisionManager {
               drop.x - drop.size / 2,
               drop.y - drop.size / 2,
               drop.size,
-              CLOUD_DROPS_DEFAULT.color
+              CLOUD_DROPS_DEFAULT.color,
             );
 
             // Supprimer la goutte
@@ -212,7 +212,7 @@ export default class CollisionManager {
         this.powerupSystem.applyPowerupEffect(
           powerup,
           this.player,
-          this.cornField
+          this.cornField,
         );
 
         // Créer une animation d'effet au point de collision
@@ -254,7 +254,7 @@ export default class CollisionManager {
               stalk.x,
               stalk.y,
               stalk.width,
-              stalk.height
+              stalk.height,
             );
 
             // Supprimer le grêlon
@@ -297,10 +297,10 @@ export default class CollisionManager {
               stalk.x,
               stalk.y,
               stalk.width,
-              stalk.height
+              stalk.height,
             );
 
-            // Supprimer la goutte/grêlon du nuage
+            // Supprimer la goutte
             cloudDrops.splice(i, 1);
             i--;
 
@@ -313,85 +313,85 @@ export default class CollisionManager {
 
   // Vérifier l'effet de l'explosion et détruire tous les grêlons
   checkExplosionEffect() {
-    // Vérifier si un anneau d'explosion est actif
-    if (this.powerupSystem.explosionRing) {
-      const ring = this.powerupSystem.explosionRing;
-      const centerX = ring.x;
-      const centerY = ring.y;
-      const currentRadius = ring.currentRadius;
+    if (!this.powerupSystem.explosionRing) return;
 
-      // Récupérer tous les grêlons
-      const hails = this.hailSystem.hails;
+    const ring = this.powerupSystem.explosionRing;
+    const centerX = ring.x;
+    const centerY = ring.y;
+    const currentRadius = ring.currentRadius;
 
-      // Parcourir tous les grêlons pour les détruire s'ils sont atteints par l'explosion
-      for (let i = hails.length - 1; i >= 0; i--) {
-        const hail = hails[i];
-        const hailCenterX = hail.x + hail.size / 2;
-        const hailCenterY = hail.y + hail.size / 2;
+    // Récupérer tous les grêlons
+    const hails = this.hailSystem.hails;
 
-        // Calculer la distance entre le centre de l'explosion et le centre du grêlon
-        const dx = centerX - hailCenterX;
-        const dy = centerY - hailCenterY;
+    // Parcourir tous les grêlons pour les détruire s'ils sont atteints par l'explosion
+    for (let i = hails.length - 1; i >= 0; i--) {
+      const hail = hails[i];
+      const hailCenterX = hail.x + hail.size / 2;
+      const hailCenterY = hail.y + hail.size / 2;
+
+      // Calculer la distance entre le centre de l'explosion et le centre du grêlon
+      const dx = centerX - hailCenterX;
+      const dy = centerY - hailCenterY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      // Si le grêlon est à l'intérieur du rayon de l'anneau, le détruire
+      if (
+        distance <= currentRadius &&
+        distance >= currentRadius - 15 * this.powerupSystem.scaleFactor
+      ) {
+        // Créer une animation de particules à l'emplacement du grêlon
+        this.hailSystem.createHailParticles(hail.x, hail.y, hail.size);
+
+        // Ajouter des points au score et incrémenter le compteur de grêlons détruits
+        this.score += HAIL_DEFAULT.points;
+        this.hailsDestroyed++;
+
+        // Supprimer le grêlon
+        hails.splice(i, 1);
+      }
+    }
+
+    // Faire la même chose pour les gouttes du nuage toxique si elles existent
+    if (this.powerupSystem.activeCloudMalus) {
+      const cloudDrops = this.powerupSystem.activeCloudMalus.drops;
+
+      for (let i = cloudDrops.length - 1; i >= 0; i--) {
+        const drop = cloudDrops[i];
+
+        // Calculer la distance
+        const dx = centerX - drop.x;
+        const dy = centerY - drop.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        // Si le grêlon est à l'intérieur du rayon de l'anneau, le détruire
-        // En comparant avec currentRadius - 15 et currentRadius pour créer un effet d'anneau
+        // Si la goutte est dans le rayon d'action de l'explosion
         if (
           distance <= currentRadius &&
           distance >= currentRadius - 15 * this.powerupSystem.scaleFactor
         ) {
-          // Créer une animation de particules à l'emplacement du grêlon
-          this.hailSystem.createHailParticles(hail.x, hail.y, hail.size);
+          // Créer une animation de particules
+          this.hailSystem.createHailParticles(
+            drop.x - drop.size / 2,
+            drop.y - drop.size / 2,
+            drop.size,
+            CLOUD_DROPS_DEFAULT.color,
+          );
 
-          // Ajouter des points au score et incrémenter le compteur de grêlons détruits
-          this.score += HAIL_DEFAULT.points;
-          this.hailsDestroyed++;
+          // Ajouter des points au score
+          this.score += CLOUD_DROPS_DEFAULT.points;
+          this.cloudDropsDestroyed++;
 
-          // Supprimer le grêlon
-          hails.splice(i, 1);
-        }
-      }
-
-      // Faire la même chose pour les gouttes du nuage toxique si elles existent
-      if (this.powerupSystem.activeCloudMalus) {
-        const cloudDrops = this.powerupSystem.activeCloudMalus.drops;
-
-        for (let i = cloudDrops.length - 1; i >= 0; i--) {
-          const drop = cloudDrops[i];
-
-          // Calculer la distance
-          const dx = centerX - drop.x;
-          const dy = centerY - drop.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          // Si la goutte est dans le rayon d'action de l'explosion
-          if (
-            distance <= currentRadius &&
-            distance >= currentRadius - 15 * this.powerupSystem.scaleFactor
-          ) {
-            // Créer une animation de particules
-            this.hailSystem.createHailParticles(
-              drop.x - drop.size / 2,
-              drop.y - drop.size / 2,
-              drop.size,
-              CLOUD_DROPS_DEFAULT.color
-            );
-
-            // Ajouter des points au score
-            this.score += CLOUD_DROPS_DEFAULT.points;
-            this.cloudDropsDestroyed++;
-
-            // Supprimer la goutte
-            cloudDrops.splice(i, 1);
-          }
+          // Supprimer la goutte
+          cloudDrops.splice(i, 1);
         }
       }
     }
   }
 
-  // Vérifie si tous les épis de maïs sont détruits
-  areAllCornsDead() {
-    return this.cornField.areAllCornsDead();
+  // Réinitialiser le gestionnaire de collision
+  reset() {
+    this.score = 0;
+    this.hailsDestroyed = 0;
+    this.cloudDropsDestroyed = 0;
   }
 
   // Récupérer le score actuel
@@ -409,10 +409,8 @@ export default class CollisionManager {
     return this.cloudDropsDestroyed;
   }
 
-  // Réinitialiser les statistiques
-  reset() {
-    this.score = 0;
-    this.hailsDestroyed = 0;
-    this.cloudDropsDestroyed = 0;
+  // Vérifier si tous les épis sont détruits
+  areAllCornsDead() {
+    return this.cornField.areAllCornsDead();
   }
 }

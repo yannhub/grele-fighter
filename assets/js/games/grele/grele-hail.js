@@ -1,13 +1,13 @@
-// hail.js - Gestion des grêlons et de leur animation
+// grele-hail.js - Gestion des grêlons et de leur animation
 
 import {
-  HAIL_DEFAULT,
   ANIMATION,
+  HAIL_DEFAULT,
   MAX_SPEED_MULTIPLIER,
   STORM_CLOUD,
-} from "./constants.js";
+} from "./grele-constants.js";
 
-export default class HailSystem {
+export default class GreleHailSystem {
   constructor(canvas, ctx, scaleFactor) {
     this.canvas = canvas;
     this.ctx = ctx;
@@ -93,7 +93,7 @@ export default class HailSystem {
         hail.y + hail.size / 2,
         hail.size / 2,
         0,
-        Math.PI * 2
+        Math.PI * 2,
       );
       this.ctx.fill();
 
@@ -105,7 +105,7 @@ export default class HailSystem {
         hail.y + hail.size / 3,
         hail.size / 6,
         0,
-        Math.PI * 2
+        Math.PI * 2,
       );
       this.ctx.fill();
     }

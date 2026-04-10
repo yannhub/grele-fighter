@@ -27,17 +27,19 @@ const urlsToCache = [
   "./assets/css/welcome.css",
   "./assets/css/creperie-game.css",
 
-  // JavaScript
+  // JavaScript — commun
   "./assets/js/main.js",
-  "./assets/js/game.js",
-  "./assets/js/player.js",
-  "./assets/js/hail.js",
-  "./assets/js/corn.js",
-  "./assets/js/collision.js",
   "./assets/js/constants.js",
   "./assets/js/leaderboard.js",
-  "./assets/js/powerups.js",
   "./assets/js/ui.js",
+  // Jeu Grêle Fighter
+  "./assets/js/games/grele/grele-game.js",
+  "./assets/js/games/grele/grele-constants.js",
+  "./assets/js/games/grele/grele-player.js",
+  "./assets/js/games/grele/grele-hail.js",
+  "./assets/js/games/grele/grele-corn.js",
+  "./assets/js/games/grele/grele-collision.js",
+  "./assets/js/games/grele/grele-powerups.js",
   // Jeu Crêperie
   "./assets/js/games/creperie/creperie-game.js",
   "./assets/js/games/creperie/creperie-constants.js",

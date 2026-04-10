@@ -1,13 +1,13 @@
-// player.js - Gestion du joueur et des tirs
+// grele-player.js - Gestion du joueur et des tirs
 
 import {
-  PLAYER_DEFAULT,
   BULLET_DEFAULT,
   PLAYER_CANON,
+  PLAYER_DEFAULT,
   PLAYER_DISPLAY,
-} from "./constants.js";
+} from "./grele-constants.js";
 
-export default class Player {
+export default class GrelePlayer {
   constructor(canvas, ctx, scaleFactor) {
     this.canvas = canvas;
     this.ctx = ctx;
@@ -206,7 +206,7 @@ export default class Player {
       this.x + this.width / 2 - canonWidth / 2,
       this.y - canonHeight,
       canonWidth,
-      canonHeight
+      canonHeight,
     );
 
     // Ajouter le texte "G2S" en blanc
@@ -218,7 +218,7 @@ export default class Player {
     this.ctx.fillText(
       "G2S",
       this.x + this.width / 2,
-      this.y + this.height / 2 + PLAYER_DISPLAY.textOffsetY * this.scaleFactor
+      this.y + this.height / 2 + PLAYER_DISPLAY.textOffsetY * this.scaleFactor,
     );
 
     // Ajouter des roues (deux cercles noirs à gauche et à droite)
@@ -231,7 +231,7 @@ export default class Player {
       this.y + this.height,
       wheelRadius,
       0,
-      Math.PI * 2
+      Math.PI * 2,
     );
     this.ctx.fill();
     // Roue droite
@@ -241,7 +241,7 @@ export default class Player {
       this.y + this.height,
       wheelRadius,
       0,
-      Math.PI * 2
+      Math.PI * 2,
     );
     this.ctx.fill();
   }

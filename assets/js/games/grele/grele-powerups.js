@@ -1,17 +1,17 @@
-// powerups.js - Gestion des bonus/malus et de leurs effets
+// grele-powerups.js - Gestion des bonus/malus et de leurs effets
 
 import {
-  POWERUP_DEFAULT,
-  POWERUP_TYPES,
-  PLAYER_DEFAULT,
+  BULLET_DEFAULT,
   CLOUD_DROPS_DEFAULT,
   GAME_TIME_IN_SECS,
-  BULLET_DEFAULT,
-  PLAYER_DISPLAY,
   PLAYER_CANON,
-} from "./constants.js";
+  PLAYER_DEFAULT,
+  PLAYER_DISPLAY,
+  POWERUP_DEFAULT,
+  POWERUP_TYPES,
+} from "./grele-constants.js";
 
-export default class PowerupSystem {
+export default class GrelePowerupSystem {
   constructor(canvas, ctx, scaleFactor) {
     this.canvas = canvas;
     this.ctx = ctx;
@@ -76,7 +76,7 @@ export default class PowerupSystem {
     const newFrequency = Math.max(
       minInterval,
       initialInterval -
-        (elapsedTime / totalGameTime) * (initialInterval - minInterval)
+        (elapsedTime / totalGameTime) * (initialInterval - minInterval),
     );
 
     this.powerupFrequency = newFrequency;
@@ -130,7 +130,9 @@ export default class PowerupSystem {
         // Avant de supprimer, vérifier si d'autres powerups du même type sont actifs
         const otherActivePowerupsOfSameType = this.activePowerups.filter(
           (p) =>
-            p.type === powerup.type && p !== powerup && currentTime <= p.endTime
+            p.type === powerup.type &&
+            p !== powerup &&
+            currentTime <= p.endTime,
         );
 
         // Ne restaurer que s'il n'y a pas d'autre powerup du même type actif
@@ -223,7 +225,7 @@ export default class PowerupSystem {
         -powerup.size / 5,
         powerup.size / 6,
         0,
-        Math.PI * 2
+        Math.PI * 2,
       );
       this.ctx.fill();
 
@@ -276,7 +278,7 @@ export default class PowerupSystem {
             effect.y,
             effect.size * (1 - progress * 0.5),
             0,
-            Math.PI * 2
+            Math.PI * 2,
           );
           this.ctx.fill();
         }
@@ -300,7 +302,7 @@ export default class PowerupSystem {
       10 * this.scaleFactor,
       cloud.x + cloud.width / 2,
       cloud.y + cloud.height / 2,
-      cloud.width / 2
+      cloud.width / 2,
     );
     gradient.addColorStop(0, "#4B0082"); // Indigo au centre
     gradient.addColorStop(1, "#000033"); // Bleu très foncé aux bords
@@ -315,7 +317,7 @@ export default class PowerupSystem {
       cloud.y + cloud.height / 2,
       cloud.width / 3,
       0,
-      Math.PI * 2
+      Math.PI * 2,
     );
     this.ctx.fill();
 
@@ -403,7 +405,7 @@ export default class PowerupSystem {
         drop.y - drop.size / 4,
         drop.size / 6,
         0,
-        Math.PI * 2
+        Math.PI * 2,
       );
       this.ctx.fill();
 
@@ -548,7 +550,7 @@ export default class PowerupSystem {
       robot.y + robot.height,
       wheelRadius,
       0,
-      Math.PI * 2
+      Math.PI * 2,
     );
     this.ctx.fill();
 
@@ -559,7 +561,7 @@ export default class PowerupSystem {
       robot.y + robot.height,
       wheelRadius,
       0,
-      Math.PI * 2
+      Math.PI * 2,
     );
     this.ctx.fill();
 
@@ -705,12 +707,6 @@ export default class PowerupSystem {
     const particleCount = 20;
     const baseSize = powerup.size;
 
-    // Effet spécial pour la récupération de maïs
-    if (powerup.type === "RECOVER_CORN") {
-      // Animation spéciale pour le bonus de récupération de maïs
-      // géré séparément pour afficher les effets sur les épis
-    }
-
     for (let i = 0; i < particleCount; i++) {
       const angle = Math.random() * Math.PI * 2; // Angle aléatoire
       const distance = (Math.random() * baseSize) / 2; // Distance du centre
@@ -844,7 +840,7 @@ export default class PowerupSystem {
       ring.currentRadius - 15 * this.scaleFactor,
       ring.x,
       ring.y,
-      ring.currentRadius
+      ring.currentRadius,
     );
 
     gradient.addColorStop(0, `${ring.color}00`); // Transparent à l'intérieur
@@ -852,7 +848,7 @@ export default class PowerupSystem {
       0.5,
       `${ring.color}${Math.floor(ring.alpha * 200)
         .toString(16)
-        .padStart(2, "0")}`
+        .padStart(2, "0")}`,
     ); // Semi-transparent au milieu
     gradient.addColorStop(1, `${ring.color}00`); // Transparent à l'extérieur
 

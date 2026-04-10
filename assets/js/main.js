@@ -1,8 +1,9 @@
 // main.js - Point d'entrée de l'application avec routage par ?game=
 
-import Game from "./game.js";
 import { GAME_CONFIG as CREPERIE_CONFIG } from "./games/creperie/creperie-constants.js";
 import CreperieGame from "./games/creperie/creperie-game.js";
+import { GAME_CONFIG as GRELE_CONFIG } from "./games/grele/grele-constants.js";
+import GreleGame from "./games/grele/grele-game.js";
 import UI from "./ui.js";
 
 let currentUI;
@@ -54,11 +55,10 @@ function configureWelcomeScreen(gameId) {
     if (testBtn) testBtn.style.display = "none";
     if (testRecapBtn) testRecapBtn.style.display = "none";
   } else {
-    // Configuration par défaut pour grêle
-    if (tagline)
-      tagline.textContent = "Défendez vos cultures, sauvez la récolte!";
+    // Configuration depuis grele-constants.js
+    if (tagline) tagline.textContent = GRELE_CONFIG.tagline;
     if (description)
-      description.innerHTML = `<p>Prenez les commandes du canon anti-grêle et protégez les champs de maïs contre les intempéries destructrices!</p>`;
+      description.innerHTML = `<p>${GRELE_CONFIG.description}</p>`;
     if (prize) prize.style.display = "block";
     if (testBtn) testBtn.style.display = "block";
     if (testRecapBtn) testRecapBtn.style.display = "block";
@@ -100,7 +100,7 @@ function initGreleGame(playerInfo = null) {
 
   currentUI.setGameManager(realGameManager);
 
-  game = new Game(currentUI);
+  game = new GreleGame(currentUI);
 
   // Utiliser le leaderboard de l'UI
   game.leaderboard = currentUI.leaderboard;

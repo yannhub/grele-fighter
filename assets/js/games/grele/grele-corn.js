@@ -1,13 +1,13 @@
-// corn.js - Gestion des épis de maïs
+// grele-corn.js - Gestion des épis de maïs
 
 import {
-  CORN_COUNT,
-  CORN_DEFAULT,
   ANIMATION,
   CORN_COLORS,
-} from "./constants.js";
+  CORN_COUNT,
+  CORN_DEFAULT,
+} from "./grele-constants.js";
 
-export default class CornField {
+export default class GreleCornField {
   constructor(canvas, ctx, scaleFactor) {
     this.canvas = canvas;
     this.ctx = ctx;
@@ -54,7 +54,7 @@ export default class CornField {
           stalk.x + stalk.width / 2 - stemWidth / 2,
           stalk.y + CORN_DEFAULT.stemOffsetY * this.scaleFactor,
           stemWidth,
-          stalk.height - CORN_DEFAULT.stemOffsetY * this.scaleFactor
+          stalk.height - CORN_DEFAULT.stemOffsetY * this.scaleFactor,
         );
 
         // Épi de maïs (forme cylindrique jaune)
@@ -67,7 +67,7 @@ export default class CornField {
           CORN_DEFAULT.clobHeight * this.scaleFactor,
           0,
           0,
-          Math.PI * 2
+          Math.PI * 2,
         );
         this.ctx.fill();
 
@@ -81,7 +81,7 @@ export default class CornField {
           CORN_DEFAULT.silkHeight * this.scaleFactor,
           0,
           0,
-          Math.PI * 2
+          Math.PI * 2,
         );
         this.ctx.fill();
 
@@ -100,7 +100,7 @@ export default class CornField {
                 i * CORN_DEFAULT.grainSpacingY * this.scaleFactor,
               CORN_DEFAULT.grainRadius * this.scaleFactor,
               0,
-              Math.PI * 2
+              Math.PI * 2,
             );
             this.ctx.fill();
           }
@@ -111,7 +111,7 @@ export default class CornField {
         this.ctx.beginPath();
         this.ctx.moveTo(
           stalk.x + stalk.width / 2,
-          stalk.y + CORN_DEFAULT.leafOffset1 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset1 * this.scaleFactor,
         );
         this.ctx.quadraticCurveTo(
           stalk.x +
@@ -121,18 +121,18 @@ export default class CornField {
           stalk.x +
             stalk.width / 2 -
             CORN_DEFAULT.leafOffset2 * this.scaleFactor,
-          stalk.y + CORN_DEFAULT.leafOffset1 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset1 * this.scaleFactor,
         );
         this.ctx.lineTo(
           stalk.x + stalk.width / 2,
-          stalk.y + CORN_DEFAULT.leafOffset3 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset3 * this.scaleFactor,
         );
         this.ctx.fill();
 
         this.ctx.beginPath();
         this.ctx.moveTo(
           stalk.x + stalk.width / 2,
-          stalk.y + CORN_DEFAULT.leafOffset2 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset2 * this.scaleFactor,
         );
         this.ctx.quadraticCurveTo(
           stalk.x +
@@ -142,11 +142,11 @@ export default class CornField {
           stalk.x +
             stalk.width / 2 +
             CORN_DEFAULT.leafOffset2 * this.scaleFactor,
-          stalk.y + CORN_DEFAULT.leafOffset2 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset2 * this.scaleFactor,
         );
         this.ctx.lineTo(
           stalk.x + stalk.width / 2,
-          stalk.y + CORN_DEFAULT.leafOffset4 * this.scaleFactor
+          stalk.y + CORN_DEFAULT.leafOffset4 * this.scaleFactor,
         );
         this.ctx.fill();
       }
@@ -183,15 +183,15 @@ export default class CornField {
       // Calculer la couleur intermédiaire entre jaune et marron
       const brownValue = Math.floor(
         CORN_COLORS.dyingRedEnd * (1 - corn.alpha) +
-          CORN_COLORS.dyingRedStart * corn.alpha
+          CORN_COLORS.dyingRedStart * corn.alpha,
       );
       const greenValue = Math.floor(
         CORN_COLORS.dyingGreenEnd * (1 - corn.alpha) +
-          CORN_COLORS.dyingGreenStart * corn.alpha
+          CORN_COLORS.dyingGreenStart * corn.alpha,
       );
       const redValue = Math.floor(
         CORN_COLORS.dyingBlueValue * (1 - corn.alpha) +
-          CORN_COLORS.dyingRedStart * corn.alpha
+          CORN_COLORS.dyingRedStart * corn.alpha,
       );
 
       // Dessiner l'épi qui se fane
@@ -210,7 +210,7 @@ export default class CornField {
         CORN_DEFAULT.clobHeight * this.scaleFactor,
         0,
         0,
-        Math.PI * 2
+        Math.PI * 2,
       );
       this.ctx.fill();
 

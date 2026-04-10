@@ -1,6 +1,7 @@
-// game.js - Gestionnaire principal du jeu
+// grele-game.js - Gestionnaire principal du jeu Grêle Fighter
 
-import CollisionManager from "./collision.js";
+import Leaderboard from "../../leaderboard.js";
+import GreleCollisionManager from "./grele-collision.js";
 import {
   BACKGROUND,
   BASE_HEIGHT,
@@ -9,14 +10,13 @@ import {
   FRAME_DURATION,
   HAIL_DEFAULT,
   UI,
-} from "./constants.js";
-import CornField from "./corn.js";
-import HailSystem from "./hail.js";
-import Leaderboard from "./leaderboard.js";
-import Player from "./player.js";
-import PowerupSystem from "./powerups.js";
+} from "./grele-constants.js";
+import GreleCornField from "./grele-corn.js";
+import GreleHailSystem from "./grele-hail.js";
+import GrelePlayer from "./grele-player.js";
+import GrelePowerupSystem from "./grele-powerups.js";
 
-export default class Game {
+export default class GreleGame {
   constructor(ui) {
     this.ui = ui;
 
@@ -52,16 +52,24 @@ export default class Game {
     this.resizeGame();
 
     // Instancier le joueur
-    this.player = new Player(this.canvas, this.ctx, this.scaleFactor);
+    this.player = new GrelePlayer(this.canvas, this.ctx, this.scaleFactor);
 
     // Instancier le champ de maïs
-    this.cornField = new CornField(this.canvas, this.ctx, this.scaleFactor);
+    this.cornField = new GreleCornField(
+      this.canvas,
+      this.ctx,
+      this.scaleFactor,
+    );
 
     // Instancier le système de grêlons
-    this.hailSystem = new HailSystem(this.canvas, this.ctx, this.scaleFactor);
+    this.hailSystem = new GreleHailSystem(
+      this.canvas,
+      this.ctx,
+      this.scaleFactor,
+    );
 
     // Instancier le système de bonus/malus
-    this.powerupSystem = new PowerupSystem(
+    this.powerupSystem = new GrelePowerupSystem(
       this.canvas,
       this.ctx,
       this.scaleFactor,
@@ -71,7 +79,7 @@ export default class Game {
     this.player.setPowerupSystem(this.powerupSystem);
 
     // Instancier le gestionnaire de collision
-    this.collisionManager = new CollisionManager(
+    this.collisionManager = new GreleCollisionManager(
       this.player,
       this.hailSystem,
       this.cornField,
