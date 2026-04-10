@@ -69,6 +69,10 @@ export default class UI {
     this.setupEventListeners();
   }
 
+  setGameManager(gameManager) {
+    this.gameManager = gameManager;
+  }
+
   // Initialise les valeurs de l'interface à partir des constantes (grêle)
   initializeUIValues() {
     const hailPointsEl = document.getElementById("hail-points");
@@ -126,7 +130,7 @@ export default class UI {
         return;
       }
       nicknameError.style.display = "none";
-      this.playerInfo = { nickname, organization };
+      this.playerInfo = { ...this.playerInfo, nickname, organization };
       this.registerForm.style.display = "none";
       this.gameInstructions.style.display = "block";
     });
@@ -203,7 +207,7 @@ export default class UI {
     this.welcomeScreen.style.display = "none";
     this.gameCanvas.style.display = "block";
     this.scoreDisplay.style.display = "block";
-    this.gameManager.startGame();
+    this.gameManager.startGame(this.playerInfo);
   }
 
   // Démarrer le timer (utilisé par le jeu grêle uniquement)

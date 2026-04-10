@@ -3,132 +3,131 @@
 import Game from "./game.js";
 import { GAME_CONFIG as CREPERIE_CONFIG } from "./games/creperie/creperie-constants.js";
 import CreperieGame from "./games/creperie/creperie-game.js";
-import Leaderboard from "./leaderboard.js";
 import UI from "./ui.js";
+
+let currentUI;
 
 document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(location.search);
   const gameId = params.get("game");
 
-  // Toujours afficher le sélecteur en premier
   const selector = document.getElementById("game-selector");
-  selector.style.display = "block";
+  const welcomeScreen = document.getElementById("welcome-screen");
 
-  let selectedGame = gameId || null;
-
-  // Pré-sélectionner la carte si ?game= dans l'URL
-  if (selectedGame) {
-    _highlightCard(selectedGame);
+  if (gameId) {
+    // Si jeu dans l'URL, masquer le sélecteur et afficher l'écran d'accueil configuré
+    selector.style.display = "none";
+    welcomeScreen.style.display = "block";
+    configureWelcomeScreen(gameId);
+  } else {
+    // Sinon, afficher le sélecteur et masquer l'écran d'accueil
+    selector.style.display = "block";
+    welcomeScreen.style.display = "none";
   }
 
   // Clics sur les cartes de jeu
   selector.querySelectorAll(".game-card").forEach((card) => {
     card.addEventListener("click", () => {
       const g = card.dataset.game;
-      selectedGame = g;
-      _highlightCard(g);
       // Mettre à jour l'URL sans rechargement
       history.pushState({}, "", `?game=${g}`);
-    });
-  });
-
-  // Bouton "JOUER →"
-  const launchBtn = document.getElementById("launch-game-btn");
-  if (launchBtn) {
-    launchBtn.addEventListener("click", () => {
-      if (selectedGame) {
-        selector.style.display = "none";
-        _launchGame(selectedGame);
-      }
-    });
-  }
-
-  // Double-clic sur la carte = sélection + lancement direct
-  selector.querySelectorAll(".game-card").forEach((card) => {
-    card.addEventListener("dblclick", () => {
-      const g = card.dataset.game;
-      selectedGame = g;
+      // Masquer le sélecteur, afficher l'écran d'accueil configuré
       selector.style.display = "none";
-      _launchGame(g);
+      welcomeScreen.style.display = "block";
+      configureWelcomeScreen(g);
     });
   });
 });
 
-function _highlightCard(gameId) {
-  document.querySelectorAll(".game-card").forEach((c) => {
-    c.classList.toggle("selected", c.dataset.game === gameId);
-  });
-  const launchBtn = document.getElementById("launch-game-btn");
-  if (launchBtn) launchBtn.style.display = "block";
-}
-
-function _launchGame(gameId) {
-  if (gameId === "grele") {
-    initGreleGame();
-  } else if (gameId === "creperie") {
-    initCreperieGame();
-  } else {
-    document.getElementById("game-selector").style.display = "block";
-  }
-}
-
-function initGreleGame() {
-  document.title = "Grêle Fighter — G2S";
-
-  let game;
-  const ui = new UI(
-    {
-      startGame: () => game.startGame(),
-      endGame: () => game.endGame(),
-      triggerStormCloud: () => game.triggerStormCloud(),
-      resizeGame: () => game.resizeGame(),
-    },
-    "grele",
-  );
-
-  game = new Game(ui);
-
-  const leaderboard = new Leaderboard(ui, "grele");
-  leaderboard.updateDisplay();
-
-  game.leaderboard = leaderboard;
-  game.resizeGame();
-}
-
-function initCreperieGame() {
-  document.title = "La Crêperie — G2S";
-
-  // Appliquer la config crêperie à l'écran d'accueil
+function configureWelcomeScreen(gameId) {
   const tagline = document.getElementById("welcome-tagline");
   const description = document.getElementById("welcome-description");
   const prize = document.getElementById("welcome-prize");
-  if (tagline) tagline.textContent = CREPERIE_CONFIG.title;
-  if (description) description.innerHTML = `<p>${CREPERIE_CONFIG.subtitle}</p>`;
-  if (prize && CREPERIE_CONFIG.hidePrize) prize.style.display = "none";
-
-  // Masquer les boutons test
   const testBtn = document.getElementById("test-mode-btn");
-  if (testBtn) testBtn.style.display = "none";
   const testRecapBtn = document.getElementById("test-recap-btn");
-  if (testRecapBtn) testRecapBtn.style.display = "none";
+
+  if (gameId === "creperie") {
+    if (tagline) tagline.textContent = CREPERIE_CONFIG.title;
+    if (description)
+      description.innerHTML = `<p>${CREPERIE_CONFIG.subtitle}</p>`;
+    if (prize && CREPERIE_CONFIG.hidePrize) prize.style.display = "none";
+    if (testBtn) testBtn.style.display = "none";
+    if (testRecapBtn) testRecapBtn.style.display = "none";
+  } else {
+    // Configuration par défaut pour grêle
+    if (tagline)
+      tagline.textContent = "Défendez vos cultures, sauvez la récolte!";
+    if (description)
+      description.innerHTML = `<p>Prenez les commandes du canon anti-grêle et protégez les champs de maïs contre les intempéries destructrices!</p>`;
+    if (prize) prize.style.display = "block";
+    if (testBtn) testBtn.style.display = "block";
+    if (testRecapBtn) testRecapBtn.style.display = "block";
+  }
+
+  // Initialiser l'UI pour ce jeu
+  initUIForGame(gameId);
+}
+
+function initUIForGame(gameId) {
+  const gameManager = {
+    startGame: (playerInfo) => _launchGame(gameId, playerInfo),
+    endGame: () => {}, // Sera remplacé par le vrai game
+    triggerStormCloud: () => {},
+    resizeGame: () => {},
+  };
+
+  currentUI = new UI(gameManager, gameId);
+}
+
+function _launchGame(gameId, playerInfo) {
+  if (gameId === "grele") {
+    initGreleGame(playerInfo);
+  } else if (gameId === "creperie") {
+    initCreperieGame(playerInfo);
+  }
+}
+
+function initGreleGame(playerInfo = null) {
+  document.title = "Grêle Fighter — G2S";
+
+  let game;
+  const realGameManager = {
+    startGame: (playerInfo) => game.startGame(playerInfo),
+    endGame: () => game.endGame(),
+    triggerStormCloud: () => game.triggerStormCloud(),
+    resizeGame: () => game.resizeGame(),
+  };
+
+  currentUI.setGameManager(realGameManager);
+
+  game = new Game(currentUI);
+
+  // Utiliser le leaderboard de l'UI
+  game.leaderboard = currentUI.leaderboard;
+  game.leaderboard.updateDisplay();
+
+  game.startGame(playerInfo);
+}
+
+function initCreperieGame(playerInfo = null) {
+  document.title = "La Crêperie — G2S";
 
   const creperieGame = new CreperieGame();
 
-  const ui = new UI(
-    {
-      startGame: (playerInfo) => creperieGame.startGame(playerInfo),
-      endGame: () => creperieGame.endGame(),
-      triggerStormCloud: () => {},
-      resizeGame: () => creperieGame.resizeGame(),
-    },
-    "creperie",
-  );
+  const realGameManager = {
+    startGame: (playerInfo) => creperieGame.startGame(playerInfo),
+    endGame: () => creperieGame.endGame(),
+    triggerStormCloud: () => {},
+    resizeGame: () => creperieGame.resizeGame(),
+  };
 
-  creperieGame.setUI(ui);
+  currentUI.setGameManager(realGameManager);
 
-  const leaderboard = new Leaderboard(ui, "creperie");
-  leaderboard.updateDisplay();
+  creperieGame.setUI(currentUI);
 
-  creperieGame.leaderboard = leaderboard;
-  creperieGame.resizeGame();
+  // Utiliser le leaderboard de l'UI
+  creperieGame.leaderboard = currentUI.leaderboard;
+  creperieGame.leaderboard.updateDisplay();
+
+  creperieGame.startGame(playerInfo || {});
 }

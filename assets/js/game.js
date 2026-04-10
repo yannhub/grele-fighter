@@ -1,20 +1,20 @@
 // game.js - Gestionnaire principal du jeu
 
+import CollisionManager from "./collision.js";
 import {
-  BASE_WIDTH,
-  BASE_HEIGHT,
-  DIFFICULTY_INCREASE_RATE,
-  HAIL_DEFAULT,
-  FRAME_DURATION,
   BACKGROUND,
+  BASE_HEIGHT,
+  BASE_WIDTH,
+  DIFFICULTY_INCREASE_RATE,
+  FRAME_DURATION,
+  HAIL_DEFAULT,
   UI,
 } from "./constants.js";
-import Player from "./player.js";
 import CornField from "./corn.js";
 import HailSystem from "./hail.js";
-import PowerupSystem from "./powerups.js";
-import CollisionManager from "./collision.js";
 import Leaderboard from "./leaderboard.js";
+import Player from "./player.js";
+import PowerupSystem from "./powerups.js";
 
 export default class Game {
   constructor(ui) {
@@ -64,7 +64,7 @@ export default class Game {
     this.powerupSystem = new PowerupSystem(
       this.canvas,
       this.ctx,
-      this.scaleFactor
+      this.scaleFactor,
     );
 
     // Donner au joueur une référence au système de bonus/malus
@@ -75,12 +75,12 @@ export default class Game {
       this.player,
       this.hailSystem,
       this.cornField,
-      this.powerupSystem
+      this.powerupSystem,
     );
   }
 
   // Démarrer une nouvelle partie
-  startGame() {
+  startGame(playerInfo = null) {
     // Réinitialiser les variables du jeu
     this.resetGame();
 
@@ -111,7 +111,7 @@ export default class Game {
       Math.max(
         HAIL_DEFAULT.minInterval,
         HAIL_DEFAULT.createInterval -
-          Math.log(this.gameSpeed) * HAIL_DEFAULT.intervalReduction * 2.5
+          Math.log(this.gameSpeed) * HAIL_DEFAULT.intervalReduction * 2.5,
       );
 
     // Créer un nouvel intervalle avec le délai calculé
@@ -130,7 +130,7 @@ export default class Game {
   schedulePowerupCreation() {
     // Utiliser la méthode avec le temps de début du jeu pour obtenir une progression linéaire
     const currentInterval = this.powerupSystem.updatePowerupFrequency(
-      this.gameStartTime
+      this.gameStartTime,
     );
 
     // Créer un nouveau timeout avec l'intervalle actuel
@@ -202,7 +202,7 @@ export default class Game {
     // Mettre à jour le score affiché
     this.ui.updateScore(
       this.collisionManager.getScore(),
-      this.currentHailInterval
+      this.currentHailInterval,
     );
 
     // Vérifier si tous les épis sont détruits
@@ -221,7 +221,7 @@ export default class Game {
     const newInterval = Math.max(
       HAIL_DEFAULT.minInterval,
       HAIL_DEFAULT.createInterval -
-        Math.log(this.gameSpeed) * HAIL_DEFAULT.intervalReduction * 3
+        Math.log(this.gameSpeed) * HAIL_DEFAULT.intervalReduction * 3,
     );
 
     // Si l'intervalle a changé de façon significative (plus de 10ms de différence)
@@ -244,7 +244,7 @@ export default class Game {
       0,
       0,
       0,
-      this.canvas.height
+      this.canvas.height,
     );
     skyGradient.addColorStop(0, BACKGROUND.skyTop); // Bleu ciel en haut
     skyGradient.addColorStop(1, BACKGROUND.skyBottom); // Bleu ciel plus clair en bas
@@ -263,7 +263,7 @@ export default class Game {
     const gameAreaWidth = gameArea.clientWidth - UI.gamePadding; // -40 pour le padding
     const gameAreaHeight = Math.min(
       window.innerHeight * UI.maxHeightRatio,
-      gameAreaWidth * UI.aspectRatio
+      gameAreaWidth * UI.aspectRatio,
     );
 
     // Ajuster la taille du canvas
@@ -273,7 +273,7 @@ export default class Game {
     // Calculer le facteur d'échelle par rapport à la taille de référence
     this.scaleFactor = Math.min(
       this.canvas.width / BASE_WIDTH,
-      this.canvas.height / BASE_HEIGHT
+      this.canvas.height / BASE_HEIGHT,
     );
 
     // Mettre à jour le facteur d'échelle pour chaque système
@@ -306,22 +306,22 @@ export default class Game {
     this.ctx.fillText(
       `HailInterval: ${Math.round(this.currentHailInterval || 0)}ms`,
       40,
-      50
+      50,
     );
     this.ctx.fillText(
       `BaseFireRate: ${Math.round(this.player.baseFireRate)}ms`,
       40,
-      70
+      70,
     );
 
     // Ajouter l'intervalle des powerups
     const powerupInterval = this.powerupSystem.updatePowerupFrequency(
-      this.gameStartTime
+      this.gameStartTime,
     );
     this.ctx.fillText(
       `PowerUpInterval: ${Math.round(powerupInterval)}ms`,
       40,
-      90
+      90,
     );
   }
 
@@ -344,7 +344,7 @@ export default class Game {
       hailsDestroyed,
       cloudDropsDestroyed,
       cornSaved,
-      collectedPowerups
+      collectedPowerups,
     );
 
     // Sauvegarder le score

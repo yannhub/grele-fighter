@@ -64,7 +64,9 @@ export class CreperieRenderer {
     const counterH = H * COUNTER_HEIGHT_RATIO;
     this._time = Date.now();
 
-    ctx.clearRect(0, 0, W, H);
+    // Remplir le fond avec une couleur de base
+    ctx.fillStyle = "#E8D0B0"; // COL.WALL_BOTTOM
+    ctx.fillRect(0, 0, W, H);
 
     drawBackground(ctx, W, H, counterY, counterH, this._time);
     drawFurniture(ctx, W, counterY, customerManager);

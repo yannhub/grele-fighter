@@ -7,9 +7,8 @@ export default class Leaderboard {
     this.leaderboardElement = document.getElementById("leaderboard-list");
     this.tooltipElement = null;
     this.ui = ui;
-    // Clé de stockage séparée par jeu (rétro-compatible : grele garde l'ancienne clé)
-    this.storageKey =
-      gameId === "grele" ? STORAGE_KEY : `${STORAGE_KEY}_${gameId}`;
+    // Clé de stockage séparée par jeu
+    this.storageKey = `${STORAGE_KEY}_${gameId}`;
     this.initTooltip();
   }
 
@@ -321,6 +320,6 @@ export default class Leaderboard {
     this.ui.showGameScreen();
 
     // Démarrer une nouvelle partie
-    this.ui.gameManager.startGame();
+    this.ui.gameManager.startGame(this.ui.playerInfo);
   }
 }

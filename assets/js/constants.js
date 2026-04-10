@@ -219,4 +219,4 @@ export const ANIMATION = {
 };
 
 // Noms de stockage local
-export const STORAGE_KEY = "greleDefenseLeaderboard";
+export const STORAGE_KEY = "g2s_Leaderboard";
