@@ -67,6 +67,9 @@ export default class UI {
 
     // Initialiser les événements
     this.setupEventListeners();
+
+    // Afficher le leaderboard avec les scores existants
+    this.leaderboard.updateDisplay();
   }
 
   setGameManager(gameManager) {
