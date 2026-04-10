@@ -1,11 +1,12 @@
 // creperie-stations.js — Gestion des postes de travail
 
-import { BILIG_COOK_TIME, IT, ST } from "./creperie-constants.js";
+import { BILIG_COOK_TIME, BURN_DELAY, IT, ST } from "./creperie-constants.js";
 
 export const BILIG_STATE = {
   EMPTY: "empty",
   COOKING: "cooking",
   READY: "ready",
+  BURNING: "burning",
 };
 
 const TOPPING_TYPES = new Set([
@@ -29,11 +30,15 @@ export class Station {
     this.w = 0;
     this.h = 0;
 
+    // Flag assistant bilig (joueur ne peut pas interagir)
+    this.isAssistantBilig = false;
+
     // État du bilig
     this.biligState = BILIG_STATE.EMPTY;
     this.cookTimer = 0;
     this.cookProgress = 0; // 0→1
     this.biligToppings = []; // ingrédients posés sur le bilig
+    this.burnTimer = 0; // ms depuis l'état READY (déclenchement incendie)
 
     // État du poste d'envoi
     this.deliveryCrepe = null; // { type, toppings[] }
@@ -45,17 +50,35 @@ export class Station {
   }
 
   update(dt, cookMultiplier = 1) {
-    if (this.type === ST.BILIG && this.biligState === BILIG_STATE.COOKING) {
-      this.cookTimer += dt * cookMultiplier;
-      this.cookProgress = Math.min(1, this.cookTimer / BILIG_COOK_TIME);
-      if (this.cookTimer >= BILIG_COOK_TIME) {
-        this.biligState = BILIG_STATE.READY;
-        this.cookProgress = 1;
+    if (this.type === ST.BILIG) {
+      if (this.biligState === BILIG_STATE.COOKING) {
+        this.cookTimer += dt * cookMultiplier;
+        this.cookProgress = Math.min(1, this.cookTimer / BILIG_COOK_TIME);
+        if (this.cookTimer >= BILIG_COOK_TIME) {
+          this.biligState = BILIG_STATE.READY;
+          this.cookProgress = 1;
+          this.burnTimer = 0;
+        }
+      } else if (this.biligState === BILIG_STATE.READY) {
+        this.burnTimer += dt;
+        if (this.burnTimer >= BURN_DELAY) {
+          this.biligState = BILIG_STATE.BURNING;
+        }
       }
     }
     if (this.flashTimer > 0) {
       this.flashTimer = Math.max(0, this.flashTimer - dt);
     }
+  }
+
+  // Extinction d'incendie par le pompier
+  resetFire() {
+    this.biligState = BILIG_STATE.EMPTY;
+    this.cookTimer = 0;
+    this.cookProgress = 0;
+    this.burnTimer = 0;
+    this.biligToppings = [];
+    this.flash("#4FC3F7"); // bleu eau
   }
 
   /**
@@ -67,11 +90,12 @@ export class Station {
       case ST.BATTER:
         return this._interactBatter(playerHands);
       case ST.BILIG:
+        if (this.biligState === BILIG_STATE.BURNING) return { action: "none" };
         return this._interactBilig(playerHands);
       case ST.DELIVERY:
         return this._interactDelivery(playerHands);
-      case ST.TRASH:
-        return this._interactTrash(playerHands);
+      case ST.DONATION:
+        return this._interactDonation(playerHands);
       default:
         return this._interactIngredient(playerHands);
     }
@@ -93,29 +117,27 @@ export class Station {
         this.biligState = BILIG_STATE.COOKING;
         this.cookTimer = 0;
         this.cookProgress = 0;
+        this.burnTimer = 0;
         this.biligToppings = [];
         return { action: "take", itemIndex: idx };
       }
 
       case BILIG_STATE.COOKING: {
-        // Déposer UN ingrédient à la fois sur le bilig pendant la cuisson
         const topping = playerHands.find((i) => TOPPING_TYPES.has(i.type));
         if (topping && this.biligToppings.length < 3) {
           this.biligToppings.push(topping.type);
           return { action: "deposit_toppings", toppingItems: [topping] };
         }
-        return { action: "none" }; // encore en cuisson
+        return { action: "none" };
       }
 
       case BILIG_STATE.READY: {
-        // Déposer UN ingrédient à la fois avant de récupérer
         const topping = playerHands.find((i) => TOPPING_TYPES.has(i.type));
         if (topping && this.biligToppings.length < 3) {
           this.biligToppings.push(topping.type);
           return { action: "deposit_toppings", toppingItems: [topping] };
         }
-        // Ramasser la crêpe (avec ou sans ingrédients)
-        if (playerHands.length >= 3) return { action: "none" }; // mains pleines
+        if (playerHands.length >= 3) return { action: "none" };
         const crepe = {
           type: IT.ASSEMBLED_CREPE,
           toppings: [...this.biligToppings],
@@ -123,6 +145,7 @@ export class Station {
         this.biligState = BILIG_STATE.EMPTY;
         this.biligToppings = [];
         this.cookProgress = 0;
+        this.burnTimer = 0;
         return { action: "give", item: crepe };
       }
     }
@@ -156,9 +179,9 @@ export class Station {
     return { action: "none" };
   }
 
-  _interactTrash(playerHands) {
+  _interactDonation(playerHands) {
     if (playerHands.length === 0) return { action: "none" };
-    return { action: "trash" };
+    return { action: "donation" };
   }
 
   _interactIngredient(playerHands) {

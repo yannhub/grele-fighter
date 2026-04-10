@@ -18,10 +18,14 @@ import {
 } from "./renderers/renderer-hud.js";
 import {
   drawAutoPlayer,
-  drawBonusIndicator,
+  drawFirefighterPlayer,
+  drawFloorTokens,
   drawPlayer,
 } from "./renderers/renderer-player.js";
-import { drawStations } from "./renderers/renderer-stations.js";
+import {
+  drawAssistantBiligs,
+  drawStations,
+} from "./renderers/renderer-stations.js";
 import { drawWaiter } from "./renderers/renderer-waiter.js";
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
@@ -45,9 +49,13 @@ export class CreperieRenderer {
     heartsLeft,
     maxHearts,
     deliveryFeedback,
-    autoPlayer = null,
-    bonusTimer = null,
+    assistants = [],
+    assistanceBiligs = [],
+    assistanceTokens = [],
+    incendieToken = null,
+    firefighter = null,
     waiter = null,
+    donationCount = 0,
   ) {
     const W = canvas.width;
     const H = canvas.height;
@@ -71,13 +79,39 @@ export class CreperieRenderer {
       this._time,
       player.currentStation,
     );
+
+    // Biligs des assistants (rangée du bas)
+    drawAssistantBiligs(ctx, assistanceBiligs, this._time, assistants);
+
+    // Tokens au sol (assistance + incendie)
+    drawFloorTokens(ctx, assistanceTokens, incendieToken, W, H, this._time);
+
     drawPlayer(ctx, player, counterY, counterH, this._time);
-    if (autoPlayer) drawAutoPlayer(ctx, autoPlayer, counterY, this._time);
+
+    // Assistants crépiers
+    assistants.forEach((a) => {
+      drawAutoPlayer(ctx, a.player, counterY, this._time);
+    });
+
+    // Pompier G2S
+    if (firefighter) drawFirefighterPlayer(ctx, firefighter, this._time);
+
     drawParticles(ctx, this.particles);
     drawDeliveryFeedback(ctx, deliveryFeedback);
-    drawHUD(ctx, W, H, score, timeLeft, heartsLeft, maxHearts);
-    if (bonusTimer !== null)
-      drawBonusIndicator(ctx, W, H, bonusTimer, this._time);
+
+    // HUD moderne plein-canvas (top strip)
+    drawHUD(
+      ctx,
+      W,
+      H,
+      score,
+      timeLeft,
+      heartsLeft,
+      maxHearts,
+      assistants.length,
+      donationCount,
+    );
+
     drawAmbientLighting(ctx, W, H, counterY);
   }
 

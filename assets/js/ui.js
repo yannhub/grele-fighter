@@ -57,7 +57,7 @@ export default class UI {
     this.timerInterval = null;
 
     // État du jeu
-    this.playerInfo = {};
+    this.playerInfo = { character: "cerise" };
     this.gameEndReason = "";
 
     // Initialiser les valeurs d'interface depuis les constantes (grêle uniquement)
@@ -134,15 +134,41 @@ export default class UI {
     this.playBtn.addEventListener("click", () => {
       this.gameInstructions.style.display = "none";
       this.gameCanvas.style.display = "block";
-      this.scoreDisplay.style.display = "block";
-      this.gameManager.startGame();
+      if (this.gameId !== "creperie") {
+        this.scoreDisplay.style.display = "block";
+      }
+      this.gameManager.startGame(this.playerInfo);
     });
+
+    // Crêperie : lancer avec la barre espace depuis l'écran des règles
+    if (this.gameId === "creperie") {
+      window.addEventListener("keydown", (e) => {
+        if (
+          e.key === " " &&
+          this.gameInstructions &&
+          this.gameInstructions.style.display !== "none"
+        ) {
+          e.preventDefault();
+          this.gameInstructions.style.display = "none";
+          this.gameCanvas.style.display = "block";
+          this.gameManager.startGame(this.playerInfo);
+        }
+      });
+
+      // Sélecteur de personnage
+      this._setupCharacterSelector();
+    }
+
+    // Lightbox sketchnote
+    this._setupSketchnoteModal();
 
     this.playAgainBtn.addEventListener("click", () => {
       this.gameOverScreen.style.display = "none";
       this.gameCanvas.style.display = "block";
-      this.scoreDisplay.style.display = "block";
-      this.gameManager.startGame();
+      if (this.gameId !== "creperie") {
+        this.scoreDisplay.style.display = "block";
+      }
+      this.gameManager.startGame(this.playerInfo);
     });
 
     this.homeBtn.addEventListener("click", () => {
@@ -151,7 +177,7 @@ export default class UI {
       this.gameOverScreen.style.display = "none";
       this.welcomeScreen.style.display = "block";
       document.getElementById("register-form").reset();
-      this.playerInfo = {};
+      this.playerInfo = { character: "cerise" };
     });
 
     if (this.testModeBtn) {
@@ -304,8 +330,66 @@ export default class UI {
         .join("");
     }
 
+    // Section dons à l'association
+    const donationSection = document.getElementById(
+      "creperie-donation-section",
+    );
+    const donationCount = document.getElementById("creperie-donation-count");
+    if (donationSection && donationCount) {
+      if (stats.donationCount > 0) {
+        donationCount.textContent = stats.donationCount;
+        donationSection.style.display = "flex";
+      } else {
+        donationSection.style.display = "none";
+      }
+    }
+
     // Sauvegarder le score
     this.leaderboard.saveScore(this.playerInfo, stats.score);
+  }
+
+  // ── Sélecteur de personnage ──────────────────────────────────────────────────
+  _setupCharacterSelector() {
+    const cards = document.querySelectorAll(".character-card");
+    if (!cards.length) return;
+
+    // Sélection par clic
+    cards.forEach((card) => {
+      card.addEventListener("click", () => {
+        cards.forEach((c) => c.classList.remove("selected"));
+        card.classList.add("selected");
+        this.playerInfo = {
+          ...this.playerInfo,
+          character: card.dataset.character,
+        };
+      });
+    });
+
+    // Valeur initiale
+    this.playerInfo = { ...this.playerInfo, character: "cerise" };
+  }
+
+  // ── Lightbox sketchnote ──────────────────────────────────────────────────────
+  _setupSketchnoteModal() {
+    const thumb = document.getElementById("sketchnote-thumb");
+    const modal = document.getElementById("sketchnote-modal");
+    const overlay = document.getElementById("sketchnote-overlay");
+    const closeBtn = document.getElementById("sketchnote-close");
+    if (!thumb || !modal) return;
+
+    const openModal = () => {
+      modal.style.display = "flex";
+    };
+    const closeModal = () => {
+      modal.style.display = "none";
+    };
+
+    thumb.addEventListener("click", openModal);
+    if (overlay) overlay.addEventListener("click", closeModal);
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modal.style.display !== "none") closeModal();
+    });
   }
 
   // Ajouter le récapitulatif des bonus/malus (grêle)

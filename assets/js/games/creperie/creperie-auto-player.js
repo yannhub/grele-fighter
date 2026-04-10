@@ -19,8 +19,10 @@ const TOPPING_TYPES = new Set([
 ]);
 
 export class AssuranceAutoPlayer {
-  constructor(canvasWidth, canvasHeight) {
-    this.x = canvasWidth * 0.25;
+  constructor(canvasWidth, canvasHeight, assignedBilig) {
+    this.x = assignedBilig
+      ? assignedBilig.x + assignedBilig.w / 2
+      : canvasWidth * 0.25;
     this.y = canvasHeight * PLAYER_Y_RATIO;
     this.hands = [];
     this.speed = PLAYER_SPEED * BONUS_AUTO_SPEED_RATIO;
@@ -29,15 +31,25 @@ export class AssuranceAutoPlayer {
     this.isMoving = false;
     this.walkFrame = 0;
 
+    // Bilig assigné (exclusif à cet assistant)
+    this.assignedBilig = assignedBilig || null;
+    this.myBilig = assignedBilig || null;
+
     // State
-    this.targetStation = null; // station to move toward
-    this.myBilig = null; // bilig currently claimed
-    this.pendingToppings = []; // toppings still to collect for current recipe
-    this.interactCooldown = 0; // ms before next interaction attempt
+    this.targetStation = null;
+    this.pendingToppings = [];
+    this.interactCooldown = 0;
+
+    // Client actuellement targété (pour flag visuel)
+    this.targetCustomer = null;
   }
 
   onResize(W, H) {
     this.y = H * PLAYER_Y_RATIO;
+    // Recentrer sur le bilig assigné après resize
+    if (this.assignedBilig) {
+      this.x = this.assignedBilig.x + this.assignedBilig.w / 2;
+    }
   }
 
   update(dt, stations, customerManager, game) {
@@ -113,6 +125,9 @@ export class AssuranceAutoPlayer {
         const toppings = result.crepe.toppings || [];
         const match = customerManager.tryMatch(toppings);
         if (match) {
+          // Libérer le flag client
+          match.handledByAssistant = false;
+          if (this.targetCustomer === match) this.targetCustomer = null;
           const pts = game._calcPoints(match);
           game.score += pts;
           game.crepesServed++;
@@ -131,7 +146,6 @@ export class AssuranceAutoPlayer {
           const fy = s.y - 20;
           game._showDeliveryFeedback(`+${pts} pts 🛡️`, "#E30613", fx, fy);
           game.renderer.addParticles(fx, fy, "#E30613", 12);
-          // Serveur NPC livre la crêpe
           if (game.waiter) {
             game.waiter.addDelivery(match, result.crepe);
           } else {
@@ -139,7 +153,6 @@ export class AssuranceAutoPlayer {
           }
         } else {
           s.rejectDelivery();
-          // Récupère la crêpe pour la jeter
           this.interactCooldown = 400;
         }
         this.targetStation = null;
@@ -172,27 +185,48 @@ export class AssuranceAutoPlayer {
       }
     }
 
-    // Priorité 2 : mon bilig est PRÊT → aller récupérer
-    if (this.myBilig && this.myBilig.biligState === BILIG_STATE.READY) {
-      this.targetStation = this.myBilig;
+    // Priorité 2 : mon bilig assigné est PRÊT → aller récupérer
+    if (
+      this.assignedBilig &&
+      this.assignedBilig.biligState === BILIG_STATE.READY
+    ) {
+      this.myBilig = this.assignedBilig;
+      this.targetStation = this.assignedBilig;
+      return;
+    }
+
+    // Si mon bilig est en feu, libérer le client cibleé
+    if (
+      this.assignedBilig &&
+      this.assignedBilig.biligState === BILIG_STATE.BURNING
+    ) {
+      if (this.targetCustomer) {
+        this.targetCustomer.handledByAssistant = false;
+        this.targetCustomer = null;
+      }
+      this.pendingToppings = [];
+      this.hands = this.hands.filter(
+        (h) => h.type !== IT.BATTER && h.type !== IT.ASSEMBLED_CREPE,
+      );
+      this.interactCooldown = 600;
       return;
     }
 
     // Priorité 3 : mon bilig cuit + j'ai des toppings à déposer
     if (
-      this.myBilig &&
-      this.myBilig.biligState === BILIG_STATE.COOKING &&
+      this.assignedBilig &&
+      this.assignedBilig.biligState === BILIG_STATE.COOKING &&
       this.hands.some((h) => TOPPING_TYPES.has(h.type)) &&
       this.pendingToppings.length === 0
     ) {
-      this.targetStation = this.myBilig;
+      this.targetStation = this.assignedBilig;
       return;
     }
 
     // Priorité 4 : mon bilig cuit + toppings encore à collecter
     if (
-      this.myBilig &&
-      this.myBilig.biligState === BILIG_STATE.COOKING &&
+      this.assignedBilig &&
+      this.assignedBilig.biligState === BILIG_STATE.COOKING &&
       this.pendingToppings.length > 0
     ) {
       const nextTopping = this.pendingToppings[0];
@@ -201,35 +235,37 @@ export class AssuranceAutoPlayer {
         this.targetStation = toppingStation;
         return;
       }
-      // ingrédient introuvable → on skip
       this.pendingToppings.shift();
       return;
     }
 
-    // Priorité 5 : mon bilig cuit, plus rien à faire → attendre qu'il soit prêt
-    if (this.myBilig && this.myBilig.biligState === BILIG_STATE.COOKING) {
+    // Priorité 5 : mon bilig cuit, plus rien à faire → attendre
+    if (
+      this.assignedBilig &&
+      this.assignedBilig.biligState === BILIG_STATE.COOKING
+    ) {
       this.interactCooldown = 400;
       return;
     }
 
-    // Priorité 6 : j'ai la pâte → aller à un bilig libre
+    // Priorité 6 : j'ai la pâte → aller à mon bilig assigné
     if (this.hands.some((h) => h.type === IT.BATTER)) {
-      const freeBilig = stations.find(
-        (s) => s.type === ST.BILIG && s.biligState === BILIG_STATE.EMPTY,
-      );
-      if (freeBilig) {
-        this.myBilig = freeBilig;
-        this.targetStation = freeBilig;
+      if (
+        this.assignedBilig &&
+        this.assignedBilig.biligState === BILIG_STATE.EMPTY
+      ) {
+        this.myBilig = this.assignedBilig;
+        this.targetStation = this.assignedBilig;
         return;
       }
-      // Pas de bilig libre → attendre
+      // Bilig occupé ou en feu → attendre
       this.interactCooldown = 500;
       return;
     }
 
     // Priorité 7 : démarrer une nouvelle crêpe pour le client le plus urgent
     const seated = customerManager.customers.filter(
-      (c) => c.state === "seated",
+      (c) => c.state === "seated" && !c.handledByAssistant,
     );
     if (seated.length === 0) {
       this.interactCooldown = 400;
@@ -238,8 +274,11 @@ export class AssuranceAutoPlayer {
 
     seated.sort((a, b) => a.patienceRemaining - b.patienceRemaining);
     const target = seated[0];
+    // Flaguer ce client comme pris en charge par un assistant
+    target.handledByAssistant = true;
+    this.targetCustomer = target;
     this.pendingToppings = [...target.recipe.toppings];
-    this.myBilig = null;
+    this.myBilig = this.assignedBilig || null;
 
     const batterStation = stations.find((s) => s.type === ST.BATTER);
     if (batterStation) {

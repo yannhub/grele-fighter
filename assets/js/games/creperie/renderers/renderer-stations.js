@@ -49,13 +49,17 @@ export function drawStation(
 
   switch (s.type) {
     case ST.BILIG:
-      drawBilig(ctx, s, sx, sy, sw, sh, time);
+      if (s.isAssistantBilig) {
+        drawAssistantBiligStation(ctx, s, sx, sy, sw, sh, time);
+      } else {
+        drawBilig(ctx, s, sx, sy, sw, sh, time);
+      }
       break;
     case ST.DELIVERY:
       drawDeliveryStation(ctx, s, sx, sy, sw, sh, time);
       break;
-    case ST.TRASH:
-      drawTrash(ctx, s, sx, sy, sw, sh);
+    case ST.DONATION:
+      drawDonation(ctx, s, sx, sy, sw, sh, time);
       break;
     case ST.BATTER:
       drawBatterStation(ctx, s, sx, sy, sw, sh);
@@ -203,6 +207,9 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
     const p = s.cookProgress;
     surfA = lerpColor("#999", "#E8B030", p);
     surfB = lerpColor("#666", "#C08010", p);
+  } else if (s.biligState === BILIG_STATE.BURNING) {
+    surfA = "#FF3300";
+    surfB = "#880000";
   } else {
     surfA = "#E8C040";
     surfB = "#B89020";
@@ -230,6 +237,11 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
     ctx.beginPath();
     ctx.arc(cx, cy, r * (i / 4), 0, Math.PI * 2);
     ctx.stroke();
+  }
+
+  // 🔥 BURNING state — flammes animées
+  if (s.biligState === BILIG_STATE.BURNING) {
+    _drawFlames(ctx, cx, cy, r, t);
   }
 
   // Crêpe on bilig (READY state)
@@ -695,88 +707,305 @@ export function drawDeliveryStation(ctx, s, sx, sy, sw, sh, time) {
 }
 
 export function drawTrash(ctx, s, sx, sy, sw, sh) {
+  // Legacy — redirige vers le rendu donation
+  drawDonation(ctx, s, sx, sy, sw, sh, Date.now());
+}
+
+// ── DONATION — Zone de don à l'association ─────────────────────────────────
+export function drawDonation(ctx, s, sx, sy, sw, sh, time) {
   const cx = sx + sw / 2;
+  const cy = sy + sh * 0.5;
+  const t = time;
+  const pulse = 0.85 + 0.15 * Math.sin(t / 700);
 
-  // Scale visually down to avoid the trash dominating the UI
-  ctx.save();
-  ctx.translate(cx, sy + sh * 0.5);
-  ctx.scale(0.72, 0.72);
-  ctx.translate(-cx, -(sy + sh * 0.5));
-
-  // Can body (cylindrical tapered shape with gradient)
-  const bodyTop = sy + sh * 0.25;
-  const bodyH = sh * 0.65;
-  ctx.beginPath();
-  ctx.moveTo(sx + 6, bodyTop);
-  ctx.lineTo(sx + 4, bodyTop + bodyH);
-  ctx.lineTo(sx + sw - 4, bodyTop + bodyH);
-  ctx.lineTo(sx + sw - 6, bodyTop);
-  ctx.closePath();
-  const trashGrad = vGrad(
-    ctx,
-    bodyTop,
-    bodyTop + bodyH,
-    COL.TRASH_A,
-    COL.TRASH_B,
-  );
-  ctx.fillStyle = trashGrad;
+  // Fond chaleureux
+  roundRect(ctx, sx + 2, sy + 2, sw - 4, sh - 4, 8);
+  const dG = vGrad(ctx, sy, sy + sh, "#FF8C42", "#D4541E");
+  ctx.fillStyle = dG;
   ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
+  ctx.strokeStyle = "#FFB870";
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Specular reflection
-  ctx.save();
-  ctx.globalAlpha = 0.15;
-  ctx.fillStyle = "#FFF";
-  ctx.fillRect(sx + 8, bodyTop + 4, 3, bodyH - 8);
-  ctx.restore();
-
-  // Curved ridges
-  ctx.strokeStyle = "rgba(255,255,255,0.12)";
-  ctx.lineWidth = 1;
-  for (let i = 1; i < 3; i++) {
-    const rx = sx + 6 + (sw - 12) * (i / 3);
-    ctx.beginPath();
-    ctx.moveTo(rx, bodyTop + 6);
-    ctx.quadraticCurveTo(rx - 1, bodyTop + bodyH / 2, rx, bodyTop + bodyH - 4);
-    ctx.stroke();
-  }
-
-  // Lid (domed with gradient)
-  const lidGrad = hGrad(
-    ctx,
-    sx + 3,
-    sx + sw - 3,
-    COL.TRASH_LID_A,
-    COL.TRASH_LID_B,
-  );
-  roundRect(ctx, sx + 3, sy + sh * 0.18, sw - 6, sh * 0.1, 4);
-  ctx.fillStyle = lidGrad;
+  // Boîte de don stylisée
+  const boxW = sw * 0.72,
+    boxH = sh * 0.55;
+  const boxX = cx - boxW / 2,
+    boxY = sy + sh * 0.18;
+  roundRect(ctx, boxX, boxY, boxW, boxH, 5);
+  ctx.fillStyle = "#FFEEDD";
   ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
+  ctx.strokeStyle = "#CC6620";
   ctx.lineWidth = 1.5;
   ctx.stroke();
-  // Lid handle (U shape)
-  ctx.strokeStyle = "#606870";
-  ctx.lineWidth = 2.5;
+  // Fente sur le dessus de la boîte
+  ctx.strokeStyle = "#AA4412";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.arc(cx, sy + sh * 0.16, 6, Math.PI, 0);
+  ctx.moveTo(cx - boxW * 0.22, boxY + 2);
+  ctx.lineTo(cx + boxW * 0.22, boxY + 2);
   ctx.stroke();
+  ctx.lineCap = "butt";
 
-  // Pedal (small rect at bottom-right)
-  ctx.fillStyle = "#555";
-  roundRect(ctx, sx + sw - 14, sy + sh * 0.85, 10, 6, 2);
+  // Ruban / décoration
+  ctx.strokeStyle = "#E30613";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, boxY);
+  ctx.lineTo(cx, boxY + boxH);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(boxX, boxY + boxH * 0.5);
+  ctx.lineTo(boxX + boxW, boxY + boxH * 0.5);
+  ctx.stroke();
+  // Nœud (petit cœur)
+  ctx.font = `${Math.max(10, sw * 0.25)}px serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("🫶", cx, boxY + boxH * 0.5);
+
+  // Label "Asso"
+  ctx.font = `bold ${Math.max(7, sw * 0.14)}px Arial`;
+  ctx.fillStyle = "#FFF";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowBlur = 3;
+  ctx.shadowColor = "rgba(0,0,0,0.5)";
+  ctx.fillText("DON", cx, sy + sh * 0.84);
+  ctx.shadowBlur = 0;
+}
+
+// ── ASSISTANT BILIG — Bilig de la rangée assistants ───────────────────────
+function drawAssistantBiligStation(ctx, s, sx, sy, sw, sh, time) {
+  const cx = sx + sw / 2,
+    cy = sy + sh * 0.42;
+  const r = Math.min(sw, sh) * 0.36;
+  const t = time;
+
+  // Base métal (plus compact que le bilig principal)
+  roundRect(ctx, sx + 1, sy + sh * 0.75, sw - 2, sh * 0.25, 3);
+  ctx.fillStyle = "#888";
   ctx.fill();
-  ctx.strokeStyle = COL.OUTLINE;
+  ctx.strokeStyle = "#555";
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // Icon
-  ctx.font = `${Math.max(14, sw * 0.3)}px serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("🗑️", cx, bodyTop + bodyH * 0.45);
+  // Surface de cuisson
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
+  ctx.fillStyle = "#999";
+  ctx.fill();
+  ctx.strokeStyle = "#666";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 
-  ctx.restore(); // end scale
+  let surfA2, surfB2;
+  if (s.biligState === BILIG_STATE.EMPTY) {
+    surfA2 = "#888";
+    surfB2 = "#555";
+  } else if (s.biligState === BILIG_STATE.COOKING) {
+    const p = s.cookProgress;
+    surfA2 = lerpColor("#888", "#D8A020", p);
+    surfB2 = lerpColor("#555", "#A06000", p);
+  } else if (s.biligState === BILIG_STATE.BURNING) {
+    surfA2 = "#FF3300";
+    surfB2 = "#880000";
+  } else {
+    surfA2 = "#D8B030";
+    surfB2 = "#A08010";
+  }
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  const sG2 = ctx.createRadialGradient(
+    cx - r * 0.2,
+    cy - r * 0.2,
+    1,
+    cx,
+    cy,
+    r,
+  );
+  sG2.addColorStop(0, surfA2);
+  sG2.addColorStop(1, surfB2);
+  ctx.fillStyle = sG2;
+  ctx.fill();
+
+  if (s.biligState === BILIG_STATE.BURNING) {
+    _drawFlames(ctx, cx, cy, r, t);
+  }
+
+  if (s.biligState === BILIG_STATE.READY) {
+    drawAssembledCrepe(
+      ctx,
+      cx,
+      cy,
+      r - 4,
+      s.biligToppings,
+      Math.max(10, sw * 0.22),
+    );
+    // ✓ badge
+    ctx.save();
+    ctx.font = `bold ${Math.max(8, sw * 0.18)}px Arial`;
+    ctx.fillStyle = "#E8C040";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("✓", cx, cy + r + 8);
+    ctx.restore();
+  }
+
+  if (s.biligState === BILIG_STATE.COOKING) {
+    const barW = sw - 4,
+      barH = 5;
+    const barX = sx + 2,
+      barY = sy + sh - 10;
+    roundRect(ctx, barX, barY, barW, barH, 2);
+    ctx.fillStyle = "#222";
+    ctx.fill();
+    roundRect(
+      ctx,
+      barX + 1,
+      barY + 1,
+      Math.max(0, barW * s.cookProgress - 2),
+      barH - 2,
+      1.5,
+    );
+    ctx.fillStyle = "#FF8C00";
+    ctx.fill();
+  }
+
+  // Label "G2S" assistant
+  ctx.save();
+  ctx.font = `bold ${Math.max(6, sw * 0.13)}px Arial`;
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("G2S", cx, sy + sh + 2);
+  ctx.restore();
+}
+
+// ── FLAMMES animées (partagées bilig joueur + assistant) ───────────────────
+function _drawFlames(ctx, cx, cy, r, t) {
+  ctx.save();
+  const numFlames = 5;
+  for (let i = 0; i < numFlames; i++) {
+    const angle = (i / numFlames) * Math.PI * 2 + t / 400;
+    const wobble = Math.sin(t / 120 + i * 1.8) * 0.3;
+    const fH = r * (0.8 + wobble * 0.4);
+    const fX = cx + Math.cos(angle) * r * 0.4;
+    const fY = cy + Math.sin(angle) * r * 0.4;
+
+    const flameG = ctx.createRadialGradient(fX, fY, 0, fX, fY - fH * 0.5, fH);
+    flameG.addColorStop(0, "rgba(255,240,80,0.95)");
+    flameG.addColorStop(0.4, "rgba(255,120,20,0.85)");
+    flameG.addColorStop(0.8, "rgba(200,20,0,0.6)");
+    flameG.addColorStop(1, "rgba(100,0,0,0)");
+
+    ctx.beginPath();
+    ctx.moveTo(fX - r * 0.18, fY);
+    ctx.bezierCurveTo(
+      fX - r * 0.12,
+      fY - fH * 0.4,
+      fX + r * 0.1 * wobble,
+      fY - fH * 0.75,
+      fX,
+      fY - fH,
+    );
+    ctx.bezierCurveTo(
+      fX - r * 0.1 * wobble,
+      fY - fH * 0.75,
+      fX + r * 0.12,
+      fY - fH * 0.4,
+      fX + r * 0.18,
+      fY,
+    );
+    ctx.closePath();
+    ctx.fillStyle = flameG;
+    ctx.fill();
+  }
+
+  // Fumée légère
+  ctx.globalAlpha = 0.12;
+  for (let si = 0; si < 3; si++) {
+    const sx2 = cx + (si - 1) * r * 0.4;
+    const sy2 = cy - r - 8 - ((t / 600 + si * 1.1) % 3) * 10;
+    const sr = 4 + Math.sin(t / 600 + si) * 2;
+    ctx.beginPath();
+    ctx.arc(sx2, sy2, sr, 0, Math.PI * 2);
+    ctx.fillStyle = "#888";
+    ctx.fill();
+  }
+
+  // Glow rouge pulsant
+  ctx.globalAlpha = 0.4 + 0.3 * Math.sin(t / 150);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 8, 0, Math.PI * 2);
+  const glow = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, r + 8);
+  glow.addColorStop(0, "rgba(255,80,0,0.4)");
+  glow.addColorStop(1, "rgba(255,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// ── EXPORT ASSISTANT BILIGS ────────────────────────────────────────────────
+export function drawAssistantBiligs(ctx, assistanceBiligs, time, assistants) {
+  if (!assistanceBiligs || assistanceBiligs.length === 0) return;
+
+  // Fond barre inférieure (séparation visuelle)
+  const first = assistanceBiligs[0];
+  const last = assistanceBiligs[assistanceBiligs.length - 1];
+  if (first.w > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = "#FFF";
+    ctx.fillRect(
+      first.x - 8,
+      first.y - 6,
+      last.x + last.w - first.x + 16,
+      first.h + 28,
+    );
+    ctx.restore();
+  }
+
+  assistanceBiligs.forEach((bilig, i) => {
+    const isActive = i < assistants.length;
+    if (!isActive) {
+      // Slot vide : ombre grisée
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.beginPath();
+      ctx.arc(
+        bilig.x + bilig.w / 2,
+        bilig.y + bilig.h * 0.42,
+        Math.min(bilig.w, bilig.h) * 0.36,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fillStyle = "#555";
+      ctx.fill();
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // "+"
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = "#FFF";
+      ctx.font = `bold ${Math.max(12, bilig.w * 0.35)}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("+", bilig.x + bilig.w / 2, bilig.y + bilig.h * 0.42);
+      ctx.restore();
+    } else {
+      drawAssistantBiligStation(
+        ctx,
+        bilig,
+        bilig.x,
+        bilig.y,
+        bilig.w,
+        bilig.h,
+        time,
+      );
+    }
+  });
 }

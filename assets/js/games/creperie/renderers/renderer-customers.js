@@ -431,17 +431,27 @@ export function drawSpeechBubble(ctx, customer, time) {
   const bx = -bw / 2,
     by = 58;
 
+  // Couleur de bordure : bleue/verte si géré par assistant
+  const isHandled = customer.handledByAssistant && customer.state === "seated";
+  const borderColor = isHandled ? "#2196F3" : COL.BUBBLE_BORDER;
+
   // Shadow
   ctx.save();
-  ctx.shadowBlur = 12;
-  ctx.shadowColor = COL.BUBBLE_SHADOW;
-  const bubGrad = vGrad(ctx, by, by + bh, COL.BUBBLE_TOP, COL.BUBBLE_BOTTOM);
+  ctx.shadowBlur = isHandled ? 14 : 12;
+  ctx.shadowColor = isHandled ? "rgba(33,150,243,0.4)" : COL.BUBBLE_SHADOW;
+  const bubGrad = vGrad(
+    ctx,
+    by,
+    by + bh,
+    COL.BUBBLE_TOP,
+    isHandled ? "#E8F4FD" : COL.BUBBLE_BOTTOM,
+  );
   roundRect(ctx, bx, by, bw, bh, 10);
   ctx.fillStyle = bubGrad;
   ctx.fill();
   ctx.shadowBlur = 0;
-  ctx.strokeStyle = COL.BUBBLE_BORDER;
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = isHandled ? 2.5 : 2;
   ctx.stroke();
   ctx.restore();
 
@@ -515,7 +525,7 @@ export function drawSpeechBubble(ctx, customer, time) {
   ctx.lineCap = "butt";
 
   // Pulsation quand le temps est presque écoulé
-  if (pf < 0.25) {
+  if (pf < 0.25 && !isHandled) {
     const pulse = Math.abs(Math.sin(time / 250));
     ctx.save();
     ctx.globalAlpha = pulse * 0.4;
@@ -525,6 +535,25 @@ export function drawSpeechBubble(ctx, customer, time) {
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.restore();
+  }
+
+  // Badge "assistant en route" si géré par un assistant G2S
+  if (isHandled) {
+    const badgeW = 68,
+      badgeH = 14;
+    const badgeX = bx + (bw - badgeW) / 2;
+    const badgeY = by + bh - badgeH - 4;
+    roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 7);
+    ctx.fillStyle = "rgba(33,150,243,0.85)";
+    ctx.fill();
+    ctx.strokeStyle = "#90CAF9";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.font = "bold 8px Arial";
+    ctx.fillStyle = "#FFF";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🛡️ G2S en route", badgeX + badgeW / 2, badgeY + badgeH / 2);
   }
 
   // Icônes de recette

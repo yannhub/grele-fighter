@@ -77,9 +77,20 @@ function kawaiiCheek(ctx, cx, cy, r) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  PLAYER (Cerise) — Kawaii chibi cartoon 3D
+//  PLAYER — branche selon le personnage choisi
 // ══════════════════════════════════════════════════════════════════════════════
 export function drawPlayer(ctx, player, counterY, counterH, time) {
+  if (player.character === "malo") {
+    drawMaloPlayer(ctx, player, counterY, counterH, time);
+  } else {
+    drawCerisePlayer(ctx, player, counterY, counterH, time);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  PLAYER (Cerise) — Kawaii chibi cartoon 3D
+// ══════════════════════════════════════════════════════════════════════════════
+function drawCerisePlayer(ctx, player, counterY, counterH, time) {
   const px = player.x,
     py = player.y,
     sz = player.size;
@@ -926,4 +937,604 @@ export function drawHeldItems(ctx, player, cx, topY, sz) {
     }
     ctx.restore();
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  MALO — Personnage masculin breton, tenue blanche à pois verts
+// ══════════════════════════════════════════════════════════════════════════════
+function drawMaloPlayer(ctx, player, counterY, counterH, time) {
+  const px = player.x,
+    py = player.y,
+    sz = player.size;
+  const t = time;
+  const dir = player.direction;
+  const walk = player.isMoving
+    ? Math.sin((player.walkFrame / 4) * Math.PI * 2)
+    : 0;
+
+  ctx.save();
+  dropShadow(ctx, px, py + sz * 0.54, sz * 0.36, sz * 0.08, 0.22);
+
+  // ── JAMBES (plus larges, masculin) ──
+  const legW = sz * 0.15,
+    legH = sz * 0.24,
+    legY = py + sz * 0.26;
+  [
+    [px - sz * 0.12, walk * sz * 0.06],
+    [px + sz * 0.02, -walk * sz * 0.06],
+  ].forEach(([lx, off]) => {
+    roundRect(ctx, lx, legY + off, legW, legH, legW * 0.4);
+    ctx.fillStyle = "#3A5A8A"; // pantalon bleu breton foncé
+    ctx.fill();
+    ctx.strokeStyle = "#1A3A5A";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+  // Chaussures noires
+  [
+    [px - sz * 0.05, legY + legH + walk * sz * 0.06],
+    [px + sz * 0.09, legY + legH - walk * sz * 0.06],
+  ].forEach(([sx3, sy3]) => {
+    ctx.beginPath();
+    ctx.ellipse(
+      sx3,
+      sy3 + sz * 0.055,
+      legW * 0.9,
+      sz * 0.07,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fillStyle = "#1A1A2E";
+    ctx.fill();
+    ctx.strokeStyle = "#333";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // ── CORPS (plus carré, épaules larges) ──
+  const bRx = sz * 0.26,
+    bRy = sz * 0.2,
+    bCX = px,
+    bCY = py - sz * 0.04;
+  ctx.beginPath();
+  ctx.ellipse(bCX, bCY, bRx, bRy, 0, 0, Math.PI * 2);
+  const bodyG = ctx.createRadialGradient(
+    bCX - bRx * 0.25,
+    bCY - bRy * 0.25,
+    bRy * 0.05,
+    bCX,
+    bCY,
+    Math.max(bRx, bRy),
+  );
+  bodyG.addColorStop(0, "#FFFFFF");
+  bodyG.addColorStop(0.5, "#F5F8FF");
+  bodyG.addColorStop(1, "#DDE0EE");
+  ctx.fillStyle = bodyG;
+  ctx.fill();
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Pois verts sur le corps (tenue bretonne)
+  const dots = [
+    [-sz * 0.12, sz * 0.01],
+    [sz * 0.09, sz * 0.0],
+    [sz * 0.0, sz * 0.14],
+    [-sz * 0.13, sz * 0.18],
+    [sz * 0.12, sz * 0.17],
+  ];
+  dots.forEach(([dx, dy]) => {
+    ctx.beginPath();
+    ctx.arc(bCX + dx, bCY - bRy * 0.2 + dy, sz * 0.04, 0, Math.PI * 2);
+    ctx.fillStyle = "#3CB371";
+    ctx.fill();
+    ctx.strokeStyle = "#1E7A40";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // ── BRAS (plus épais) ──
+  const armW = sz * 0.13,
+    armH = sz * 0.26,
+    armY = bCY - bRy * 0.55;
+  ctx.save();
+  ctx.translate(px - bRx - armW * 0.25, armY + walk * sz * 0.03);
+  ctx.rotate(-0.22 + walk * 0.18);
+  roundRect(ctx, -armW / 2, 0, armW, armH, armW * 0.45);
+  ctx.fillStyle = vGrad(ctx, 0, armH, "#FFFFFF", "#DDE0EE");
+  ctx.fill();
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.translate(px + bRx + armW * 0.25, armY - walk * sz * 0.03);
+  ctx.rotate(0.22 - walk * 0.18);
+  roundRect(ctx, -armW / 2, 0, armW, armH, armW * 0.45);
+  ctx.fillStyle = vGrad(ctx, 0, armH, "#FFFFFF", "#DDE0EE");
+  ctx.fill();
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // ── TÊTE (ronde, masculine) ──
+  const headR = sz * 0.24;
+  const headCX = px,
+    headCY = bCY - bRy - headR * 0.52;
+
+  // Cou
+  roundRect(ctx, px - sz * 0.07, headCY + headR * 0.76, sz * 0.14, sz * 0.1, 3);
+  ctx.fillStyle = "#FFD0B5";
+  ctx.fill();
+
+  // Cheveux courts (châtains)
+  ctx.beginPath();
+  ctx.arc(headCX, headCY, headR * 1.05, 0, Math.PI * 2);
+  const hairG = ctx.createRadialGradient(
+    headCX - headR * 0.2,
+    headCY - headR * 0.3,
+    headR * 0.1,
+    headCX,
+    headCY,
+    headR * 1.05,
+  );
+  hairG.addColorStop(0, "#6B3E26");
+  hairG.addColorStop(1, "#3C1E0A");
+  ctx.fillStyle = hairG;
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Visage
+  ctx.beginPath();
+  ctx.arc(headCX, headCY, headR, 0, Math.PI * 2);
+  const faceG2 = ctx.createRadialGradient(
+    headCX - headR * 0.22,
+    headCY - headR * 0.22,
+    headR * 0.04,
+    headCX,
+    headCY,
+    headR,
+  );
+  faceG2.addColorStop(0, "#FFE0C8");
+  faceG2.addColorStop(0.55, "#FFC8A8");
+  faceG2.addColorStop(1, "#E0A080");
+  ctx.fillStyle = faceG2;
+  ctx.fill();
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  // ── BÉRET BRETON ──
+  const beretR = headR * 1.15;
+  const bY = headCY - headR * 0.5;
+  // Béret bleu marine
+  ctx.beginPath();
+  ctx.ellipse(
+    headCX + headR * 0.15 * dir,
+    bY,
+    beretR * 0.9,
+    beretR * 0.38,
+    dir * 0.12,
+    0,
+    Math.PI * 2,
+  );
+  const beretG = ctx.createRadialGradient(
+    headCX,
+    bY - 5,
+    2,
+    headCX,
+    bY,
+    beretR * 0.9,
+  );
+  beretG.addColorStop(0, "#2B4A6E");
+  beretG.addColorStop(1, "#1A2E48");
+  ctx.fillStyle = beretG;
+  ctx.fill();
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Pompon rouge
+  ctx.beginPath();
+  ctx.arc(
+    headCX + headR * 0.15 * dir,
+    bY - beretR * 0.3,
+    beretR * 0.12,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = "#CC1020";
+  ctx.fill();
+  ctx.strokeStyle = "#880010";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ── YEUX ET SOURIRE ──
+  const eyeW2 = headR * 0.25,
+    eyeH2 = headR * 0.22,
+    eyeY2 = headCY + headR * 0.08;
+  const eOff = dir * headR * 0.1;
+  [headCX + eOff - headR * 0.24, headCX + eOff + headR * 0.12].forEach(
+    (ex) => kawaiiEye(ctx, ex, eyeY2, eyeW2, eyeH2, "#2A5A2A"), // yeux verts
+  );
+  kawaiiCheek(ctx, headCX - headR * 0.42, eyeY2 + headR * 0.25, headR * 0.22);
+  kawaiiCheek(ctx, headCX + headR * 0.42, eyeY2 + headR * 0.25, headR * 0.22);
+  // Sourire masculin (moins courbé)
+  ctx.strokeStyle = "#884444";
+  ctx.lineWidth = headR * 0.09;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(
+    headCX + eOff * 0.2,
+    eyeY2 + headR * 0.35,
+    headR * 0.18,
+    0.3,
+    Math.PI - 0.3,
+  );
+  ctx.stroke();
+  ctx.lineCap = "butt";
+
+  // Items tenus
+  const bob2 = Math.sin(t / 800) * 2;
+  drawHeldItems(ctx, player, px, headCY - headR - sz * 0.34 + bob2, sz);
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  POMPIER G2S — NPC extingueur d'incendie
+// ══════════════════════════════════════════════════════════════════════════════
+export function drawFirefighterPlayer(ctx, ff, time) {
+  const px = ff.x,
+    py = ff.y,
+    sz = ff.size || 70;
+  const t = time;
+  const walk = ff.isMoving ? Math.sin((ff.walkFrame / 4) * Math.PI * 2) : 0;
+  const dir = ff.direction || 1;
+
+  ctx.save();
+
+  // Halo rouge pompier
+  const pulse = 0.5 + 0.5 * Math.abs(Math.sin(t / 300));
+  ctx.save();
+  ctx.globalAlpha = 0.22 * pulse;
+  ctx.beginPath();
+  ctx.ellipse(px, py + sz * 0.52, sz * 0.6, sz * 0.1, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "#FF4422";
+  ctx.fill();
+  ctx.restore();
+
+  dropShadow(ctx, px, py + sz * 0.52, sz * 0.32, sz * 0.07, 0.2);
+
+  // JAMBES (pantalon bleu)
+  const lW = sz * 0.14,
+    lH = sz * 0.22,
+    lY = py + sz * 0.28;
+  [
+    [px - sz * 0.12, walk * sz * 0.055],
+    [px + sz * 0.02, -walk * sz * 0.055],
+  ].forEach(([lx, off]) => {
+    roundRect(ctx, lx, lY + off, lW, lH, lW * 0.4);
+    ctx.fillStyle = "#1A3080";
+    ctx.fill();
+    ctx.strokeStyle = "#0A1A50";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+  // Bottes noires renforcées
+  [
+    [px - sz * 0.06, lY + lH + walk * sz * 0.055],
+    [px + sz * 0.08, lY + lH - walk * sz * 0.055],
+  ].forEach(([sx3, sy3]) => {
+    ctx.beginPath();
+    ctx.ellipse(
+      sx3,
+      sy3 + sz * 0.055,
+      lW * 0.92,
+      sz * 0.068,
+      0,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fillStyle = "#1C1C1C";
+    ctx.fill();
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // CORPS (combinaison orange pompier)
+  const bRx = sz * 0.23,
+    bRy = sz * 0.2,
+    bCX = px,
+    bCY = py - sz * 0.04;
+  ctx.beginPath();
+  ctx.ellipse(bCX, bCY, bRx, bRy, 0, 0, Math.PI * 2);
+  const bG = ctx.createRadialGradient(
+    bCX - bRx * 0.25,
+    bCY - bRy * 0.25,
+    2,
+    bCX,
+    bCY,
+    Math.max(bRx, bRy),
+  );
+  bG.addColorStop(0, "#FF8C22");
+  bG.addColorStop(1, "#CC5500");
+  ctx.fillStyle = bG;
+  ctx.fill();
+  ctx.strokeStyle = "#332200";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Badge G2S sur la veste
+  ctx.save();
+  ctx.font = `bold ${sz * 0.14}px Arial`;
+  ctx.fillStyle = "#FFF";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowBlur = 3;
+  ctx.shadowColor = "#000";
+  ctx.fillText("G2S", bCX, bCY + sz * 0.02);
+  ctx.restore();
+  // Bandes réfléchissantes
+  ctx.strokeStyle = "#FFE050";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(bCX, bCY + sz * 0.12, bRx * 0.85, Math.PI * 0.3, Math.PI * 0.7);
+  ctx.stroke();
+
+  // BRAS avec tuyau d'extinction
+  const armW2 = sz * 0.12,
+    armH2 = sz * 0.24,
+    armY2 = bCY - bRy * 0.55;
+  const armColor = vGrad(ctx, armY2, armY2 + armH2, "#FF8C22", "#CC5500");
+  ctx.save();
+  ctx.translate(px - bRx - armW2 * 0.2, armY2 + walk * sz * 0.03);
+  ctx.rotate(-0.25 + walk * 0.2);
+  roundRect(ctx, -armW2 / 2, 0, armW2, armH2, armW2 * 0.45);
+  ctx.fillStyle = armColor;
+  ctx.fill();
+  ctx.strokeStyle = "#332200";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+  // Bras droit avec tuyau
+  ctx.save();
+  ctx.translate(px + bRx + armW2 * 0.2, armY2 - walk * sz * 0.03);
+  ctx.rotate(0.8); // bras tendu avec tuyau
+  roundRect(ctx, -armW2 / 2, 0, armW2, armH2, armW2 * 0.45);
+  ctx.fillStyle = armColor;
+  ctx.fill();
+  ctx.strokeStyle = "#332200";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Tuyau sortant de la main
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-armW2 * 0.2, armH2 * 0.85);
+  ctx.lineTo(-armW2 * 0.2 + 20, armH2 + 10);
+  ctx.stroke();
+  // Jet d'eau (si extinguishing)
+  if (ff.state === "extinguishing") {
+    ctx.globalAlpha = 0.7 + 0.3 * Math.sin(t / 80);
+    ctx.strokeStyle = "#80D8FF";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-armW2 * 0.2 + 20, armH2 + 10);
+    ctx.quadraticCurveTo(
+      -armW2 * 0.2 - 40 - Math.sin(t / 120) * 5,
+      armH2 + 40,
+      -armW2 * 0.2 - 80,
+      armH2 + 15,
+    );
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+
+  // TÊTE
+  const hR = sz * 0.23,
+    hX = px,
+    hY = bCY - bRy - hR * 0.52;
+  roundRect(ctx, px - sz * 0.06, hY + hR * 0.75, sz * 0.12, sz * 0.1, 3);
+  ctx.fillStyle = "#FFD0B5";
+  ctx.fill();
+
+  // Casque pompier (rouge + visière)
+  const helmW = hR * 2.1,
+    helmH = hR * 1.0;
+  const helmX = hX - helmW / 2,
+    helmY = hY - hR * 0.55;
+  ctx.beginPath();
+  ctx.ellipse(hX, helmY, helmW / 2, helmH * 0.55, 0, Math.PI, 0);
+  const helmG = ctx.createLinearGradient(
+    helmX,
+    helmY - helmH * 0.5,
+    helmX + helmW,
+    helmY,
+  );
+  helmG.addColorStop(0, "#CC1010");
+  helmG.addColorStop(0.5, "#FF2020");
+  helmG.addColorStop(1, "#AA0808");
+  ctx.fillStyle = helmG;
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Bord du casque (rebord)
+  ctx.beginPath();
+  ctx.ellipse(
+    hX,
+    helmY + helmH * 0.12,
+    helmW * 0.56,
+    helmH * 0.14,
+    0,
+    0,
+    Math.PI * 2,
+  );
+  ctx.fillStyle = "#AA0808";
+  ctx.fill();
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // Visière dorée
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  ctx.beginPath();
+  ctx.ellipse(
+    hX,
+    helmY + helmH * 0.05,
+    helmW * 0.42,
+    helmH * 0.28,
+    0,
+    Math.PI * 0.15,
+    Math.PI * 0.85,
+  );
+  ctx.fillStyle = "#FFD700";
+  ctx.fill();
+  ctx.strokeStyle = "#B8860B";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Visage
+  ctx.beginPath();
+  ctx.arc(hX, hY, hR, 0, Math.PI * 2);
+  const fG = ctx.createRadialGradient(
+    hX - hR * 0.2,
+    hY - hR * 0.2,
+    hR * 0.04,
+    hX,
+    hY,
+    hR,
+  );
+  fG.addColorStop(0, "#FFE0C8");
+  fG.addColorStop(1, "#D09070");
+  ctx.fillStyle = fG;
+  ctx.fill();
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  // Sourcils (expression déterminée)
+  ctx.strokeStyle = "#5A2800";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  const eOff3 = dir * hR * 0.08;
+  ctx.beginPath();
+  ctx.moveTo(hX + eOff3 - hR * 0.28, hY - hR * 0.14);
+  ctx.lineTo(hX + eOff3 - hR * 0.05, hY - hR * 0.22);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(hX + eOff3 + hR * 0.08, hY - hR * 0.22);
+  ctx.lineTo(hX + eOff3 + hR * 0.28, hY - hR * 0.14);
+  ctx.stroke();
+  // Yeux simples (déterminés)
+  [hX + eOff3 - hR * 0.2, hX + eOff3 + hR * 0.18].forEach((ex) => {
+    ctx.beginPath();
+    ctx.ellipse(ex, hY + hR * 0.04, hR * 0.12, hR * 0.1, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#2E1A00";
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  FLOOR TOKENS — Tokens d'assistance et d'incendie au sol
+// ══════════════════════════════════════════════════════════════════════════════
+export function drawFloorTokens(
+  ctx,
+  assistanceTokens,
+  incendieToken,
+  W,
+  H,
+  time,
+) {
+  const t = time;
+
+  // Tokens d'assistance G2S
+  assistanceTokens.forEach((token) => {
+    const lifeRatio = token.timer / token.duration;
+    const pulse = 0.8 + 0.2 * Math.sin(t / 250);
+    const alpha = Math.min(1, lifeRatio * 3) * pulse;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(token.x, token.y);
+
+    // Glowing circle
+    ctx.shadowBlur = 18 * pulse;
+    ctx.shadowColor = "#E30613";
+    ctx.beginPath();
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    const tG = ctx.createRadialGradient(-5, -5, 1, 0, 0, 22);
+    tG.addColorStop(0, "#FF6B6B");
+    tG.addColorStop(0.6, "#E30613");
+    tG.addColorStop(1, "#8B0000");
+    ctx.fillStyle = tG;
+    ctx.fill();
+    ctx.strokeStyle = "#FFB0B0";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Text G2S
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 10px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("G2S", 0, -3);
+
+    // Texte "ASSISTANT"
+    ctx.font = "7px Arial";
+    ctx.fillText("CONTRAT", 0, 6);
+
+    // Timer bar (barre de vie)
+    const barW = 38,
+      barH = 4;
+    roundRect(ctx, -barW / 2, 26, barW, barH, 2);
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fill();
+    roundRect(ctx, -barW / 2, 26, barW * lifeRatio, barH, 2);
+    ctx.fillStyle = lifeRatio > 0.4 ? "#4CAF50" : "#FF9800";
+    ctx.fill();
+
+    ctx.restore();
+  });
+
+  // Token incendie (ne disparaît pas)
+  if (incendieToken) {
+    const pulse2 = 0.6 + 0.4 * Math.abs(Math.sin(t / 180));
+    ctx.save();
+    ctx.translate(incendieToken.x, incendieToken.y);
+
+    ctx.shadowBlur = 20 * pulse2;
+    ctx.shadowColor = "#FF6600";
+    ctx.beginPath();
+    ctx.arc(0, 0, 24, 0, Math.PI * 2);
+    const tG2 = ctx.createRadialGradient(-5, -5, 1, 0, 0, 24);
+    tG2.addColorStop(0, "#FFD700");
+    tG2.addColorStop(0.5, "#FF6600");
+    tG2.addColorStop(1, "#CC2200");
+    ctx.fillStyle = tG2;
+    ctx.fill();
+    ctx.strokeStyle = "#FFDD88";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Flamme emoji + texte
+    ctx.font = `${14 * pulse2}px serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🧯", 0, -2);
+    ctx.font = "6px Arial";
+    ctx.fillStyle = "#FFEE88";
+    ctx.fillText("ASSURANCE", 0, 13);
+
+    ctx.restore();
+  }
 }

@@ -32,27 +32,34 @@
         </div>
 
         <div class="game-area">
-          <!-- ===== SÉLECTEUR DE JEU (page sans ?game=) ===== -->
+          <!-- ===== SÉLECTEUR DE JEU ===== -->
           <div id="game-selector" class="game-selector" style="display: none">
             <h2 class="game-selector-title">🎮 Choisissez votre jeu</h2>
             <p class="game-selector-sub">Sélectionnez un jeu pour commencer</p>
             <div class="game-cards">
-              <a href="?game=grele" class="game-card">
+              <div class="game-card" data-game="grele">
                 <div class="game-card-emoji">🌽💧</div>
                 <h3>Grêle Fighter</h3>
                 <p>
                   Défendez vos cultures contre la grêle et protégez les épis de
                   maïs!
                 </p>
-                <span class="game-card-cta">JOUER →</span>
-              </a>
-              <a href="?game=creperie" class="game-card">
+                <span class="game-card-cta">SÉLECTIONNER</span>
+              </div>
+              <div class="game-card" data-game="creperie">
                 <div class="game-card-emoji">🥞👩‍🍳</div>
                 <h3>La Crêperie</h3>
                 <p>Préparez et servez un maximum de crêpes en 1min30!</p>
-                <span class="game-card-cta">JOUER →</span>
-              </a>
+                <span class="game-card-cta">SÉLECTIONNER</span>
+              </div>
             </div>
+            <button
+              id="launch-game-btn"
+              class="start-btn"
+              style="display: none; margin-top: 1.5rem"
+            >
+              JOUER ➜
+            </button>
           </div>
 
           <!-- ===== ÉCRAN D'ACCUEIL (partagé, contenu injecté par le jeu) ===== -->
@@ -108,7 +115,9 @@
             <img
               src="./assets/img/sketchnote.png"
               alt="sketchnote G2S"
-              class="sketchnote"
+              class="sketchnote sketchnote-clickable"
+              id="sketchnote-thumb"
+              title="Cliquez pour agrandir"
             />
             <button type="submit" id="submit-info">SUIVANT</button>
           </form>
@@ -288,6 +297,20 @@
                   </p>
                   <div class="separator"></div>
                   <div id="creperie-recipe-breakdown"></div>
+                  <div
+                    id="creperie-donation-section"
+                    style="display: none"
+                    class="donation-recap"
+                  >
+                    <div class="donation-icon">🫶</div>
+                    <div class="donation-text">
+                      <strong
+                        ><span id="creperie-donation-count">0</span> crêpe(s)
+                        offertes à l'association</strong
+                      >
+                      <p>Chaque geste compte !</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -306,6 +329,19 @@
             <!-- Les scores seront ajoutés ici dynamiquement -->
           </ul>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== LIGHTBOX SKETCHNOTE ===== -->
+    <div id="sketchnote-modal" class="sketchnote-modal" style="display: none">
+      <div class="sketchnote-modal-overlay" id="sketchnote-overlay"></div>
+      <div class="sketchnote-modal-content">
+        <button class="sketchnote-modal-close" id="sketchnote-close">✕</button>
+        <img
+          src="./assets/img/sketchnote.png"
+          alt="Sketchnote G2S"
+          class="sketchnote-modal-img"
+        />
       </div>
     </div>
 

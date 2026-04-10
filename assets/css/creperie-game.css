@@ -175,6 +175,42 @@
   color: #555;
 }
 
+/* ── Section dons à l'association ──────────────────────────────────────────── */
+.donation-recap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #fff8ef 0%, #fff3e0 100%);
+  border: 2px solid #ffb74d;
+  border-radius: 0.75rem;
+  padding: 0.8rem 1rem;
+  margin-top: 0.75rem;
+  text-align: left;
+}
+
+.donation-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.donation-text strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #e65100;
+  margin-bottom: 2px;
+}
+
+.donation-text p {
+  font-size: 0.82rem;
+  color: #888;
+  margin: 0;
+}
+
+/* ── DOM HUD caché (remplacé par canvas HUD) ─────────────────────────────── */
+#score-display {
+  display: none !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

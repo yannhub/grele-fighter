@@ -7,17 +7,39 @@ export const BILIG_COOK_TIME = 5500; // ms de cuisson
 // Ratios de mise en page (fraction de la hauteur du canvas)
 export const COUNTER_Y_RATIO = 0.55; // bord supérieur du comptoir
 export const COUNTER_HEIGHT_RATIO = 0.15; // hauteur du comptoir
-export const PLAYER_Y_RATIO = 0.82; // centre Y du joueur (en dessous du comptoir)
+export const PLAYER_Y_RATIO = 0.75; // centre Y du joueur (en dessous du comptoir)
 
 // Joueur
 export const PLAYER_SPEED = 560; // px/sec
 export const MAX_HANDS = 3;
 export const PLAYER_SIZE = 110; // px (hauteur du sprite)
 
-// Bonus Assurance G2S
-export const BONUS_DURATION = 15; // secondes
-export const BONUS_COOK_SPEEDUP = 2.5; // multiplicateur de vitesse de cuisson
+// Bonus Assurance G2S — nouveau système d'assistants accumulables
+export const BONUS_DURATION = 15; // legacy (gardé pour compat)
+export const BONUS_COOK_SPEEDUP = 1; // les biligs assistants cuisent à vitesse normale
 export const BONUS_AUTO_SPEED_RATIO = 0.85; // vitesse relative du joueur auto
+
+// Assistants crépiers (accumulables)
+export const MAX_ASSISTANTS = 5;
+export const ASSISTANT_DURATION = 90; // secondes de durée par assistant
+export const ASSISTANCE_TOKEN_DURATION = 12000; // ms avant disparition d'un token
+export const MAX_ASSISTANCE_TOKENS = 3; // tokens simultanés sur le sol
+export const ASSISTANCE_TOKEN_SPAWN_INTERVAL = 22000; // ms entre chaque spawn
+export const ASSISTANT_BILIG_Y_RATIO = 0.88; // Y des biligs assistants (rangée du bas)
+export const ASSISTANT_Y_RATIO = 0.93; // Y de marche des assistants (rangée du bas)
+export const TOKEN_COLLECT_RADIUS = 50; // distance de collecte (px)
+
+// Mécanique d'incendie
+export const BURN_DELAY = 10000; // ms après état READY avant d'attraper feu
+export const FIREFIGHTER_SPEED = 480; // px/sec
+
+// Configuration de l'écran d'accueil
+export const GAME_CONFIG = {
+  title: "Bienvenue dans votre crêperie !",
+  subtitle:
+    "Préparez et servez un maximum de crêpes délicieuses à vos clients en 1 minute 30 !",
+  hidePrize: true,
+};
 
 // Types de postes
 export const ST = {
@@ -30,7 +52,7 @@ export const ST = {
   LEMON: "LEMON",
   WHIPPED_CREAM: "WHIPPED_CREAM",
   DELIVERY: "DELIVERY",
-  TRASH: "TRASH",
+  DONATION: "DONATION", // ancienne poubelle → zone de don à l'association
 };
 
 // Types d'items (ce que le joueur peut tenir en main)
@@ -58,7 +80,7 @@ export const STATION_LAYOUT = [
   { type: ST.LEMON, label: "Citron", xRatio: 0.66 },
   { type: ST.WHIPPED_CREAM, label: "Chantilly", xRatio: 0.74 },
   { type: ST.DELIVERY, label: "Envoi", xRatio: 0.85 },
-  { type: ST.TRASH, label: "Poubelle", xRatio: 0.96 },
+  { type: ST.DONATION, label: "Don 🫶", xRatio: 0.96 },
 ];
 
 // Recettes : ordre des toppings non significatif pour le match
