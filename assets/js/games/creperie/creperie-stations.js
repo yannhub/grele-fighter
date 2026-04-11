@@ -1,6 +1,12 @@
 // creperie-stations.js — Gestion des postes de travail
 
-import { BILIG_COOK_TIME, BURN_DELAY, IT, ST } from "./creperie-constants.js";
+import {
+  BILIG_COOK_TIME,
+  BURN_DELAY,
+  FIRE_SPREAD_DELAY,
+  IT,
+  ST,
+} from "./creperie-constants.js";
 
 export const BILIG_STATE = {
   EMPTY: "empty",
@@ -39,6 +45,7 @@ export class Station {
     this.cookProgress = 0; // 0→1
     this.biligToppings = []; // ingrédients posés sur le bilig
     this.burnTimer = 0; // ms depuis l'état READY (déclenchement incendie)
+    this.spreadTimer = null; // ms restantes avant propagation du feu (null = pas en feu)
 
     // État du poste d'envoi
     this.deliveryCrepe = null; // { type, toppings[] }
@@ -63,7 +70,13 @@ export class Station {
         this.burnTimer += dt;
         if (this.burnTimer >= BURN_DELAY) {
           this.biligState = BILIG_STATE.BURNING;
+          this.spreadTimer = FIRE_SPREAD_DELAY;
         }
+      } else if (
+        this.biligState === BILIG_STATE.BURNING &&
+        this.spreadTimer !== null
+      ) {
+        this.spreadTimer -= dt;
       }
     }
     if (this.flashTimer > 0) {
@@ -77,8 +90,16 @@ export class Station {
     this.cookTimer = 0;
     this.cookProgress = 0;
     this.burnTimer = 0;
+    this.spreadTimer = null;
     this.biligToppings = [];
     this.flash("#4FC3F7"); // bleu eau
+  }
+
+  // Forcer l'état incendie (propagation)
+  setBurning() {
+    if (this.biligState === BILIG_STATE.BURNING) return;
+    this.biligState = BILIG_STATE.BURNING;
+    this.spreadTimer = FIRE_SPREAD_DELAY;
   }
 
   /**
@@ -96,6 +117,8 @@ export class Station {
         return this._interactDelivery(playerHands);
       case ST.DONATION:
         return this._interactDonation(playerHands);
+      case ST.CALL_G2S:
+        return this._interactCallG2S();
       default:
         return this._interactIngredient(playerHands);
     }
@@ -182,6 +205,12 @@ export class Station {
   _interactDonation(playerHands) {
     if (playerHands.length === 0) return { action: "none" };
     return { action: "donation" };
+  }
+
+  _interactCallG2S() {
+    // Le jeu vérifie s'il y a un feu actif (état passé via game)
+    // On retourne une action générique; le jeu décidera
+    return { action: "call_g2s" };
   }
 
   _interactIngredient(playerHands) {

@@ -1,18 +1,24 @@
 // renderer-hud.js — HUD moderne plein-canvas (glassmorphism top strip)
 
+import {
+  GAME_DURATION,
+  HUD_H,
+  MAX_ASSISTANTS as _MAX_ASSISTANTS,
+} from "../creperie-constants.js";
 import { heartPath, roundRect } from "./renderer-colors.js";
 
-const HUD_H = 68; // hauteur de la bande HUD en haut
-const MAX_ASSISTANTS = 5;
+const MAX_ASSISTANTS = _MAX_ASSISTANTS;
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  HUD — Bande en haut du canvas
+//  HUD — Bande dédiée en haut du canvas (non-overlay)
 // ══════════════════════════════════════════════════════════════════════════════
 export function drawHUD(
   ctx,
   W,
   H,
   score,
+  displayScore,
+  scoreFlashTimer,
   timeLeft,
   heartsLeft,
   maxHearts,
@@ -38,31 +44,54 @@ export function drawHUD(
   ctx.lineTo(W, HUD_H);
   ctx.stroke();
 
-  // ── ZONE GAUCHE : Score ───────────────────────────────────────────────────
+  // ── ZONE GAUCHE : Score animé ─────────────────────────────────────────────
   const scoreX = 18;
   // Icône trophée stylisé
-  ctx.font = "bold 20px Arial";
+  ctx.font = "bold 22px Arial";
   ctx.fillStyle = "#FFD700";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.fillText("🏆", scoreX, HUD_H * 0.42);
 
-  const scoreStr = String(score);
-  ctx.font = `bold ${Math.min(28, 18 + scoreStr.length)}px 'Arial', sans-serif`;
-  ctx.fillStyle = "#FFFFFF";
-  ctx.shadowBlur = 8;
-  ctx.shadowColor = "rgba(255,220,0,0.5)";
-  ctx.fillText(scoreStr, scoreX + 28, HUD_H * 0.42);
+  const scoreStr = Math.round(displayScore).toString();
+  // Scale animé quand le score monte
+  const flashFrac = Math.max(0, scoreFlashTimer / 600);
+  const scoreScale = 1 + 0.28 * flashFrac;
+  const baseFontSize = Math.max(30, 36 - Math.max(0, scoreStr.length - 3) * 3);
+  const fontSize = Math.round(baseFontSize * scoreScale);
+
+  ctx.save();
+  ctx.font = `bold ${fontSize}px 'Arial', sans-serif`;
+  // Dégradé or pour le score
+  const sg = ctx.createLinearGradient(
+    scoreX + 32,
+    HUD_H * 0.2,
+    scoreX + 32,
+    HUD_H * 0.7,
+  );
+  sg.addColorStop(0, "#FFE066");
+  sg.addColorStop(0.5, "#FFD700");
+  sg.addColorStop(1, "#FF8C00");
+  ctx.fillStyle = sg;
+  ctx.shadowBlur = 12 + 8 * flashFrac;
+  ctx.shadowColor = `rgba(255,200,0,${0.7 + 0.3 * flashFrac})`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(scoreStr, scoreX + 32, HUD_H * 0.44);
   ctx.shadowBlur = 0;
+  ctx.restore();
 
   // Label "pts"
   ctx.font = "11px Arial";
   ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.fillText(
-    "pts",
-    scoreX + 28 + ctx.measureText(scoreStr).width + 3,
-    HUD_H * 0.42,
-  );
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  {
+    ctx.font = `bold ${Math.max(30, 36 - Math.max(0, scoreStr.length - 3) * 3)}px Arial`;
+    const sw2 = ctx.measureText(scoreStr).width;
+    ctx.font = "11px Arial";
+    ctx.fillText("pts", scoreX + 32 + sw2 + 4, HUD_H * 0.65);
+  }
 
   // ── ZONE CENTRE : Minuteur ────────────────────────────────────────────────
   const cx = W / 2;
@@ -74,7 +103,7 @@ export function drawHUD(
 
   // Arc de progression
   const arcR = 22;
-  const arcFrac = timeLeft / 90;
+  const arcFrac = timeLeft / GAME_DURATION;
   const arcStartAngle = -Math.PI / 2;
   const arcColor =
     arcFrac > 0.5 ? "#4CAF50" : arcFrac > 0.2 ? "#FF9800" : "#F44336";
@@ -121,10 +150,10 @@ export function drawHUD(
   ctx.shadowBlur = 0;
   ctx.restore();
 
-  // ── ZONE DROITE : Cœurs ───────────────────────────────────────────────────
-  const heartSize = 22;
-  const heartSpacing = heartSize + 5;
-  const heartsStartX = W - maxHearts * heartSpacing - 12;
+  // ── ZONE DROITE : Cœurs (28px, plus grands) ──────────────────────────────
+  const heartSize = 28;
+  const heartSpacing = heartSize + 7;
+  const heartsStartX = W - maxHearts * heartSpacing - 14;
   const heartY = HUD_H * 0.5;
 
   for (let i = 0; i < maxHearts; i++) {
@@ -368,4 +397,44 @@ export function drawDeliveryFeedback(ctx, feedback) {
   ctx.fillText(text, 0, 0);
 
   ctx.restore();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  FLOATING TEXTS — textes animés au niveau des clients (sans encadré)
+// ══════════════════════════════════════════════════════════════════════════════
+export function drawFloatingTexts(ctx, floatingTexts) {
+  floatingTexts.forEach((ft) => {
+    if (ft.timer <= 0) return;
+    const progress = 1 - ft.timer / ft.maxTimer;
+    // Fondu : entrée rapide (200ms), sortie lente
+    const alpha =
+      Math.min(1, ft.timer / 250) *
+      Math.max(0, Math.min(1, (ft.timer / ft.maxTimer) * 3.5));
+    const vy = progress * -70;
+    const scale = Math.max(0.8, 1.3 - 0.3 * progress);
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(ft.x, ft.y + vy);
+    ctx.scale(scale, scale);
+
+    // Halo lumineux (glow) sans fond opaque
+    ctx.font = "bold 30px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowBlur = 22;
+    ctx.shadowColor = ft.color || "#2ECC71";
+    ctx.fillStyle = ft.color || "#2ECC71";
+    // Contour noir léger pour lisibilité
+    ctx.strokeStyle = "rgba(0,0,0,0.55)";
+    ctx.lineWidth = 4;
+    ctx.lineJoin = "round";
+    ctx.strokeText(ft.text, 0, 0);
+    // Fill brillant
+    ctx.shadowBlur = 18;
+    ctx.fillText(ft.text, 0, 0);
+    ctx.shadowBlur = 0;
+
+    ctx.restore();
+  });
 }

@@ -2,28 +2,40 @@
 // Style graphique Overcooked : gradients, cel-shading outlines, ombres portées, éclairage ambiant
 // Les rendus sont délégués aux sous-fichiers dans le dossier renderers/
 
-import { COUNTER_HEIGHT_RATIO, COUNTER_Y_RATIO } from "./creperie-constants.js";
+import {
+  BOTTOM_COUNTER_HEIGHT_RATIO,
+  BOTTOM_COUNTER_Y_RATIO,
+  COUNTER_HEIGHT_RATIO,
+  COUNTER_Y_RATIO,
+  HUD_H,
+  PASSAGE_X_RATIO,
+} from "./creperie-constants.js";
 
 import { drawAmbientLighting } from "./renderers/renderer-ambient.js";
 import { drawBackground } from "./renderers/renderer-background.js";
-import { drawCounter } from "./renderers/renderer-counter.js";
-import { drawCustomers } from "./renderers/renderer-customers.js";
+import {
+  drawBottomCounter,
+  drawTopCounter,
+} from "./renderers/renderer-counter.js";
+import {
+  drawContracts,
+  drawCustomers,
+} from "./renderers/renderer-customers.js";
 import { drawFurniture } from "./renderers/renderer-furniture.js";
 import {
   addParticles as _addParticles,
   updateParticles as _updateParticles,
-  drawDeliveryFeedback,
+  drawFloatingTexts,
   drawHUD,
   drawParticles,
 } from "./renderers/renderer-hud.js";
 import {
   drawAutoPlayer,
   drawFirefighterPlayer,
-  drawFloorTokens,
   drawPlayer,
 } from "./renderers/renderer-player.js";
 import {
-  drawAssistantBiligs,
+  drawBottomStations,
   drawStations,
 } from "./renderers/renderer-stations.js";
 import { drawWaiter } from "./renderers/renderer-waiter.js";
@@ -32,7 +44,6 @@ import { drawWaiter } from "./renderers/renderer-waiter.js";
 export class CreperieRenderer {
   constructor(ctx) {
     this.ctx = ctx;
-    this.deliveryFeedback = null;
     this.particles = [];
     this._time = 0;
   }
@@ -42,37 +53,72 @@ export class CreperieRenderer {
   render(
     canvas,
     stations,
+    bottomStations,
     player,
     customerManager,
     score,
+    displayScore,
+    scoreFlashTimer,
     timeLeft,
     heartsLeft,
     maxHearts,
-    deliveryFeedback,
+    floatingTexts,
     assistants = [],
     assistanceBiligs = [],
-    assistanceTokens = [],
-    incendieToken = null,
+    g2sContracts = [],
     firefighter = null,
     waiter = null,
     donationCount = 0,
+    hasActiveFire = false,
   ) {
     const W = canvas.width;
     const H = canvas.height;
     const ctx = this.ctx;
-    const counterY = H * COUNTER_Y_RATIO;
-    const counterH = H * COUNTER_HEIGHT_RATIO;
     this._time = Date.now();
 
-    // Remplir le fond avec une couleur de base
-    ctx.fillStyle = "#E8D0B0"; // COL.WALL_BOTTOM
-    ctx.fillRect(0, 0, W, H);
+    // ── Fond de canvas (couleur de base pour la bande HUD) ──────────────────
+    ctx.fillStyle = "#1A0A05";
+    ctx.fillRect(0, 0, W, HUD_H);
 
-    drawBackground(ctx, W, H, counterY, counterH, this._time);
+    // ── Tout le jeu est décalé de HUD_H vers le bas ─────────────────────────
+    ctx.save();
+    ctx.translate(0, HUD_H);
+    const gameH = H - HUD_H;
+
+    const counterY = gameH * COUNTER_Y_RATIO;
+    const counterH = gameH * COUNTER_HEIGHT_RATIO;
+    const passageX = W * PASSAGE_X_RATIO;
+    const bottomCounterY = gameH * BOTTOM_COUNTER_Y_RATIO;
+    const bottomCounterH = gameH * BOTTOM_COUNTER_HEIGHT_RATIO;
+
+    // Fond de base
+    ctx.fillStyle = "#E8D0B0";
+    ctx.fillRect(0, 0, W, gameH);
+
+    drawBackground(
+      ctx,
+      W,
+      gameH,
+      counterY,
+      counterH,
+      bottomCounterY,
+      bottomCounterH,
+      this._time,
+    );
     drawFurniture(ctx, W, counterY, customerManager);
     drawCustomers(ctx, W, counterY, customerManager.customers, this._time);
-    if (waiter) drawWaiter(ctx, waiter, W, H, counterY, counterH, this._time);
-    drawCounter(ctx, W, counterY, counterH);
+    // Contrats G2S dans la salle
+    drawContracts(ctx, g2sContracts, this._time);
+
+    if (waiter)
+      drawWaiter(ctx, waiter, W, gameH, counterY, counterH, this._time);
+
+    // Comptoir haut (s'arrête au passage)
+    drawTopCounter(ctx, W, counterY, counterH, passageX);
+    // Comptoir bas (pleine largeur)
+    drawBottomCounter(ctx, W, bottomCounterY, bottomCounterH);
+
+    // Stations comptoir haut
     drawStations(
       ctx,
       stations,
@@ -82,11 +128,18 @@ export class CreperieRenderer {
       player.currentStation,
     );
 
-    // Biligs des assistants (rangée du bas)
-    drawAssistantBiligs(ctx, assistanceBiligs, this._time, assistants);
-
-    // Tokens au sol (assistance + incendie)
-    drawFloorTokens(ctx, assistanceTokens, incendieToken, W, H, this._time);
+    // Biligs des assistants + stations du bas (CALL_G2S, DON)
+    drawBottomStations(
+      ctx,
+      assistanceBiligs,
+      bottomStations,
+      bottomCounterY,
+      bottomCounterH,
+      this._time,
+      player.currentStation,
+      assistants,
+      hasActiveFire,
+    );
 
     drawPlayer(ctx, player, counterY, counterH, this._time);
 
@@ -99,22 +152,28 @@ export class CreperieRenderer {
     if (firefighter) drawFirefighterPlayer(ctx, firefighter, this._time);
 
     drawParticles(ctx, this.particles);
-    drawDeliveryFeedback(ctx, deliveryFeedback);
 
-    // HUD moderne plein-canvas (top strip)
+    // Textes flottants (score au niveau des clients dans la salle)
+    drawFloatingTexts(ctx, floatingTexts);
+
+    drawAmbientLighting(ctx, W, gameH, counterY);
+
+    ctx.restore();
+
+    // ── HUD dédié (dessiné HORS de la translation, en haut du canvas) ───────
     drawHUD(
       ctx,
       W,
       H,
       score,
+      displayScore,
+      scoreFlashTimer,
       timeLeft,
       heartsLeft,
       maxHearts,
       assistants.length,
       donationCount,
     );
-
-    drawAmbientLighting(ctx, W, H, counterY);
   }
 
   addParticles(x, y, color, count = 10) {

@@ -1,9 +1,11 @@
-// creperie-player.js — Joueur (Cerise) avec déplacement horizontal
+// creperie-player.js — Joueur avec déplacement 2D (cuisine + salle)
 
 import {
+  KITCHEN_BOTTOM_LANE_Y_RATIO,
+  KITCHEN_TOP_LANE_Y_RATIO,
+  PLAYER_DINING_Y_RATIO,
   PLAYER_SIZE,
   PLAYER_SPEED,
-  PLAYER_Y_RATIO,
 } from "./creperie-constants.js";
 
 const WALK_FRAME_COUNT = 4;
@@ -12,10 +14,15 @@ const WALK_FRAME_DURATION = 120; // ms par frame
 export class CreperiePlayer {
   constructor(startX, canvasHeight) {
     this.x = startX;
-    this.y = canvasHeight * PLAYER_Y_RATIO;
+    this.y = canvasHeight * KITCHEN_TOP_LANE_Y_RATIO;
     this.size = PLAYER_SIZE;
-    this.minX = 20;
-    this.maxX = 800 - 20;
+    this.minX = 22;
+    this.maxX = 800 - 22;
+
+    // Zone : "kitchen" ou "dining"
+    this.zone = "kitchen";
+    // Lane Y (en cuisine) : 0 = haut, 1 = bas
+    this._lane = 0;
 
     // Items tenus en main (max MAX_HANDS)
     this.hands = [];
@@ -34,32 +41,114 @@ export class CreperiePlayer {
   }
 
   onResize(canvasWidth, canvasHeight) {
-    this.maxX = canvasWidth - 20;
-    this.y = canvasHeight * PLAYER_Y_RATIO;
-    // Reclamper x
+    this.maxX = canvasWidth - 22;
+    // Recalcule Y selon la zone actuelle
+    if (this.zone === "kitchen") {
+      if (this._lane === 0) {
+        this.y = canvasHeight * KITCHEN_TOP_LANE_Y_RATIO;
+      } else {
+        this.y = canvasHeight * KITCHEN_BOTTOM_LANE_Y_RATIO;
+      }
+    }
     this.x = Math.max(this.minX, Math.min(this.maxX, this.x));
   }
 
-  update(dt, keys) {
-    let dx = 0;
-    if (keys.left) dx -= PLAYER_SPEED * (dt / 1000);
-    if (keys.right) dx += PLAYER_SPEED * (dt / 1000);
+  update(dt, keys, gameLayout) {
+    const {
+      gameH,
+      counterY,
+      passageX,
+      kitchenTopLaneY,
+      kitchenBottomLaneY,
+      tableRects = [],
+    } = gameLayout || {};
 
-    if (dx !== 0) {
-      this.x = Math.max(this.minX, Math.min(this.maxX, this.x + dx));
-      this.direction = dx > 0 ? 1 : -1;
-      this.isMoving = true;
+    const spd = PLAYER_SPEED * (dt / 1000);
+    let moving = false;
 
+    if (this.zone === "kitchen") {
+      // ── Mouvement horizontal ─────────────────────────────────────────────
+      if (keys.left) {
+        this.x -= spd;
+        this.direction = -1;
+        moving = true;
+      }
+      if (keys.right) {
+        this.x += spd;
+        this.direction = 1;
+        moving = true;
+      }
+      this.x = Math.max(this.minX, Math.min(this.maxX, this.x));
+
+      // ── Mouvement vertical entre les deux lanes ──────────────────────────
+      if (keys.up && this._lane === 1) {
+        this._lane = 0;
+        this.y = kitchenTopLaneY;
+      }
+      if (keys.down && this._lane === 0) {
+        this._lane = 1;
+        this.y = kitchenBottomLaneY;
+      }
+
+      // ── Transition vers la salle (montée + à droite du passage) ──────────
+      if (keys.up && this._lane === 0 && this.x > passageX - 20) {
+        this.zone = "dining";
+        this.y = counterY * PLAYER_DINING_Y_RATIO; // dans la salle (coords jeu)
+        this._lane = 0;
+        this.direction = -1;
+      }
+    } else {
+      // ── Mouvement libre dans la salle (2D) ───────────────────────────────
+      let nx = this.x,
+        ny = this.y;
+      if (keys.left) {
+        nx -= spd;
+        this.direction = -1;
+        moving = true;
+      }
+      if (keys.right) {
+        nx += spd;
+        this.direction = 1;
+        moving = true;
+      }
+      if (keys.up) {
+        ny -= spd;
+        moving = true;
+      }
+      if (keys.down) {
+        ny += spd;
+        moving = true;
+      }
+
+      // Bornes
+      nx = Math.max(this.minX, Math.min(this.maxX, nx));
+      ny = Math.max(4, Math.min(counterY - 16, ny));
+
+      this.x = nx;
+      this.y = ny;
+
+      // ── Transition retour cuisine (descente + à droite du passage) ────────
+      if (keys.down && this.y >= counterY - 20 && this.x > passageX - 20) {
+        this.zone = "kitchen";
+        this._lane = 0;
+        this.y = kitchenTopLaneY;
+      }
+    }
+
+    // Animation de marche
+    if (keys.left || keys.right || keys.up || keys.down) {
+      moving = true;
       this.walkTimer += dt;
       if (this.walkTimer >= WALK_FRAME_DURATION) {
         this.walkFrame = (this.walkFrame + 1) % WALK_FRAME_COUNT;
         this.walkTimer = 0;
       }
     } else {
-      this.isMoving = false;
+      moving = false;
       this.walkFrame = 0;
       this.walkTimer = 0;
     }
+    this.isMoving = moving;
 
     if (this.interactFlashTimer > 0) {
       this.interactFlashTimer = Math.max(0, this.interactFlashTimer - dt);

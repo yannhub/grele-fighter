@@ -2,7 +2,16 @@
 
 import { COL, vGrad } from "./renderer-colors.js";
 
-export function drawBackground(ctx, W, H, counterY, counterH, time) {
+export function drawBackground(
+  ctx,
+  W,
+  H,
+  counterY,
+  counterH,
+  bottomCounterY,
+  bottomCounterH,
+  time,
+) {
   const rH = counterY; // restaurant height
 
   // ── Mur du fond (gradient vertical chaud) ──
@@ -92,7 +101,7 @@ export function drawBackground(ctx, W, H, counterY, counterH, time) {
   drawPlant(ctx, 28, rH - plH - 6);
   drawPlant(ctx, W - 28, rH - plH - 6);
 
-  // ── Sol cuisine (damier 3D avec bevel) ──
+  // ── Sol cuisine (entre les deux comptoirs + sous le comptoir bas) ──
   const kitchenTop = counterY + counterH;
   const kTile = 38;
   for (let tx = 0; tx < W; tx += kTile) {

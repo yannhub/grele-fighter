@@ -34,7 +34,7 @@ export class Customer {
 
   update(dt) {
     if (this.state === "arriving") {
-      this.arrivalProgress = Math.min(1, this.arrivalProgress + dt / 400);
+      this.arrivalProgress = Math.min(1, this.arrivalProgress + dt / 200);
       if (this.arrivalProgress >= 1) this.state = "seated";
       return;
     }
@@ -174,5 +174,18 @@ export class CustomerManager {
 
   get seatedCount() {
     return this.customers.filter((c) => c.state === "seated").length;
+  }
+
+  /** Nombre de commandes disponibles pour le joueur (assis + non pris par assistant) */
+  get unhandledCount() {
+    return this.customers.filter(
+      (c) => c.state === "seated" && !c.handledByAssistant,
+    ).length;
+  }
+
+  /** Force l'apparition immédiate d'un client (ignoré si toutes les tables sont prises) */
+  forceSpawn() {
+    this._spawnCustomer();
+    this.spawnTimer = 0; // remet le timer pour éviter un double spawn juste après
   }
 }

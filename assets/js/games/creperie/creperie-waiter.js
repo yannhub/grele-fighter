@@ -40,10 +40,12 @@ export class CreperieWaiter {
 
   /**
    * Queue a delivery: waiter will pick up the crêpe and walk to the customer's table.
-   * The customer should be in "served" state (patience frozen, waiting for food).
+   * @param {object} customer
+   * @param {object} crepe
+   * @param {Function|null} onArrival  Callback fired when waiter reaches the table.
    */
-  addDelivery(customer, crepe) {
-    this.deliveryQueue.push({ customer, crepe });
+  addDelivery(customer, crepe, onArrival = null) {
+    this.deliveryQueue.push({ customer, crepe, onArrival });
   }
 
   update(dt, canvasWidth, canvasHeight) {
@@ -77,6 +79,10 @@ export class CreperieWaiter {
         const c = this.currentDelivery.customer;
         if (c.state === "served") {
           c.state = "leaving_happy";
+        }
+        // Fire optional callback (e.g. to spawn score popup at table position)
+        if (typeof this.currentDelivery.onArrival === "function") {
+          this.currentDelivery.onArrival();
         }
         this.heldCrepe = null;
         this.currentDelivery = null;

@@ -76,21 +76,22 @@ const OUTFITS = [
 
 export function drawCustomers(ctx, W, counterY, customers, time) {
   const rH = counterY;
+  const BASE_SCALE = 0.7; // clients plus petits pour tenir dans la salle
   customers.forEach((c) => {
     const tablePos = TABLE_POSITIONS[c.tableIndex];
     if (!tablePos) return;
     const tx = W * tablePos.xRatio;
-    const ty = rH * tablePos.yRatio - 30;
+    const ty = rH * tablePos.yRatio - 22;
 
     let alpha = 1,
-      scale = 1;
+      scale = BASE_SCALE;
     if (c.state === "arriving") {
       alpha = c.arrivalProgress;
-      scale = 0.5 + c.arrivalProgress * 0.5;
+      scale = BASE_SCALE * (0.5 + c.arrivalProgress * 0.5);
     } else if (c.state === "leaving_happy" || c.state === "leaving_angry") {
       const p = c.leavingTimer / c.leavingDuration;
       alpha = 1 - p;
-      scale = 1 + p * 0.3;
+      scale = BASE_SCALE * (1 + p * 0.3);
     }
 
     ctx.save();
@@ -98,6 +99,8 @@ export function drawCustomers(ctx, W, counterY, customers, time) {
     ctx.translate(tx, ty);
     ctx.scale(scale, scale);
     drawCustomerBody(ctx, c, time);
+    // Bulle de commande dessinée hors du scale client pour garder une taille lisible
+    ctx.scale(1 / scale, 1 / scale);
     drawSpeechBubble(ctx, c, time);
     ctx.restore();
   });
@@ -431,27 +434,30 @@ export function drawSpeechBubble(ctx, customer, time) {
   const bx = -bw / 2,
     by = 58;
 
-  // Couleur de bordure : bleue/verte si géré par assistant
+  // Couleur de bordure : grise si géré par assistant, sinon rouge/vert
   const isHandled = customer.handledByAssistant && customer.state === "seated";
-  const borderColor = isHandled ? "#2196F3" : COL.BUBBLE_BORDER;
+  const borderColor = isHandled ? "#999" : COL.BUBBLE_BORDER;
+
+  ctx.save();
+  if (isHandled) ctx.globalAlpha = 0.75;
 
   // Shadow
   ctx.save();
-  ctx.shadowBlur = isHandled ? 14 : 12;
-  ctx.shadowColor = isHandled ? "rgba(33,150,243,0.4)" : COL.BUBBLE_SHADOW;
+  ctx.shadowBlur = isHandled ? 8 : 12;
+  ctx.shadowColor = isHandled ? "rgba(0,0,0,0.18)" : COL.BUBBLE_SHADOW;
   const bubGrad = vGrad(
     ctx,
     by,
     by + bh,
-    COL.BUBBLE_TOP,
-    isHandled ? "#E8F4FD" : COL.BUBBLE_BOTTOM,
+    isHandled ? "rgba(220,220,220,0.95)" : COL.BUBBLE_TOP,
+    isHandled ? "rgba(200,200,200,0.90)" : COL.BUBBLE_BOTTOM,
   );
   roundRect(ctx, bx, by, bw, bh, 10);
   ctx.fillStyle = bubGrad;
   ctx.fill();
   ctx.shadowBlur = 0;
   ctx.strokeStyle = borderColor;
-  ctx.lineWidth = isHandled ? 2.5 : 2;
+  ctx.lineWidth = isHandled ? 1.8 : 2;
   ctx.stroke();
   ctx.restore();
 
@@ -476,6 +482,7 @@ export function drawSpeechBubble(ctx, customer, time) {
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#2ECC71";
     ctx.fillText("✅", bx + bw / 2, by + bh / 2 + 2);
+    ctx.restore(); // ← indispensable : annule le ctx.save() du début
     return;
   }
 
@@ -495,7 +502,7 @@ export function drawSpeechBubble(ctx, customer, time) {
   const timerR = 12;
   const timerX = 0; // centré sur le client
   const timerY = by - timerR - 8; // au-dessus de la flèche
-  const tColor = pf > 0.5 ? "#2ECC71" : pf > 0.25 ? "#F39C12" : "#E74C3C";
+  const tColor = pf > 0.66 ? "#2ECC71" : pf > 0.12 ? "#F39C12" : "#E74C3C";
 
   // Anneau de fond
   ctx.beginPath();
@@ -525,7 +532,7 @@ export function drawSpeechBubble(ctx, customer, time) {
   ctx.lineCap = "butt";
 
   // Pulsation quand le temps est presque écoulé
-  if (pf < 0.25 && !isHandled) {
+  if (pf < 0.12 && !isHandled) {
     const pulse = Math.abs(Math.sin(time / 250));
     ctx.save();
     ctx.globalAlpha = pulse * 0.4;
@@ -537,45 +544,170 @@ export function drawSpeechBubble(ctx, customer, time) {
     ctx.restore();
   }
 
-  // Badge "assistant en route" si géré par un assistant G2S
+  // Badge "Traité par G2S" si géré par un assistant
   if (isHandled) {
-    const badgeW = 68,
+    const badgeW = 82,
       badgeH = 14;
     const badgeX = bx + (bw - badgeW) / 2;
     const badgeY = by + bh - badgeH - 4;
     roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 7);
-    ctx.fillStyle = "rgba(33,150,243,0.85)";
+    ctx.fillStyle = "rgba(240,240,240,0.92)";
     ctx.fill();
-    ctx.strokeStyle = "#90CAF9";
+    ctx.strokeStyle = "#BBB";
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.font = "bold 8px Arial";
-    ctx.fillStyle = "#FFF";
+    ctx.fillStyle = "#E30613";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("🛡️ G2S en route", badgeX + badgeW / 2, badgeY + badgeH / 2);
+    ctx.fillText("🛡️ Traité par G2S", badgeX + badgeW / 2, badgeY + badgeH / 2);
   }
 
   // Icônes de recette
   const icons = recipe.toppings.map((t) => ITEM_ICONS[t] || "?");
-  const iconSize = 28;
-  const totalW = icons.length * (iconSize + 6) - 6;
+  const iconSize = isHandled ? 22 : 24;
+  const iconGap = 10;
+  const totalW = icons.length * (iconSize + iconGap) - iconGap;
   const startX = bx + (bw - totalW) / 2;
   icons.forEach((icon, i) => {
-    const ix = startX + i * (iconSize + 6) + iconSize / 2;
+    const ix = startX + i * (iconSize + iconGap) + iconSize / 2;
     const iy = by + bh / 2 + 6;
     // Circle background
     ctx.beginPath();
     ctx.arc(ix, iy, iconSize / 2 + 2, 0, Math.PI * 2);
-    ctx.fillStyle = "#FFF";
+    ctx.fillStyle = isHandled ? "rgba(220,220,220,0.8)" : "#FFF";
     ctx.fill();
     ctx.strokeStyle = "#DDD";
     ctx.lineWidth = 1.5;
     ctx.stroke();
     // Icon
+    ctx.globalAlpha = isHandled ? 0.55 : 1;
     ctx.font = `${iconSize}px serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(icon, ix, iy);
+    ctx.globalAlpha = isHandled ? 0.75 : 1; // restore outer alpha
+  });
+
+  ctx.restore(); // restore globalAlpha save from start
+}
+
+/**
+ * Dessine les contrats G2S laissés dans la salle par des clients satisfaits.
+ * Chaque contrat :  { x, y, timer, duration }
+ */
+export function drawContracts(ctx, contracts, time) {
+  if (!contracts || contracts.length === 0) return;
+  contracts.forEach((c) => {
+    const frac = c.timer / c.duration;
+    if (frac <= 0) return;
+
+    const alpha = Math.min(1, frac * 2);
+    const bounce = Math.sin(time / 700) * 2.5;
+
+    // Dimensions du "contrat" (petit rectangle type document)
+    const cw = 44,
+      ch = 56;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(c.x, c.y + bounce);
+
+    // Halo doux
+    ctx.save();
+    ctx.shadowBlur = 18;
+    ctx.shadowColor =
+      frac > 0.4 ? "rgba(33,150,243,0.55)" : "rgba(244,67,54,0.55)";
+
+    // Corps du document - parchemin blanc-creme
+    const bg = ctx.createLinearGradient(-cw / 2, -ch / 2, cw / 2, ch / 2);
+    bg.addColorStop(0, "#FDFAF0");
+    bg.addColorStop(1, "#F0EAD0");
+    ctx.beginPath();
+    // Coin coupe en haut a droite (style contrat)
+    const cornerR = 4,
+      notch = 10;
+    ctx.moveTo(-cw / 2 + cornerR, -ch / 2);
+    ctx.lineTo(cw / 2 - notch, -ch / 2);
+    ctx.lineTo(cw / 2, -ch / 2 + notch);
+    ctx.lineTo(cw / 2, ch / 2 - cornerR);
+    ctx.quadraticCurveTo(cw / 2, ch / 2, cw / 2 - cornerR, ch / 2);
+    ctx.lineTo(-cw / 2 + cornerR, ch / 2);
+    ctx.quadraticCurveTo(-cw / 2, ch / 2, -cw / 2, ch / 2 - cornerR);
+    ctx.lineTo(-cw / 2, -ch / 2 + cornerR);
+    ctx.quadraticCurveTo(-cw / 2, -ch / 2, -cw / 2 + cornerR, -ch / 2);
+    ctx.closePath();
+    ctx.fillStyle = bg;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Petit triangle du coin coupe
+    ctx.beginPath();
+    ctx.moveTo(cw / 2 - notch, -ch / 2);
+    ctx.lineTo(cw / 2 - notch, -ch / 2 + notch);
+    ctx.lineTo(cw / 2, -ch / 2 + notch);
+    ctx.closePath();
+    ctx.fillStyle = "#D4C9A0";
+    ctx.fill();
+    ctx.restore();
+
+    // Bordure du document
+    ctx.beginPath();
+    ctx.moveTo(-cw / 2 + cornerR, -ch / 2);
+    ctx.lineTo(cw / 2 - notch, -ch / 2);
+    ctx.lineTo(cw / 2, -ch / 2 + notch);
+    ctx.lineTo(cw / 2, ch / 2 - cornerR);
+    ctx.quadraticCurveTo(cw / 2, ch / 2, cw / 2 - cornerR, ch / 2);
+    ctx.lineTo(-cw / 2 + cornerR, ch / 2);
+    ctx.quadraticCurveTo(-cw / 2, ch / 2, -cw / 2, ch / 2 - cornerR);
+    ctx.lineTo(-cw / 2, -ch / 2 + cornerR);
+    ctx.quadraticCurveTo(-cw / 2, -ch / 2, -cw / 2 + cornerR, -ch / 2);
+    ctx.closePath();
+    ctx.strokeStyle = frac > 0.4 ? "#1565C0" : "#C62828";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Lignes de texte simulées
+    ctx.strokeStyle = "rgba(100,80,40,0.18)";
+    ctx.lineWidth = 1.2;
+    ctx.lineCap = "round";
+    [14, 20, 26, 32].forEach((yOff) => {
+      const lw = yOff === 14 ? cw * 0.55 : cw * 0.7;
+      ctx.beginPath();
+      ctx.moveTo(-lw / 2, yOff - ch / 2 + 2);
+      ctx.lineTo(lw / 2, yOff - ch / 2 + 2);
+      ctx.stroke();
+    });
+    ctx.lineCap = "butt";
+
+    // Badge "G2S" dans la partie haute
+    const badgeH = 14,
+      badgeW = cw - 10;
+    roundRect(ctx, -badgeW / 2, -ch / 2 + 3, badgeW, badgeH, 3);
+    ctx.fillStyle = frac > 0.4 ? "#1565C0" : "#C62828";
+    ctx.fill();
+    ctx.font = "bold 9px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText("G2S", 0, -ch / 2 + 3 + badgeH / 2);
+
+    // Barre de timer en bas
+    const barW = cw - 8,
+      barH = 5;
+    const barX = -barW / 2,
+      barY = ch / 2 - barH - 4;
+    // Fond
+    ctx.beginPath();
+    ctx.rect(barX, barY, barW, barH);
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.fill();
+    // Remplissage
+    ctx.beginPath();
+    ctx.rect(barX, barY, barW * frac, barH);
+    ctx.fillStyle = frac > 0.4 ? "#1565C0" : "#E53935";
+    ctx.fill();
+
+    ctx.restore();
   });
 }

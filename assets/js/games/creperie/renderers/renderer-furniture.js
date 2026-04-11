@@ -14,15 +14,15 @@ export function drawFurniture(ctx, W, counterY, customerManager) {
 }
 
 export function drawTable(ctx, cx, cy, customer, tableIdx) {
-  const tw = 90,
-    th = 56;
+  const tw = 65,
+    th = 40;
 
   // Drop shadow under table
   dropShadow(ctx, cx, cy + th / 2 + 8, tw * 0.45, 6, 0.12);
 
   // 4 table legs (gradient)
-  const legW = 7,
-    legH = 14;
+  const legW = 5,
+    legH = 10;
   const legOffX = tw / 2 - 10;
   const legOffY = th / 2;
   [
@@ -91,15 +91,15 @@ export function drawTable(ctx, cx, cy, customer, tableIdx) {
   ctx.fillStyle = "#F8F4F0";
   ctx.strokeStyle = "#D0C0A8";
   ctx.lineWidth = 1;
-  [-18, 18].forEach((ox) => {
+  [-12, 12].forEach((ox) => {
     ctx.beginPath();
-    ctx.arc(cx + ox, cy, 9, 0, Math.PI * 2);
+    ctx.arc(cx + ox, cy, 7, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   });
 
   // Chairs (top + bottom)
-  const chairOff = th / 2 + 20;
+  const chairOff = th / 2 + 14;
   drawChair(
     ctx,
     cx,
@@ -113,8 +113,8 @@ export function drawTable(ctx, cx, cy, customer, tableIdx) {
 }
 
 export function drawChair(ctx, cx, cy, flipped, occupied) {
-  const cw = 42,
-    ch = 26;
+  const cw = 30,
+    ch = 18;
 
   // Assise (gradient radial = effet coussin)
   roundRect(ctx, cx - cw / 2, cy - ch / 2, cw, ch, 6);
@@ -135,7 +135,7 @@ export function drawChair(ctx, cx, cy, flipped, occupied) {
   ctx.stroke();
 
   // Dossier (arrondi semi-circulaire)
-  const backH = 16;
+  const backH = 11;
   const backDir = flipped ? 1 : -1;
   const backY = cy + backDir * (ch / 2);
   roundRect(

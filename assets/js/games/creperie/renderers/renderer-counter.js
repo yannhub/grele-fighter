@@ -1,20 +1,53 @@
-// renderer-counter.js — Rendu du comptoir en bois (gradients, grain, moulures)
+// renderer-counter.js — Rendu des comptoirs en bois (gradients, grain, moulures)
 
-import { COL, hGrad, vGrad } from "./renderer-colors.js";
+import { COL, hGrad, roundRect, vGrad } from "./renderer-colors.js";
 
-export function drawCounter(ctx, W, counterY, counterH) {
+// Dessine un comptoir jusqu'à passageX (comptoir du haut avec passage à droite)
+export function drawTopCounter(ctx, W, counterY, counterH, passageX) {
+  _drawCounterBody(ctx, 0, passageX, counterY, counterH);
+
+  // Montants du passage (comme un cadre de porte)
+  ctx.save();
+  const postW = 8;
+  const postH = counterH + 8;
+  const postX = passageX - postW / 2;
+  const postGrad = vGrad(
+    ctx,
+    counterY - 4,
+    counterY + postH,
+    "#5A2A10",
+    "#3A1008",
+  );
+  roundRect(ctx, postX, counterY - 4, postW, postH, 3);
+  ctx.fillStyle = postGrad;
+  ctx.fill();
+  ctx.strokeStyle = "#2A0A04";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+}
+
+// Dessine le comptoir du bas (pleine largeur)
+export function drawBottomCounter(ctx, W, bottomCounterY, bottomCounterH) {
+  _drawCounterBody(ctx, 0, W, bottomCounterY, bottomCounterH);
+}
+
+// Moteur commun des deux comptoirs
+function _drawCounterBody(ctx, fromX, toX, counterY, counterH) {
+  const W2 = toX - fromX;
+
   // Molding top (thin dark strip)
   ctx.fillStyle = COL.COUNTER_MOLDING;
-  ctx.fillRect(0, counterY, W, 4);
+  ctx.fillRect(fromX, counterY, W2, 4);
 
   // Plan de travail (dessus — gradient horizontal avec reflet spéculaire)
   const topH = 14;
-  const topGrad = hGrad(ctx, 0, W, COL.COUNTER_TOP_A, COL.COUNTER_TOP_B);
+  const topGrad = hGrad(ctx, fromX, toX, COL.COUNTER_TOP_A, COL.COUNTER_TOP_B);
   ctx.fillStyle = topGrad;
-  ctx.fillRect(0, counterY + 4, W, topH);
+  ctx.fillRect(fromX, counterY + 4, W2, topH);
   // Specular highlight
   ctx.fillStyle = COL.COUNTER_TOP_SPECULAR;
-  ctx.fillRect(0, counterY + 4 + topH * 0.3, W, 3);
+  ctx.fillRect(fromX, counterY + 4 + topH * 0.3, W2, 3);
 
   // Façade du comptoir (gradient vertical + texture bois)
   const faceY = counterY + 4 + topH;
@@ -27,12 +60,12 @@ export function drawCounter(ctx, W, counterY, counterH) {
     COL.COUNTER_FRONT_B,
   );
   ctx.fillStyle = faceGrad;
-  ctx.fillRect(0, faceY, W, faceH);
+  ctx.fillRect(fromX, faceY, W2, faceH);
 
-  // Wood plank dividers — vertical with slight bezier wobble (organic feel)
+  // Wood plank dividers
   ctx.strokeStyle = COL.COUNTER_WOOD_GRAIN;
   ctx.lineWidth = 1.5;
-  for (let lx = 0; lx < W; lx += 65) {
+  for (let lx = fromX; lx < toX; lx += 65) {
     ctx.beginPath();
     ctx.moveTo(lx, faceY);
     ctx.bezierCurveTo(
@@ -45,23 +78,26 @@ export function drawCounter(ctx, W, counterY, counterH) {
     );
     ctx.stroke();
   }
-  // Horizontal grain lines — sine-wave wobble for natural wood feel
+  // Horizontal grain lines
   ctx.save();
   ctx.strokeStyle = "rgba(0,0,0,0.05)";
   ctx.lineWidth = 0.7;
   for (let ly = faceY + 7; ly < faceY + faceH - 3; ly += 8) {
     ctx.beginPath();
-    ctx.moveTo(0, ly);
-    for (let wx = 0; wx < W; wx += 24) {
-      ctx.lineTo(wx, ly + Math.sin((wx / W) * Math.PI * 4 + ly * 0.3) * 1.3);
+    ctx.moveTo(fromX, ly);
+    for (let wx = fromX; wx < toX; wx += 24) {
+      ctx.lineTo(
+        wx,
+        ly + Math.sin(((wx - fromX) / W2) * Math.PI * 4 + ly * 0.3) * 1.3,
+      );
     }
-    ctx.lineTo(W, ly);
+    ctx.lineTo(toX, ly);
     ctx.stroke();
   }
   ctx.restore();
-  // Wood knots with concentric ring detail
+  // Wood knots
   ctx.fillStyle = COL.COUNTER_WOOD_KNOT;
-  for (let kx = 30; kx < W; kx += 130) {
+  for (let kx = fromX + 30; kx < toX; kx += 130) {
     const ky = faceY + faceH * 0.4 + (kx % 7) * 3;
     ctx.beginPath();
     ctx.ellipse(kx, ky, 6, 3.5, 0.3, 0, Math.PI * 2);
@@ -76,15 +112,14 @@ export function drawCounter(ctx, W, counterY, counterH) {
     ctx.stroke();
   }
 
-  // Molding bottom (thick with shadow)
+  // Molding bottom
   ctx.fillStyle = COL.COUNTER_EDGE;
-  ctx.fillRect(0, counterY + counterH - 6, W, 6);
-  // Bottom shadow
+  ctx.fillRect(fromX, counterY + counterH - 6, W2, 6);
   ctx.save();
   ctx.shadowBlur = 4;
   ctx.shadowColor = "rgba(0,0,0,0.2)";
   ctx.shadowOffsetY = 3;
   ctx.fillStyle = COL.COUNTER_MOLDING;
-  ctx.fillRect(0, counterY + counterH - 2, W, 2);
+  ctx.fillRect(fromX, counterY + counterH - 2, W2, 2);
   ctx.restore();
 }

@@ -26,6 +26,39 @@ export function drawStations(
   );
 }
 
+// Dessine les biligs assistants + les stations du comptoir bas
+export function drawBottomStations(
+  ctx,
+  assistanceBiligs,
+  bottomStations,
+  bottomCounterY,
+  bottomCounterH,
+  time,
+  currentStation = null,
+  assistants = [],
+  hasActiveFire = false,
+) {
+  // Biligs assistants (même rendu que les biligs du joueur)
+  assistanceBiligs.forEach((s) => {
+    const isActive = s === currentStation;
+    drawBilig(ctx, s, s.x, s.y, s.w, s.h, time);
+    // Label avec numéro d'assistant
+    _drawStationLabel(ctx, s, time, isActive);
+    if (isActive) _drawActiveHalo(ctx, s);
+  });
+  // Stations spéciales du bas
+  bottomStations.forEach((s) => {
+    const isActive = s === currentStation;
+    if (s.type === ST.CALL_G2S) {
+      drawCallG2S(ctx, s, s.x, s.y, s.w, s.h, time, hasActiveFire);
+    } else if (s.type === ST.DONATION) {
+      drawDonation(ctx, s, s.x, s.y, s.w, s.h, time);
+    }
+    _drawStationLabel(ctx, s, time, isActive);
+    if (isActive) _drawActiveHalo(ctx, s);
+  });
+}
+
 export function drawStation(
   ctx,
   s,
@@ -49,17 +82,10 @@ export function drawStation(
 
   switch (s.type) {
     case ST.BILIG:
-      if (s.isAssistantBilig) {
-        drawAssistantBiligStation(ctx, s, sx, sy, sw, sh, time);
-      } else {
-        drawBilig(ctx, s, sx, sy, sw, sh, time);
-      }
+      drawBilig(ctx, s, sx, sy, sw, sh, time);
       break;
     case ST.DELIVERY:
       drawDeliveryStation(ctx, s, sx, sy, sw, sh, time);
-      break;
-    case ST.DONATION:
-      drawDonation(ctx, s, sx, sy, sw, sh, time);
       break;
     case ST.BATTER:
       drawBatterStation(ctx, s, sx, sy, sw, sh);
@@ -69,10 +95,18 @@ export function drawStation(
   }
 
   // Station label badge
+  _drawStationLabel(ctx, s, time, isActive);
+
+  // ── Halo de surbrillance ──────────────────────────────────────────────────
+  if (isActive) _drawActiveHalo(ctx, s);
+}
+
+function _drawStationLabel(ctx, s, time, isActive) {
+  const { w: sw, h: sh, x: sx, y: sy } = s;
   ctx.save();
   const labelFont = `bold ${Math.max(11, sw * 0.2)}px Arial`;
   ctx.font = labelFont;
-  const labelText = s.label;
+  const labelText = s.label || "";
   const textW = ctx.measureText(labelText).width;
   const badgeW = textW + 16;
   const badgeH = 18;
@@ -81,86 +115,68 @@ export function drawStation(
   roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 9);
   ctx.fillStyle = COL.LABEL_BG;
   ctx.fill();
-  // Text shadow
   ctx.fillStyle = "rgba(0,0,0,0.4)";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(labelText, sx + sw / 2 + 1, badgeY + badgeH / 2 + 1);
-  // Text
   ctx.fillStyle = COL.TEXT_LABEL;
   ctx.fillText(labelText, sx + sw / 2, badgeY + badgeH / 2);
   ctx.restore();
+}
 
-  // ── Halo de surbrillance — dessiné PAR-DESSUS tout le contenu ─────────────
-  if (isActive) {
-    // Oscillation lente, plancher à 0.60 → effet jamais invisible
-    const pulse = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(time / 380));
-    // Glint : oscillation plus rapide, déphasée
-    const gP = 0.5 + 0.5 * Math.sin(time / 190 + Math.PI / 3);
-
-    // Marges généreuses pour rester dans la station
-    const m = 6;
-    const hx = sx + m,
-      hy = sy + m;
-    const hw = sw - m * 2,
-      hh = sh - m * 2;
-    const rr = 7;
-
-    ctx.save();
-
-    // ── Couche 1 : halo large très transparent (glow externe) ────────────────
-    ctx.strokeStyle = `rgba(255,215,30,${0.13 * pulse})`;
-    ctx.lineWidth = 14;
-    roundRect(ctx, hx, hy, hw, hh, rr);
+function _drawActiveHalo(ctx, s) {
+  const { w: sw, h: sh, x: sx, y: sy } = s;
+  const time = Date.now();
+  const pulse = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(time / 380));
+  const gP = 0.5 + 0.5 * Math.sin(time / 190 + Math.PI / 3);
+  const m = 6;
+  const hx = sx + m,
+    hy = sy + m;
+  const hw = sw - m * 2,
+    hh = sh - m * 2;
+  const rr = 7;
+  ctx.save();
+  ctx.strokeStyle = `rgba(255,215,30,${0.13 * pulse})`;
+  ctx.lineWidth = 14;
+  roundRect(ctx, hx, hy, hw, hh, rr);
+  ctx.stroke();
+  ctx.strokeStyle = `rgba(255,230,50,${0.3 * pulse})`;
+  ctx.lineWidth = 7;
+  roundRect(ctx, hx, hy, hw, hh, rr);
+  ctx.stroke();
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = `rgba(255,215,20,${0.95 * pulse})`;
+  ctx.strokeStyle = `rgba(255,250,130,${0.95 * pulse})`;
+  ctx.lineWidth = 1.8;
+  roundRect(ctx, hx, hy, hw, hh, rr);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  const fillG = ctx.createLinearGradient(hx, hy, hx, hy + hh);
+  fillG.addColorStop(0, `rgba(255,255,180,${0.22 * pulse})`);
+  fillG.addColorStop(0.4, `rgba(255,235,70,${0.08 * pulse})`);
+  fillG.addColorStop(1, `rgba(255,200,0,0)`);
+  ctx.fillStyle = fillG;
+  roundRect(ctx, hx, hy, hw, hh, rr);
+  ctx.fill();
+  const gs = Math.min(hw, hh) * 0.2;
+  ctx.strokeStyle = `rgba(255,255,210,${0.9 * gP * pulse})`;
+  ctx.lineWidth = 1.8;
+  ctx.lineCap = "round";
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = `rgba(255,255,160,${0.8 * gP})`;
+  [
+    { cx: hx, cy: hy, dx: 1, dy: 1 },
+    { cx: hx + hw, cy: hy, dx: -1, dy: 1 },
+    { cx: hx, cy: hy + hh, dx: 1, dy: -1 },
+    { cx: hx + hw, cy: hy + hh, dx: -1, dy: -1 },
+  ].forEach(({ cx: cx_, cy: cy_, dx, dy }) => {
+    ctx.beginPath();
+    ctx.moveTo(cx_ + dx * gs, cy_);
+    ctx.lineTo(cx_, cy_);
+    ctx.lineTo(cx_, cy_ + dy * gs);
     ctx.stroke();
-
-    // ── Couche 2 : halo intermédiaire ────────────────────────────────────────
-    ctx.strokeStyle = `rgba(255,230,50,${0.3 * pulse})`;
-    ctx.lineWidth = 7;
-    roundRect(ctx, hx, hy, hw, hh, rr);
-    ctx.stroke();
-
-    // ── Couche 3 : trait fin lumineux avec shadowBlur ─────────────────────────
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = `rgba(255,215,20,${0.95 * pulse})`;
-    ctx.strokeStyle = `rgba(255,250,130,${0.95 * pulse})`;
-    ctx.lineWidth = 1.8;
-    roundRect(ctx, hx, hy, hw, hh, rr);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // ── Voile intérieur : lumière descendante (reflet depuis le haut) ─────────
-    const fillG = ctx.createLinearGradient(hx, hy, hx, hy + hh);
-    fillG.addColorStop(0, `rgba(255,255,180,${0.22 * pulse})`);
-    fillG.addColorStop(0.4, `rgba(255,235,70,${0.08 * pulse})`);
-    fillG.addColorStop(1, `rgba(255,200,0,0)`);
-    ctx.fillStyle = fillG;
-    roundRect(ctx, hx, hy, hw, hh, rr);
-    ctx.fill();
-
-    // ── Glints aux 4 coins (crochets « ⌐ » pointant vers l'intérieur) ────────
-    const gs = Math.min(hw, hh) * 0.2; // longueur max = 20 % de la petite dim
-    ctx.strokeStyle = `rgba(255,255,210,${0.9 * gP * pulse})`;
-    ctx.lineWidth = 1.8;
-    ctx.lineCap = "round";
-    ctx.shadowBlur = 6;
-    ctx.shadowColor = `rgba(255,255,160,${0.8 * gP})`;
-
-    [
-      { cx: hx, cy: hy, dx: 1, dy: 1 }, // top-left
-      { cx: hx + hw, cy: hy, dx: -1, dy: 1 }, // top-right
-      { cx: hx, cy: hy + hh, dx: 1, dy: -1 }, // bottom-left
-      { cx: hx + hw, cy: hy + hh, dx: -1, dy: -1 }, // bottom-right
-    ].forEach(({ cx: cx_, cy: cy_, dx, dy }) => {
-      ctx.beginPath();
-      ctx.moveTo(cx_ + dx * gs, cy_);
-      ctx.lineTo(cx_, cy_);
-      ctx.lineTo(cx_, cy_ + dy * gs);
-      ctx.stroke();
-    });
-
-    ctx.restore();
-  }
+  });
+  ctx.restore();
 }
 
 export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
@@ -776,113 +792,88 @@ export function drawDonation(ctx, s, sx, sy, sw, sh, time) {
   ctx.shadowBlur = 0;
 }
 
-// ── ASSISTANT BILIG — Bilig de la rangée assistants ───────────────────────
-function drawAssistantBiligStation(ctx, s, sx, sy, sw, sh, time) {
-  const cx = sx + sw / 2,
-    cy = sy + sh * 0.42;
-  const r = Math.min(sw, sh) * 0.36;
+// ── CALL G2S — Station d'appel pompier ────────────────────────────────────
+export function drawCallG2S(
+  ctx,
+  s,
+  sx,
+  sy,
+  sw,
+  sh,
+  time,
+  isFireActive = false,
+) {
+  const cx = sx + sw / 2;
+  const cy = sy + sh * 0.5;
   const t = time;
 
-  // Base métal (plus compact que le bilig principal)
-  roundRect(ctx, sx + 1, sy + sh * 0.75, sw - 2, sh * 0.25, 3);
-  ctx.fillStyle = "#888";
-  ctx.fill();
-  ctx.strokeStyle = "#555";
-  ctx.lineWidth = 1;
-  ctx.stroke();
+  // Pulsation rouge quand feu actif
+  const firePulse = isFireActive ? 0.7 + 0.3 * Math.sin(t / 150) : 0;
 
-  // Surface de cuisson
-  ctx.beginPath();
-  ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
-  ctx.fillStyle = "#999";
-  ctx.fill();
-  ctx.strokeStyle = "#666";
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  let surfA2, surfB2;
-  if (s.biligState === BILIG_STATE.EMPTY) {
-    surfA2 = "#888";
-    surfB2 = "#555";
-  } else if (s.biligState === BILIG_STATE.COOKING) {
-    const p = s.cookProgress;
-    surfA2 = lerpColor("#888", "#D8A020", p);
-    surfB2 = lerpColor("#555", "#A06000", p);
-  } else if (s.biligState === BILIG_STATE.BURNING) {
-    surfA2 = "#FF3300";
-    surfB2 = "#880000";
-  } else {
-    surfA2 = "#D8B030";
-    surfB2 = "#A08010";
-  }
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  const sG2 = ctx.createRadialGradient(
-    cx - r * 0.2,
-    cy - r * 0.2,
-    1,
-    cx,
-    cy,
-    r,
-  );
-  sG2.addColorStop(0, surfA2);
-  sG2.addColorStop(1, surfB2);
-  ctx.fillStyle = sG2;
-  ctx.fill();
-
-  if (s.biligState === BILIG_STATE.BURNING) {
-    _drawFlames(ctx, cx, cy, r, t);
-  }
-
-  if (s.biligState === BILIG_STATE.READY) {
-    drawAssembledCrepe(
+  // Fond
+  roundRect(ctx, sx + 2, sy + 2, sw - 4, sh - 4, 8);
+  let bgG;
+  if (isFireActive) {
+    bgG = vGrad(
       ctx,
-      cx,
-      cy,
-      r - 4,
-      s.biligToppings,
-      Math.max(10, sw * 0.22),
+      sy,
+      sy + sh,
+      `rgba(220,30,10,${0.7 + 0.25 * firePulse})`,
+      "#8B1010",
     );
-    // ✓ badge
+  } else {
+    bgG = vGrad(ctx, sy, sy + sh, "#2255AA", "#102060");
+  }
+  ctx.fillStyle = bgG;
+  ctx.fill();
+  // Glow rouge si feu
+  if (isFireActive) {
     ctx.save();
-    ctx.font = `bold ${Math.max(8, sw * 0.18)}px Arial`;
-    ctx.fillStyle = "#E8C040";
+    ctx.shadowBlur = 20 * firePulse;
+    ctx.shadowColor = "#FF2200";
+    ctx.strokeStyle = `rgba(255,80,20,${firePulse})`;
+    ctx.lineWidth = 3;
+    roundRect(ctx, sx + 2, sy + 2, sw - 4, sh - 4, 8);
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    ctx.strokeStyle = "#4488EE";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Icône téléphone / sirène
+  const iconY = sy + sh * 0.42;
+  ctx.font = `${Math.max(14, sw * 0.36)}px serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  if (isFireActive) {
+    ctx.save();
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = "#FFD700";
+    ctx.fillText("🚒", cx, iconY);
+    ctx.restore();
+    // Texte d'alerte
+    ctx.font = `bold ${Math.max(7, sw * 0.14)}px Arial`;
+    ctx.fillStyle = `rgba(255,220,80,${0.8 + 0.2 * firePulse})`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("✓", cx, cy + r + 8);
-    ctx.restore();
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = "#FF4400";
+    ctx.fillText("FEU!", cx, sy + sh * 0.78);
+    ctx.shadowBlur = 0;
+  } else {
+    ctx.fillText("📞", cx, iconY);
+    ctx.font = `bold ${Math.max(6, sw * 0.12)}px Arial`;
+    ctx.fillStyle = "rgba(170,210,255,0.8)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("G2S", cx, sy + sh * 0.8);
   }
-
-  if (s.biligState === BILIG_STATE.COOKING) {
-    const barW = sw - 4,
-      barH = 5;
-    const barX = sx + 2,
-      barY = sy + sh - 10;
-    roundRect(ctx, barX, barY, barW, barH, 2);
-    ctx.fillStyle = "#222";
-    ctx.fill();
-    roundRect(
-      ctx,
-      barX + 1,
-      barY + 1,
-      Math.max(0, barW * s.cookProgress - 2),
-      barH - 2,
-      1.5,
-    );
-    ctx.fillStyle = "#FF8C00";
-    ctx.fill();
-  }
-
-  // Label "G2S" assistant
-  ctx.save();
-  ctx.font = `bold ${Math.max(6, sw * 0.13)}px Arial`;
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-  ctx.fillText("G2S", cx, sy + sh + 2);
-  ctx.restore();
 }
+
+// ── ASSISTANT BILIG — REMPLACÉ par drawBilig commun ───────────────────────
+// (les biligs assistants sont dessinés via drawBilig dans drawBottomStations)
 
 // ── FLAMMES animées (partagées bilig joueur + assistant) ───────────────────
 function _drawFlames(ctx, cx, cy, r, t) {
