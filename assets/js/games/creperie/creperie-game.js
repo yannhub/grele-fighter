@@ -12,7 +12,6 @@ import {
   FIREFIGHTER_SPEED,
   GAME_DURATION,
   HUD_H,
-  INTERACT_Y_TOLERANCE,
   KITCHEN_BOTTOM_LANE_Y_RATIO,
   KITCHEN_TOP_LANE_Y_RATIO,
   MAX_ASSISTANTS,
@@ -137,8 +136,7 @@ export default class CreperieGame {
     if (rect.width > 0) this.canvas.width = rect.width;
     if (rect.height > 0) this.canvas.height = rect.height;
     this._layoutStations();
-    if (this.player)
-      this.player.onResize(this.canvas.width, this.canvas.height);
+    if (this.player) this.player.onResize(this.canvas.width, this._gameH);
     if (this.renderer) this.renderer.onResize();
     if (this.waiter) this.waiter.onResize(this.canvas.width, this._gameH);
     this.assistants.forEach((a) =>
@@ -192,6 +190,8 @@ export default class CreperieGame {
         this.heartsLeft = Math.max(0, this.heartsLeft - 1);
       },
     );
+    this.customerManager.onCustomerSpawned = (customer) =>
+      this._tryAssignToAssistant(customer);
     this.renderer = new CreperieRenderer(this.ctx);
     this.waiter = new CreperieWaiter(this.canvas.width, this._gameH);
 
@@ -385,6 +385,8 @@ export default class CreperieGame {
       a.player.update(dt, allStations, this.customerManager, this);
       return true;
     });
+    if (this.customerManager)
+      this.customerManager.assistantCount = this.assistants.length;
   }
 
   _spawnAssistant(W, H) {
@@ -412,6 +414,29 @@ export default class CreperieGame {
       bilig: newBilig,
       timer: ASSISTANT_DURATION,
     });
+
+    // Si un client attend déjà sans assistant, l'assigner immédiatement
+    const waiting = this.customerManager.customers.find(
+      (c) =>
+        (c.state === "seated" || c.state === "arriving") &&
+        !c.handledByAssistant,
+    );
+    if (waiting) {
+      assistant.assignCustomer(waiting);
+      this.customerManager.forceSpawn();
+    }
+  }
+
+  // ── Attribution automatique aux assistants ────────────────────────────────
+  /**
+   * Appelé quand un client apparaît (normal ou forcé).
+   * Si un assistant est libre, lui attribue le client et force l'apparition d'un nouveau.
+   */
+  _tryAssignToAssistant(customer) {
+    const free = this.assistants.find((a) => a.player.isFree);
+    if (!free) return;
+    free.player.assignCustomer(customer);
+    this.customerManager.forceSpawn();
   }
 
   // ── Contrats G2S ───────────────────────────────────────────────────────────
@@ -606,20 +631,17 @@ export default class CreperieGame {
   _detectStation() {
     if (this.player.zone !== "kitchen") return null;
     const px = this.player.x;
-    const py = this.player.y;
 
-    // Comptoir haut
-    for (const s of this.stations) {
-      if (px >= s.x && px <= s.x + s.w) {
-        const frontY = s.y + s.h; // bord avant du comptoir
-        if (Math.abs(py - frontY) < INTERACT_Y_TOLERANCE) return s;
+    // Comptoir haut — seulement si le joueur est en lane 0 (devant le comptoir haut)
+    if (this.player._lane === 0) {
+      for (const s of this.stations) {
+        if (px >= s.x && px <= s.x + s.w) return s;
       }
     }
-    // Comptoir bas (stations spéciales uniquement — les biligs assistants sont exclus)
-    for (const s of this.bottomStations) {
-      if (px >= s.x && px <= s.x + s.w) {
-        const frontY = s.y; // interagir depuis le haut du comptoir bas
-        if (Math.abs(py - frontY) < INTERACT_Y_TOLERANCE) return s;
+    // Comptoir bas — seulement si le joueur est en lane 1 (devant le comptoir bas)
+    if (this.player._lane === 1) {
+      for (const s of this.bottomStations) {
+        if (px >= s.x && px <= s.x + s.w) return s;
       }
     }
     return null;
@@ -683,7 +705,8 @@ export default class CreperieGame {
           this.renderer.addParticles(fx, fy, "#FFD700", 10);
 
           // Contrat G2S si le client était patient (> 50%) — spawn à l'arrivée du serveur
-          const shouldSpawnContract = match.patienceFraction > 0.5;
+          const shouldSpawnContract =
+            match.patienceFraction > 0.5 && Math.random() < 1 / 2;
 
           if (this.waiter) {
             // Geler la patience du client pendant le trajet du serveur
@@ -795,6 +818,7 @@ export default class CreperieGame {
         score: this.score,
         crepesServed: this.crepesServed,
         heartsLost: MAX_HEARTS - this.heartsLeft,
+        maxUnhappy: MAX_HEARTS,
         reason,
         recipeBreakdown,
         donationCount: this.donationCount,

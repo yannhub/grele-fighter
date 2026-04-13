@@ -312,6 +312,8 @@ export default class UI {
       stats.crepesServed;
     document.getElementById("creperie-hearts-lost").textContent =
       stats.heartsLost;
+    const heartsMaxEl = document.getElementById("creperie-hearts-max");
+    if (heartsMaxEl) heartsMaxEl.textContent = stats.maxUnhappy ?? 3;
 
     const title = document.getElementById("creperie-game-over-title");
     if (title) {

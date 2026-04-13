@@ -2,6 +2,7 @@
 
 import {
   DIFFICULTY_STEPS,
+  MAX_HEARTS,
   RECIPES,
   TABLE_POSITIONS,
 } from "./creperie-constants.js";
@@ -71,6 +72,9 @@ export class CustomerManager {
     this.onAngryLeave = onAngryLeave || null;
     this.unhappyCount = 0;
 
+    // Nombre d'assistants actifs (mis à jour par le jeu chaque frame)
+    this.assistantCount = 0;
+
     // Spawn timer
     this.spawnTimer = 0;
     this.spawnInterval = DIFFICULTY_STEPS[0].spawnInterval;
@@ -78,6 +82,9 @@ export class CustomerManager {
 
     // Spawn immédiat du premier client après 2s
     this.spawnTimer = this.spawnInterval - 2000;
+
+    // Callback appelé à chaque apparition de client (utilisé pour l'attribution aux assistants)
+    this.onCustomerSpawned = null;
   }
 
   update(dt, elapsed) {
@@ -92,7 +99,7 @@ export class CustomerManager {
         this.unhappyCount++;
         if (this.onAngryLeave) this.onAngryLeave();
         toRemove.push(c);
-        if (this.unhappyCount >= 3) {
+        if (this.unhappyCount >= MAX_HEARTS) {
           this.onGameOver();
           return;
         }
@@ -123,7 +130,9 @@ export class CustomerManager {
       if (elapsed >= s.at) step = s;
       else break;
     }
-    this.spawnInterval = step.spawnInterval;
+    // Chaque assistant ralentit un peu le spawn naturel (les assistants déclenchent déjà leurs force-spawns)
+    const assistantSlowdown = 1 + this.assistantCount * 0.35;
+    this.spawnInterval = step.spawnInterval * assistantSlowdown;
     this.patienceDuration = step.patienceDuration;
   }
 
@@ -148,6 +157,7 @@ export class CustomerManager {
     const customer = new Customer(freeIndex, recipe, this.patienceDuration);
     this.occupiedTables.add(freeIndex);
     this.customers.push(customer);
+    if (this.onCustomerSpawned) this.onCustomerSpawned(customer);
   }
 
   _pickRecipe() {

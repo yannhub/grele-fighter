@@ -5,6 +5,7 @@ import {
   IT,
   KITCHEN_BOTTOM_LANE_Y_RATIO,
   KITCHEN_TOP_LANE_Y_RATIO,
+  MAX_HANDS,
   PLAYER_SPEED,
   ST,
 } from "./creperie-constants.js";
@@ -155,7 +156,7 @@ export class AssuranceAutoPlayer {
 
     switch (result.action) {
       case "give": {
-        if (this.hands.length < 3) {
+        if (this.hands.length < MAX_HANDS) {
           this.hands.push(result.item);
           if (TOPPING_TYPES.has(result.item.type)) {
             const idx = this.pendingToppings.indexOf(result.item.type);
@@ -220,7 +221,7 @@ export class AssuranceAutoPlayer {
             );
           }
         } else {
-          // Donation automatique : libérer la station immédiatement
+          // Donation automatique : le client est parti, libérer la commande
           s.acceptDelivery();
           game.donationCount++;
           game.score += 1;
@@ -228,6 +229,9 @@ export class AssuranceAutoPlayer {
           game._spawnFloatingText("+1 🫶", s.x + s.w / 2, s.y - 20, "#FF8C00");
           game.renderer.addParticles(s.x + s.w / 2, s.y, "#FF8C00", 8);
           this.interactCooldown = 400;
+          // Libérer le client fantôme pour pouvoir en accepter un nouveau
+          this.targetCustomer = null;
+          this.pendingToppings = [];
         }
         this.targetStation = null;
         break;
@@ -241,11 +245,13 @@ export class AssuranceAutoPlayer {
         break;
 
       case "donation":
-        // Le don a été effectué : vider les items donnés
+        // Le don a été effectué : vider les items donnés et libérer le client
         this.hands = [];
         game.donationCount++;
         game.score += 1;
         this.targetStation = null;
+        this.targetCustomer = null;
+        this.pendingToppings = [];
         break;
 
       default:
@@ -356,24 +362,39 @@ export class AssuranceAutoPlayer {
       return;
     }
 
-    // Priorité 7 : démarrer une nouvelle crêpe pour le client le plus urgent
-    // Ne prendre une commande que s'il en reste au moins 2 pour le joueur
-    const seated = customerManager.customers.filter(
-      (c) => c.state === "seated" && !c.handledByAssistant,
-    );
-    if (seated.length <= 1) {
-      this.interactCooldown = 500;
+    // Priorité 7 : client assigné extérieurement + bilig vide + pas de pâte → aller chercher la pâte
+    if (
+      this.targetCustomer &&
+      this.assignedBilig &&
+      this.assignedBilig.biligState === BILIG_STATE.EMPTY &&
+      !this.hands.some(
+        (h) => h.type === IT.BATTER || h.type === IT.ASSEMBLED_CREPE,
+      )
+    ) {
+      const batterStation = stations.find((s) => s.type === ST.BATTER);
+      if (batterStation) this._setTargetStation(batterStation);
       return;
     }
 
-    seated.sort((a, b) => a.patienceRemaining - b.patienceRemaining);
-    const target = seated[0];
-    target.handledByAssistant = true;
-    this.targetCustomer = target;
-    this.pendingToppings = [...target.recipe.toppings];
-    this.myBilig = this.assignedBilig || null;
+    // Pas de client assigné → attendre
+    this.interactCooldown = 400;
+  }
 
-    const batterStation = stations.find((s) => s.type === ST.BATTER);
-    if (batterStation) this._setTargetStation(batterStation);
+  // ── API externe ───────────────────────────────────────────────────
+
+  /** Vrai si l'assistant n'a pas de client en cours et peut en accepter un nouveau. */
+  get isFree() {
+    return this.targetCustomer === null;
+  }
+
+  /**
+   * Attribue un client à cet assistant depuis l'extérieur (exécuté à l'arrivée du client).
+   * L'assistant démarrera la préparation au prochain tick.
+   */
+  assignCustomer(customer) {
+    customer.handledByAssistant = true;
+    this.targetCustomer = customer;
+    this.pendingToppings = [...customer.recipe.toppings];
+    this.myBilig = this.assignedBilig || null;
   }
 }

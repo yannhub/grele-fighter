@@ -435,7 +435,9 @@ export function drawSpeechBubble(ctx, customer, time) {
     by = 58;
 
   // Couleur de bordure : grise si géré par assistant, sinon rouge/vert
-  const isHandled = customer.handledByAssistant && customer.state === "seated";
+  const isHandled =
+    customer.handledByAssistant &&
+    (customer.state === "seated" || customer.state === "arriving");
   const borderColor = isHandled ? "#999" : COL.BUBBLE_BORDER;
 
   ctx.save();

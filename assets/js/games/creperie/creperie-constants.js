@@ -1,8 +1,8 @@
 // creperie-constants.js — Configuration du jeu La Crêperie
 
 export const GAME_DURATION = 120; // secondes
-export const MAX_HEARTS = 3;
-export const BILIG_COOK_TIME = 5500; // ms de cuisson
+export const MAX_HEARTS = 5;
+export const BILIG_COOK_TIME = 3500; // ms de cuisson
 
 // Ratios de mise en page (fraction de la hauteur du CANVAS)
 export const HUD_H = 72; // px — hauteur du HUD dédié (hors zone jeu)
@@ -16,8 +16,8 @@ export const BOTTOM_COUNTER_Y_RATIO = 0.86; // bord supérieur du 2e comptoir (b
 export const BOTTOM_COUNTER_HEIGHT_RATIO = 0.11; // hauteur du 2e comptoir
 
 // Joueur
-export const PLAYER_SPEED = 560; // px/sec
-export const MAX_HANDS = 3;
+export const PLAYER_SPEED = 800; // px/sec
+export const MAX_HANDS = 4;
 export const PLAYER_SIZE = 110; // px (hauteur du sprite)
 export const INTERACT_Y_TOLERANCE = 44; // px — proximité front comptoir pour interaction
 
@@ -32,7 +32,8 @@ export const CONTRACT_DURATION = 20000; // ms avant disparition d'un contrat G2S
 export const CONTRACT_COLLECT_RADIUS = 55; // distance de collecte (px)
 
 // Mécanique d'incendie
-export const BURN_DELAY = 10000; // ms après état READY avant d'attraper feu
+export const BROWN_DELAY = 9000; // ms après état READY avant que la crêpe brunisse
+export const BURN_DELAY = 13000; // ms après état READY avant d'attraper feu
 export const FIRE_SPREAD_DELAY = 14000; // ms avant propagation à un bilig voisin
 export const FIREFIGHTER_SPEED = 480; // px/sec
 
@@ -164,12 +165,12 @@ export const RECIPES = [
 // Paliers de difficulté (elapsed en secondes → paramètres)
 // patienceDuration augmentée pour compenser le temps de marche du serveur
 export const DIFFICULTY_STEPS = [
-  { at: 0, spawnInterval: 9000, patienceDuration: 36000 },
-  { at: 20, spawnInterval: 7500, patienceDuration: 32000 },
-  { at: 40, spawnInterval: 6000, patienceDuration: 28000 },
-  { at: 60, spawnInterval: 5000, patienceDuration: 24000 },
-  { at: 80, spawnInterval: 4000, patienceDuration: 20000 },
-  { at: 100, spawnInterval: 3200, patienceDuration: 17000 },
+  { at: 0, spawnInterval: 6000, patienceDuration: 36000 },
+  { at: 20, spawnInterval: 5000, patienceDuration: 32000 },
+  { at: 40, spawnInterval: 4000, patienceDuration: 28000 },
+  { at: 60, spawnInterval: 3200, patienceDuration: 24000 },
+  { at: 80, spawnInterval: 2500, patienceDuration: 20000 },
+  { at: 100, spawnInterval: 2000, patienceDuration: 17000 },
 ];
 
 // Positions des tables dans la salle (ratios relatifs à la zone restaurant = haut du canvas)

@@ -223,6 +223,9 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
     const p = s.cookProgress;
     surfA = lerpColor("#999", "#E8B030", p);
     surfB = lerpColor("#666", "#C08010", p);
+  } else if (s.biligState === BILIG_STATE.BROWNING) {
+    surfA = "#C06010";
+    surfB = "#703008";
   } else if (s.biligState === BILIG_STATE.BURNING) {
     surfA = "#FF3300";
     surfB = "#880000";
@@ -260,8 +263,11 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
     _drawFlames(ctx, cx, cy, r, t);
   }
 
-  // Crêpe on bilig (READY state)
-  if (s.biligState === BILIG_STATE.READY) {
+  // Crêpe on bilig (READY or BROWNING state)
+  if (
+    s.biligState === BILIG_STATE.READY ||
+    s.biligState === BILIG_STATE.BROWNING
+  ) {
     drawAssembledCrepe(
       ctx,
       cx,
@@ -271,16 +277,32 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
       Math.max(16, sw * 0.3),
     );
 
+    // Brown overlay for BROWNING state
+    if (s.biligState === BILIG_STATE.BROWNING) {
+      const brownAlpha = 0.38 + 0.12 * Math.sin(t / 200);
+      ctx.save();
+      ctx.globalAlpha = brownAlpha;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 7, 0, Math.PI * 2);
+      ctx.fillStyle = "#5A2000";
+      ctx.fill();
+      ctx.restore();
+    }
+
+    const isBrowning = s.biligState === BILIG_STATE.BROWNING;
+    const glowColor = isBrowning ? "#D05010" : COL.BILIG_GLOW;
+    const glowCSSColor = isBrowning ? "rgba(200,80,10," : "rgba(255,210,60,";
+
     // Warm radial background glow + animated ring
     const glow = Math.sin(t / 300) * 0.35 + 0.65;
-    glowCircle(ctx, cx, cy, r * 1.9, COL.BILIG_GLOW, glow * 0.28);
+    glowCircle(ctx, cx, cy, r * 1.9, glowColor, glow * 0.28);
     ctx.save();
     ctx.shadowBlur = 14 * glow;
-    ctx.shadowColor = `rgba(255,210,60,${glow * 0.55})`;
+    ctx.shadowColor = `${glowCSSColor}${glow * 0.55})`;
     ctx.globalAlpha = glow * 0.55;
     ctx.beginPath();
     ctx.arc(cx, cy, r + 7, 0, Math.PI * 2);
-    ctx.strokeStyle = COL.BILIG_GLOW;
+    ctx.strokeStyle = glowColor;
     ctx.lineWidth = 5;
     ctx.stroke();
     ctx.globalAlpha = glow * 0.25;
@@ -293,12 +315,14 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
     // Ready check badge
     ctx.save();
     ctx.font = `bold ${Math.max(10, sw * 0.2)}px Arial`;
-    ctx.fillStyle = COL.BILIG_GLOW;
+    ctx.fillStyle = isBrowning ? "#D05010" : COL.BILIG_GLOW;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.shadowBlur = 10 * glow;
-    ctx.shadowColor = "rgba(255,200,60,0.75)";
-    ctx.fillText("✓", cx, cy + r + 13);
+    ctx.shadowColor = isBrowning
+      ? "rgba(200,80,10,0.75)"
+      : "rgba(255,200,60,0.75)";
+    ctx.fillText(isBrowning ? "⚠" : "✓", cx, cy + r + 13);
     ctx.restore();
   }
 

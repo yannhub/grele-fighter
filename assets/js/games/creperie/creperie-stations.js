@@ -2,9 +2,11 @@
 
 import {
   BILIG_COOK_TIME,
+  BROWN_DELAY,
   BURN_DELAY,
   FIRE_SPREAD_DELAY,
   IT,
+  MAX_HANDS,
   ST,
 } from "./creperie-constants.js";
 
@@ -12,6 +14,7 @@ export const BILIG_STATE = {
   EMPTY: "empty",
   COOKING: "cooking",
   READY: "ready",
+  BROWNING: "browning",
   BURNING: "burning",
 };
 
@@ -68,6 +71,11 @@ export class Station {
         }
       } else if (this.biligState === BILIG_STATE.READY) {
         this.burnTimer += dt;
+        if (this.burnTimer >= BROWN_DELAY) {
+          this.biligState = BILIG_STATE.BROWNING;
+        }
+      } else if (this.biligState === BILIG_STATE.BROWNING) {
+        this.burnTimer += dt;
         if (this.burnTimer >= BURN_DELAY) {
           this.biligState = BILIG_STATE.BURNING;
           this.spreadTimer = FIRE_SPREAD_DELAY;
@@ -98,6 +106,7 @@ export class Station {
   // Forcer l'état incendie (propagation)
   setBurning() {
     if (this.biligState === BILIG_STATE.BURNING) return;
+    if (this.biligState === BILIG_STATE.EMPTY) return;
     this.biligState = BILIG_STATE.BURNING;
     this.spreadTimer = FIRE_SPREAD_DELAY;
   }
@@ -125,7 +134,7 @@ export class Station {
   }
 
   _interactBatter(playerHands) {
-    if (playerHands.length >= 3) return { action: "none" };
+    if (playerHands.length >= MAX_HANDS) return { action: "none" };
     // Pas de pâte si on a déjà une crêpe assemblée
     if (playerHands.some((i) => i.type === IT.ASSEMBLED_CREPE))
       return { action: "none" };
@@ -146,21 +155,28 @@ export class Station {
       }
 
       case BILIG_STATE.COOKING: {
-        const topping = playerHands.find((i) => TOPPING_TYPES.has(i.type));
-        if (topping && this.biligToppings.length < 3) {
-          this.biligToppings.push(topping.type);
-          return { action: "deposit_toppings", toppingItems: [topping] };
+        const slotsLeft = 3 - this.biligToppings.length;
+        const toppings = playerHands
+          .filter((i) => TOPPING_TYPES.has(i.type))
+          .slice(0, slotsLeft);
+        if (toppings.length > 0) {
+          toppings.forEach((t) => this.biligToppings.push(t.type));
+          return { action: "deposit_toppings", toppingItems: toppings };
         }
         return { action: "none" };
       }
 
-      case BILIG_STATE.READY: {
-        const topping = playerHands.find((i) => TOPPING_TYPES.has(i.type));
-        if (topping && this.biligToppings.length < 3) {
-          this.biligToppings.push(topping.type);
-          return { action: "deposit_toppings", toppingItems: [topping] };
+      case BILIG_STATE.READY:
+      case BILIG_STATE.BROWNING: {
+        const slotsLeft = 3 - this.biligToppings.length;
+        const toppings = playerHands
+          .filter((i) => TOPPING_TYPES.has(i.type))
+          .slice(0, slotsLeft);
+        if (toppings.length > 0) {
+          toppings.forEach((t) => this.biligToppings.push(t.type));
+          return { action: "deposit_toppings", toppingItems: toppings };
         }
-        if (playerHands.length >= 3) return { action: "none" };
+        if (playerHands.length >= MAX_HANDS) return { action: "none" };
         const crepe = {
           type: IT.ASSEMBLED_CREPE,
           toppings: [...this.biligToppings],
@@ -191,7 +207,7 @@ export class Station {
       const crepe = this.deliveryCrepe;
       this.deliveryCrepe = null;
       this.deliveryStatus = "empty";
-      if (playerHands.length >= 3) {
+      if (playerHands.length >= MAX_HANDS) {
         // Remettre en rejected si mains pleines
         this.deliveryCrepe = crepe;
         this.deliveryStatus = "rejected";
@@ -214,7 +230,7 @@ export class Station {
   }
 
   _interactIngredient(playerHands) {
-    if (playerHands.length >= 3) return { action: "none" };
+    if (playerHands.length >= MAX_HANDS) return { action: "none" };
     const itemType = STATION_TO_ITEM[this.type];
     if (!itemType) return { action: "none" };
     return { action: "give", item: { type: itemType } };
