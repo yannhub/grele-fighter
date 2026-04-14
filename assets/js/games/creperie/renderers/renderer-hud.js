@@ -24,6 +24,8 @@ export function drawHUD(
   maxHearts,
   assistantCount = 0,
   donationCount = 0,
+  comboCount = 0,
+  comboTimer = 0,
 ) {
   const t = Date.now();
 
@@ -270,6 +272,43 @@ export function drawHUD(
       badgeX + 5,
       badgeY + 7,
     );
+  }
+
+  // ── BADGE COMBO (centre du HUD, sous le timer) ───────────────────────────
+  if (comboCount >= 2) {
+    const timerFrac = Math.max(0, comboTimer / 3000);
+    const alpha = 0.4 + 0.6 * timerFrac;
+    const pulse = 1 + 0.08 * Math.sin(t / 120);
+    const badgeW = 104 * pulse;
+    const comboX = W / 2;
+    const comboY = HUD_H - 11;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    // Fond ardent centré
+    roundRect(ctx, comboX - badgeW / 2, comboY - 9, badgeW, 16, 8);
+    const cg = ctx.createLinearGradient(
+      comboX - badgeW / 2,
+      comboY,
+      comboX + badgeW / 2,
+      comboY,
+    );
+    cg.addColorStop(0, "rgba(255,80,0,0.7)");
+    cg.addColorStop(1, "rgba(255,200,0,0.5)");
+    ctx.fillStyle = cg;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,160,0,0.8)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Texte centré
+    ctx.font = `bold ${Math.round(11 * pulse)}px Arial`;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = "#FF8800";
+    ctx.fillText(`🔥 COMBO ×${comboCount}`, comboX, comboY);
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
   ctx.restore();

@@ -80,8 +80,8 @@ export class CustomerManager {
     this.spawnInterval = DIFFICULTY_STEPS[0].spawnInterval;
     this.patienceDuration = DIFFICULTY_STEPS[0].patienceDuration;
 
-    // Spawn immédiat du premier client après 2s
-    this.spawnTimer = this.spawnInterval - 2000;
+    // Spawn immédiat du premier client après ~1s
+    this.spawnTimer = this.spawnInterval - 3500;
 
     // Callback appelé à chaque apparition de client (utilisé pour l'attribution aux assistants)
     this.onCustomerSpawned = null;
@@ -125,13 +125,14 @@ export class CustomerManager {
   }
 
   _applyDifficulty(elapsed) {
+    this._elapsed = elapsed;
     let step = DIFFICULTY_STEPS[0];
     for (const s of DIFFICULTY_STEPS) {
       if (elapsed >= s.at) step = s;
       else break;
     }
-    // Chaque assistant ralentit un peu le spawn naturel (les assistants déclenchent déjà leurs force-spawns)
-    const assistantSlowdown = 1 + this.assistantCount * 0.35;
+    // Chaque assistant ralentit un peu le spawn (plafonné à 1.5× pour ne pas bloquer les spawns)
+    const assistantSlowdown = Math.min(1.5, 1 + this.assistantCount * 0.35);
     this.spawnInterval = step.spawnInterval * assistantSlowdown;
     this.patienceDuration = step.patienceDuration;
   }
@@ -161,18 +162,54 @@ export class CustomerManager {
   }
 
   _pickRecipe() {
-    // Toutes recettes disponibles, avec poids inversement proportionnel à la difficulté
-    return RECIPES[Math.floor(Math.random() * RECIPES.length)];
+    const elapsed = this._elapsed || 0;
+    const weights = RECIPES.map((r) => {
+      const pts = r.points;
+      if (elapsed < 30) {
+        if (pts <= 100) return 3; // recettes simples favorisées au début
+        if (pts >= 150) return 0.3; // recettes complexes rarissimes au début
+        return 1;
+      }
+      if (elapsed >= 60) {
+        if (pts >= 150) return 1.5; // recettes complexes favorisées en fin de partie
+        return 1;
+      }
+      return 1; // 30-60s : poids neutres
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < RECIPES.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return RECIPES[i];
+    }
+    return RECIPES[RECIPES.length - 1];
   }
 
   /**
    * Cherche un client dont la commande correspond exactement aux toppings fournis.
-   * Retourne le client s'il existe, sinon null.
+   * @param {string[]} toppings
+   * @param {Customer|null} preferredCustomer  Si fourni (livraison assistant) : tenter ce client
+   *   en priorité, puis se limiter aux clients handledByAssistant en fallback.
    */
-  tryMatch(toppings) {
+  tryMatch(toppings, preferredCustomer = null) {
     const key = [...toppings].sort().join(",");
+
+    // 1. Essayer d'abord le client ciblé par l'assistant
+    if (preferredCustomer && preferredCustomer.state === "seated") {
+      const recipeKey = [...preferredCustomer.recipe.toppings].sort().join(",");
+      if (recipeKey === key) {
+        preferredCustomer.state = "served";
+        return preferredCustomer;
+      }
+    }
+
+    // 2. Chercher dans le pool général, mais si un client préféré était spécifié
+    //    (livraison assistant) on se limite aux commandes handledByAssistant
+    //    pour ne jamais voler une commande du joueur.
+    const assistantOnly = preferredCustomer !== null;
     for (const c of this.customers) {
       if (c.state !== "seated") continue;
+      if (assistantOnly && !c.handledByAssistant) continue;
       const recipeKey = [...c.recipe.toppings].sort().join(",");
       if (recipeKey === key) {
         c.state = "served";

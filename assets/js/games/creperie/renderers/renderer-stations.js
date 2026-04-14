@@ -379,7 +379,7 @@ export function drawBilig(ctx, s, sx, sy, sw, sh, time) {
 
     // Steam animation
     ctx.save();
-    ctx.globalAlpha = 0.15 + prog * 0.15;
+    ctx.globalAlpha = 0.27 + prog * 0.18;
     const steamT = t / 600;
     for (let si = 0; si < 3; si++) {
       const sx2 = cx + (si - 1) * (r * 0.5);

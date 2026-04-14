@@ -2,7 +2,6 @@
 
 import { AssuranceAutoPlayer } from "./creperie-auto-player.js";
 import {
-  ASSISTANT_DURATION,
   BOTTOM_COUNTER_HEIGHT_RATIO,
   BOTTOM_COUNTER_Y_RATIO,
   CONTRACT_COLLECT_RADIUS,
@@ -17,6 +16,7 @@ import {
   MAX_ASSISTANTS,
   MAX_HANDS,
   MAX_HEARTS,
+  MIN_PLAYER_ORDERS,
   PASSAGE_X_RATIO,
   STATION_LAYOUT,
   STATION_LAYOUT_BOTTOM,
@@ -88,6 +88,10 @@ export default class CreperieGame {
 
     // Textes flottants (remplace deliveryFeedback slot unique)
     this.floatingTexts = [];
+
+    // Système de combo (livraisons consécutives en moins de 3s)
+    this.comboCount = 0;
+    this.comboTimer = 0;
 
     // Layout courant (mis à jour par _layoutStations)
     this._gameH = 0;
@@ -182,7 +186,11 @@ export default class CreperieGame {
     // Les biligs assistants sont créés à la volée quand un assistant est ajouté
     this.assistanceBiligs = [];
 
-    this.player = new CreperiePlayer(this.canvas.width / 2, this._gameH);
+    this.player = new CreperiePlayer(
+      this.canvas.width / 2,
+      this.canvas.width,
+      this._gameH,
+    );
     this.player.character = this.character;
     this.customerManager = new CustomerManager(
       () => this._onUnhappyGameOver(),
@@ -295,6 +303,12 @@ export default class CreperieGame {
       this.scoreFlashTimer = Math.max(0, this.scoreFlashTimer - dt);
     }
 
+    // Décroissance du timer de combo
+    if (this.comboTimer > 0) {
+      this.comboTimer = Math.max(0, this.comboTimer - dt);
+      if (this.comboTimer === 0) this.comboCount = 0;
+    }
+
     // Mise à jour des assistants
     this._updateAssistants(dt);
 
@@ -357,6 +371,8 @@ export default class CreperieGame {
       this.waiter,
       this.donationCount,
       this.hasActiveFire,
+      this.comboCount,
+      this.comboTimer,
     );
 
     this._drawStationHint(W, gameH);
@@ -370,21 +386,9 @@ export default class CreperieGame {
       ...this.assistanceBiligs,
       ...this.bottomStations,
     ];
-    this.assistants = this.assistants.filter((a) => {
-      a.timer -= dt / 1000;
-      if (a.timer <= 0) {
-        if (a.player.targetCustomer) {
-          a.player.targetCustomer.handledByAssistant = false;
-          a.player.targetCustomer = null;
-        }
-        a.bilig.biligState = BILIG_STATE.EMPTY;
-        a.bilig.cookTimer = 0;
-        a.bilig.biligToppings = [];
-        return false;
-      }
+    for (const a of this.assistants) {
       a.player.update(dt, allStations, this.customerManager, this);
-      return true;
-    });
+    }
     if (this.customerManager)
       this.customerManager.assistantCount = this.assistants.length;
   }
@@ -412,18 +416,25 @@ export default class CreperieGame {
     this.assistants.push({
       player: assistant,
       bilig: newBilig,
-      timer: ASSISTANT_DURATION,
     });
 
-    // Si un client attend déjà sans assistant, l'assigner immédiatement
-    const waiting = this.customerManager.customers.find(
-      (c) =>
-        (c.state === "seated" || c.state === "arriving") &&
-        !c.handledByAssistant,
-    );
-    if (waiting) {
-      assistant.assignCustomer(waiting);
-      this.customerManager.forceSpawn();
+    // Toujours faire apparaître un nouveau client quand un assistant arrive
+    this.customerManager.forceSpawn();
+
+    // Si le joueur dépasse son quota, assigner l'excédent à l'assistant
+    // (seulement si forceSpawn() ne lui a pas déjà attribué un client)
+    const playerOrders = this.customerManager.customers.filter(
+      (c) => c.state === "seated" && !c.handledByAssistant,
+    ).length;
+    if (assistant.isFree && playerOrders >= MIN_PLAYER_ORDERS) {
+      const waiting = this.customerManager.customers.find(
+        (c) =>
+          (c.state === "seated" || c.state === "arriving") &&
+          !c.handledByAssistant,
+      );
+      if (waiting) {
+        assistant.assignCustomer(waiting);
+      }
     }
   }
 
@@ -433,6 +444,11 @@ export default class CreperieGame {
    * Si un assistant est libre, lui attribue le client et force l'apparition d'un nouveau.
    */
   _tryAssignToAssistant(customer) {
+    // Réserver MIN_PLAYER_ORDERS commandes au joueur avant d'en donner aux assistants
+    const playerOrders = this.customerManager.customers.filter(
+      (c) => c.state === "seated" && !c.handledByAssistant,
+    ).length;
+    if (playerOrders < MIN_PLAYER_ORDERS) return;
     const free = this.assistants.find((a) => a.player.isFree);
     if (!free) return;
     free.player.assignCustomer(customer);
@@ -441,6 +457,8 @@ export default class CreperieGame {
 
   // ── Contrats G2S ───────────────────────────────────────────────────────────
   _spawnContract(customer) {
+    // Inutile de spawner un contrat si tous les slots assistants sont déjà pris
+    if (this.assistants.length >= MAX_ASSISTANTS) return;
     const W = this.canvas.width;
     const tp = TABLE_POSITIONS[customer.tableIndex];
     if (!tp) return;
@@ -470,7 +488,7 @@ export default class CreperieGame {
       return;
     }
     const px = this.player.x;
-    const py = this.player.y;
+    const py = this.player.y - this.player.size * 0.3; // centre du sprite
     this.g2sContracts = this.g2sContracts.filter((c) => {
       const dx = px - c.x;
       const dy = py - c.y;
@@ -682,10 +700,10 @@ export default class CreperieGame {
 
         if (match) {
           match.handledByAssistant = false;
+          const isPerfect = match.patienceFraction > 0.9;
           const pts = this._calcPoints(match);
-          this.score += pts;
-          this.crepesServed++;
-          this.scoreFlashTimer = 600;
+          const { finalPts, comboCount: deliveryCombo } =
+            this._registerDelivery(pts);
           station.acceptDelivery();
 
           const label = match.recipe.label;
@@ -697,7 +715,7 @@ export default class CreperieGame {
             };
           }
           this.recipeBreakdown[label].count++;
-          this.recipeBreakdown[label].points += pts;
+          this.recipeBreakdown[label].points += finalPts;
 
           // Particules à la station
           const fx = station.x + station.w / 2;
@@ -706,7 +724,7 @@ export default class CreperieGame {
 
           // Contrat G2S si le client était patient (> 50%) — spawn à l'arrivée du serveur
           const shouldSpawnContract =
-            match.patienceFraction > 0.5 && Math.random() < 1 / 2;
+            match.patienceFraction > 0.5 && Math.random() < 1 / 3;
 
           if (this.waiter) {
             // Geler la patience du client pendant le trajet du serveur
@@ -720,7 +738,14 @@ export default class CreperieGame {
               if (tp) {
                 const tx = W * tp.xRatio;
                 const ty = this._counterY * tp.yRatio - 50;
-                this._spawnFloatingText(`+${pts}`, tx, ty);
+                const parfaitPrefix = isPerfect ? "⭐ " : "";
+                const comboSuffix =
+                  deliveryCombo >= 2 ? ` ×${deliveryCombo}🔥` : "";
+                this._spawnFloatingText(
+                  `${parfaitPrefix}+${finalPts}${comboSuffix}`,
+                  tx,
+                  ty,
+                );
               }
             });
           } else {
@@ -782,12 +807,36 @@ export default class CreperieGame {
 
   _calcPoints(customer) {
     const pf = customer.patienceRemaining / customer.maxPatience;
-    return Math.max(10, Math.round(customer.recipe.points * (0.5 + pf * 0.5)));
+    const base = Math.max(
+      10,
+      Math.round(customer.recipe.points * (0.5 + pf * 0.5)),
+    );
+    // Bonus Parfait : livraison très rapide (patience > 90%)
+    return pf > 0.9 ? Math.round(base * 1.1) : base;
   }
 
   _spawnFloatingText(text, x, y, color = "#2ECC71") {
     this.floatingTexts.push({ text, x, y, color, timer: 2000, maxTimer: 2000 });
     if (color === "#2ECC71") this.scoreFlashTimer = 600;
+  }
+
+  /**
+   * Enregistre une livraison, met à jour le combo et retourne les points finaux.
+   * Doit être appelé par le joueur ET les assistants à chaque crêpe livrée.
+   */
+  _registerDelivery(pts) {
+    if (this.comboTimer > 0) {
+      this.comboCount++;
+    } else {
+      this.comboCount = 1;
+    }
+    this.comboTimer = 3000;
+    const multiplier = Math.pow(1.2, this.comboCount - 1);
+    const finalPts = Math.round(pts * multiplier);
+    this.score += finalPts;
+    this.crepesServed++;
+    this.scoreFlashTimer = 600;
+    return { finalPts, comboCount: this.comboCount };
   }
 
   // ── Game Over ──────────────────────────────────────────────────────────────

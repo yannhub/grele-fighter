@@ -21,7 +21,7 @@ export function drawBackground(
 
   // Motif papier peint subtil (losanges)
   ctx.save();
-  ctx.globalAlpha = 0.04;
+  ctx.globalAlpha = 0.06;
   ctx.fillStyle = "#A08060";
   const pSize = 30;
   for (let px = 0; px < W; px += pSize * 2) {

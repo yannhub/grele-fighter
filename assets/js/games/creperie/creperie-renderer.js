@@ -70,6 +70,8 @@ export class CreperieRenderer {
     waiter = null,
     donationCount = 0,
     hasActiveFire = false,
+    comboCount = 0,
+    comboTimer = 0,
   ) {
     const W = canvas.width;
     const H = canvas.height;
@@ -173,6 +175,8 @@ export class CreperieRenderer {
       maxHearts,
       assistants.length,
       donationCount,
+      comboCount,
+      comboTimer,
     );
   }
 

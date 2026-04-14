@@ -26,7 +26,6 @@ export class CreperieWaiter {
 
     this.targetX = 0;
     this.targetY = 0;
-    this.idleTimer = 0;
   }
 
   onResize(W, H) {
@@ -53,7 +52,6 @@ export class CreperieWaiter {
 
     if (this.state === "idle") {
       this.isMoving = false;
-      this.idleTimer += dt;
 
       if (this.deliveryQueue.length > 0) {
         this.currentDelivery = this.deliveryQueue.shift();
@@ -73,7 +71,7 @@ export class CreperieWaiter {
     }
 
     if (this.state === "delivering") {
-      this.walkFrame += dt / 80;
+      this.walkFrame = (this.walkFrame + dt / 80) % 8;
       if (this._moveToward(dtS)) {
         // Arrived at table — customer gets food
         const c = this.currentDelivery.customer;
@@ -94,7 +92,7 @@ export class CreperieWaiter {
     }
 
     if (this.state === "returning") {
-      this.walkFrame += dt / 80;
+      this.walkFrame = (this.walkFrame + dt / 80) % 8;
       if (this._moveToward(dtS)) {
         this.state = "idle";
         this.isMoving = false;

@@ -14,11 +14,23 @@ export function drawFurniture(ctx, W, counterY, customerManager) {
 }
 
 export function drawTable(ctx, cx, cy, customer, tableIdx) {
-  const tw = 65,
-    th = 40;
+  const tw = 70,
+    th = 44;
 
   // Drop shadow under table
-  dropShadow(ctx, cx, cy + th / 2 + 8, tw * 0.45, 6, 0.12);
+  dropShadow(ctx, cx, cy + th / 2 + 8, tw * 0.5, 6, 0.13);
+
+  // Back chair drawn BEFORE table top (depth sort: appears behind table)
+  const chairOff = th / 2 + 14;
+  drawChair(
+    ctx,
+    cx,
+    cy - chairOff,
+    false,
+    customer?.state === "seated" ||
+      customer?.state === "served" ||
+      customer?.state === "leaving_happy",
+  );
 
   // 4 table legs (gradient)
   const legW = 5,
@@ -91,30 +103,20 @@ export function drawTable(ctx, cx, cy, customer, tableIdx) {
   ctx.fillStyle = "#F8F4F0";
   ctx.strokeStyle = "#D0C0A8";
   ctx.lineWidth = 1;
-  [-12, 12].forEach((ox) => {
+  [-13, 13].forEach((ox) => {
     ctx.beginPath();
-    ctx.arc(cx + ox, cy, 7, 0, Math.PI * 2);
+    ctx.arc(cx + ox, cy, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   });
 
-  // Chairs (top + bottom)
-  const chairOff = th / 2 + 14;
-  drawChair(
-    ctx,
-    cx,
-    cy - chairOff,
-    false,
-    customer?.state === "seated" ||
-      customer?.state === "served" ||
-      customer?.state === "leaving_happy",
-  );
+  // Front chair drawn AFTER table top (depth sort: appears in front of table)
   drawChair(ctx, cx, cy + chairOff, true, false);
 }
 
 export function drawChair(ctx, cx, cy, flipped, occupied) {
-  const cw = 30,
-    ch = 18;
+  const cw = 32,
+    ch = 20;
 
   // Assise (gradient radial = effet coussin)
   roundRect(ctx, cx - cw / 2, cy - ch / 2, cw, ch, 6);

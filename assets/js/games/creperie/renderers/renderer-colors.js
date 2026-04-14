@@ -12,10 +12,10 @@ export const COL = {
 
   // Sol restaurant (damier)
   FLOOR_TILE_A: "#E0CEAE",
-  FLOOR_TILE_B: "#C8B490",
+  FLOOR_TILE_B: "#B59B78",
   FLOOR_TILE_HIGHLIGHT: "rgba(255,255,255,0.18)",
-  FLOOR_TILE_SHADOW: "rgba(0,0,0,0.08)",
-  FLOOR_JOINT: "rgba(0,0,0,0.05)",
+  FLOOR_TILE_SHADOW: "rgba(0,0,0,0.14)",
+  FLOOR_JOINT: "rgba(0,0,0,0.12)",
 
   // Comptoir
   COUNTER_TOP_A: "#8B4513",
@@ -29,10 +29,10 @@ export const COL = {
   COUNTER_WOOD_KNOT: "rgba(0,0,0,0.10)",
 
   // Cuisine (dessous comptoir)
-  FLOOR_KITCHEN_A: "#B8B0A0",
-  FLOOR_KITCHEN_B: "#A8A090",
+  FLOOR_KITCHEN_A: "#C0B8A8",
+  FLOOR_KITCHEN_B: "#918A78",
   FLOOR_KITCHEN_HIGHLIGHT: "rgba(255,255,255,0.12)",
-  FLOOR_KITCHEN_SHADOW: "rgba(0,0,0,0.06)",
+  FLOOR_KITCHEN_SHADOW: "rgba(0,0,0,0.12)",
 
   // Mobilier
   TABLE_A: "#C8A060",

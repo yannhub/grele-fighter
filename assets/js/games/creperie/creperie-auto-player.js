@@ -1,13 +1,16 @@
 // creperie-auto-player.js — Joueur automatique du bonus "Assurance G2S"
 
 import {
+  ASSISTANT_ACCEL_PER_SEC,
   BONUS_AUTO_SPEED_RATIO,
+  GAME_DURATION,
   IT,
   KITCHEN_BOTTOM_LANE_Y_RATIO,
   KITCHEN_TOP_LANE_Y_RATIO,
   MAX_HANDS,
   PLAYER_SPEED,
   ST,
+  TABLE_POSITIONS,
 } from "./creperie-constants.js";
 import { BILIG_STATE } from "./creperie-stations.js";
 
@@ -94,6 +97,13 @@ export class AssuranceAutoPlayer {
   update(dt, stations, customerManager, game) {
     if (this.isMoving) this.walkFrame = (this.walkFrame + dt / 80) % 8;
     this.interactCooldown = Math.max(0, this.interactCooldown - dt);
+
+    // Accélération progressive : +1 px/s par seconde écoulée, plafonnée à 320 px/s
+    const elapsed = GAME_DURATION - (game.timeLeft || 0);
+    this.speed = Math.min(
+      320,
+      PLAYER_SPEED * BONUS_AUTO_SPEED_RATIO + elapsed * ASSISTANT_ACCEL_PER_SEC,
+    );
 
     const arrived = this._move(dt);
 
@@ -182,15 +192,21 @@ export class AssuranceAutoPlayer {
       case "take_for_delivery": {
         this.hands.splice(result.itemIndex, 1);
         const toppings = result.crepe.toppings || [];
-        const match = customerManager.tryMatch(toppings);
+        // Passer targetCustomer pour prioriser la commande assignée et éviter
+        // de matcher des commandes non traitées par G2S (bug livraison croisée)
+        const match = customerManager.tryMatch(toppings, this.targetCustomer);
         if (match) {
           match.handledByAssistant = false;
           if (this.targetCustomer === match) this.targetCustomer = null;
+          const isPerfect = match.patienceFraction > 0.9;
           const pts = game._calcPoints(match);
-          game.score += pts;
-          game.crepesServed++;
-          game.scoreFlashTimer = 600;
+          const { finalPts, comboCount: deliveryCombo } =
+            game._registerDelivery(pts);
           s.acceptDelivery();
+          // Particules dorées à la station (identique au joueur)
+          const fx = s.x + s.w / 2;
+          const fy = s.y - 20;
+          game.renderer.addParticles(fx, fy, "#FFD700", 10);
           const label = match.recipe.label;
           if (!game.recipeBreakdown[label]) {
             game.recipeBreakdown[label] = {
@@ -200,21 +216,42 @@ export class AssuranceAutoPlayer {
             };
           }
           game.recipeBreakdown[label].count++;
-          game.recipeBreakdown[label].points += pts;
+          game.recipeBreakdown[label].points += finalPts;
+          const shouldSpawnContract =
+            match.patienceFraction > 0.5 && Math.random() < 1 / 2;
           if (game.waiter) {
             const tableIndex = match.tableIndex;
             game.waiter.addDelivery(match, result.crepe, () => {
+              if (shouldSpawnContract) game._spawnContract(match);
               const W = game.canvas.width;
-              const { TABLE_POSITIONS } = game._tablePositions || {};
-              // Fallback: popup à la station
-              const fx = s.x + s.w / 2;
-              const fy = s.y - 20;
-              game._spawnFloatingText(`+${pts}`, fx, fy, "#2ECC71");
+              const tp = TABLE_POSITIONS[tableIndex];
+              if (tp) {
+                const tx = W * tp.xRatio;
+                const ty = game._counterY * tp.yRatio - 50;
+                const parfaitPrefix = isPerfect ? "⭐ " : "";
+                const comboSuffix =
+                  deliveryCombo >= 2 ? ` ×${deliveryCombo}🔥` : "";
+                game._spawnFloatingText(
+                  `${parfaitPrefix}+${finalPts}${comboSuffix}`,
+                  tx,
+                  ty,
+                  "#2ECC71",
+                );
+              } else {
+                game._spawnFloatingText(
+                  `+${finalPts}`,
+                  s.x + s.w / 2,
+                  s.y - 20,
+                  "#2ECC71",
+                );
+              }
             });
           } else {
+            if (shouldSpawnContract) game._spawnContract(match);
             match.state = "leaving_happy";
+            const parfaitPfx = isPerfect ? "⭐ " : "";
             game._spawnFloatingText(
-              `+${pts}`,
+              `${parfaitPfx}+${finalPts}`,
               s.x + s.w / 2,
               s.y - 20,
               "#2ECC71",
@@ -263,6 +300,11 @@ export class AssuranceAutoPlayer {
 
   // ── Décision ─────────────────────────────────────────────────────────────
   _decideNextTask(stations, customerManager, game) {
+    // Vider les pendingToppings orphelins si le client a été libéré par une autre voie
+    if (!this.targetCustomer && this.pendingToppings.length > 0) {
+      this.pendingToppings = [];
+    }
+
     // Priorité 0 : crêpe rejetée en main → aller au don
     const rejectedCrepe = this.hands.find(
       (h) => h.type === IT.ASSEMBLED_CREPE && h._rejected,
@@ -285,10 +327,12 @@ export class AssuranceAutoPlayer {
       }
     }
 
-    // Priorité 2 : mon bilig assigné est PRÊT → aller récupérer
+    // Priorité 2 : mon bilig assigné est PRÊT/BRUNISSANT et tous les toppings sont collectés → aller récupérer
     if (
       this.assignedBilig &&
-      this.assignedBilig.biligState === BILIG_STATE.READY
+      (this.assignedBilig.biligState === BILIG_STATE.READY ||
+        this.assignedBilig.biligState === BILIG_STATE.BROWNING) &&
+      this.pendingToppings.length === 0
     ) {
       this.myBilig = this.assignedBilig;
       this._setTargetStation(this.assignedBilig);
@@ -323,10 +367,12 @@ export class AssuranceAutoPlayer {
       return;
     }
 
-    // Priorité 4 : mon bilig cuit + toppings encore à collecter
+    // Priorité 4 : mon bilig cuit/prêt/brunissant + toppings encore à collecter
     if (
       this.assignedBilig &&
-      this.assignedBilig.biligState === BILIG_STATE.COOKING &&
+      (this.assignedBilig.biligState === BILIG_STATE.COOKING ||
+        this.assignedBilig.biligState === BILIG_STATE.READY ||
+        this.assignedBilig.biligState === BILIG_STATE.BROWNING) &&
       this.pendingToppings.length > 0
     ) {
       const nextTopping = this.pendingToppings[0];

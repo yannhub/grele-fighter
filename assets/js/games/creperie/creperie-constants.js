@@ -21,6 +21,9 @@ export const MAX_HANDS = 4;
 export const PLAYER_SIZE = 110; // px (hauteur du sprite)
 export const INTERACT_Y_TOLERANCE = 44; // px — proximité front comptoir pour interaction
 
+// Vitesse du serveur NPC
+export const WAITER_SPEED = 800; // px/sec
+
 // Bonus Assurance G2S — assistants obtenus via contrats clients
 export const BONUS_COOK_SPEEDUP = 1; // les biligs assistants cuisent à vitesse normale
 export const BONUS_AUTO_SPEED_RATIO = 0.25; // vitesse réduite du joueur auto (2× plus lent que le joueur)
@@ -28,8 +31,10 @@ export const BONUS_AUTO_SPEED_RATIO = 0.25; // vitesse réduite du joueur auto (
 // Assistants crépiers (accumulables via contrats)
 export const MAX_ASSISTANTS = 5;
 export const ASSISTANT_DURATION = 90; // secondes de durée par assistant
+export const MIN_PLAYER_ORDERS = 2; // commandes min réservées au joueur avant d'attribuer aux assistants
+export const ASSISTANT_ACCEL_PER_SEC = 1.0; // px/s gagnés par seconde de jeu écoulée (200→320px/s sur 120s)
 export const CONTRACT_DURATION = 20000; // ms avant disparition d'un contrat G2S
-export const CONTRACT_COLLECT_RADIUS = 55; // distance de collecte (px)
+export const CONTRACT_COLLECT_RADIUS = 90; // distance de collecte (px)
 
 // Mécanique d'incendie
 export const BROWN_DELAY = 9000; // ms après état READY avant que la crêpe brunisse
@@ -122,7 +127,7 @@ export const RECIPES = [
   },
   {
     id: "citron_sucre",
-    toppings: ["LEMON", "SUGAR"],
+    toppings: ["SUGAR", "LEMON"],
     points: 100,
     label: "Citron-Sucre",
     icon: "🍋",
@@ -165,16 +170,15 @@ export const RECIPES = [
 // Paliers de difficulté (elapsed en secondes → paramètres)
 // patienceDuration augmentée pour compenser le temps de marche du serveur
 export const DIFFICULTY_STEPS = [
-  { at: 0, spawnInterval: 6000, patienceDuration: 36000 },
-  { at: 20, spawnInterval: 5000, patienceDuration: 32000 },
-  { at: 40, spawnInterval: 4000, patienceDuration: 28000 },
-  { at: 60, spawnInterval: 3200, patienceDuration: 24000 },
-  { at: 80, spawnInterval: 2500, patienceDuration: 20000 },
-  { at: 100, spawnInterval: 2000, patienceDuration: 17000 },
+  { at: 0, spawnInterval: 4600, patienceDuration: 40000 },
+  { at: 30, spawnInterval: 4400, patienceDuration: 35000 },
+  { at: 60, spawnInterval: 4200, patienceDuration: 32000 },
+  { at: 90, spawnInterval: 4000, patienceDuration: 30000 },
+  { at: 110, spawnInterval: 3600, patienceDuration: 28000 },
 ];
 
 // Positions des tables dans la salle (ratios relatifs à la zone restaurant = haut du canvas)
-// 8 tables sur 3 rangées
+// 10 tables sur 3 rangées
 export const TABLE_POSITIONS = [
   // Rangée du fond
   { xRatio: 0.12, yRatio: 0.16 },
@@ -186,11 +190,11 @@ export const TABLE_POSITIONS = [
   { xRatio: 0.77, yRatio: 0.46 },
   // Rangée avant
   { xRatio: 0.16, yRatio: 0.76 },
+  { xRatio: 0.42, yRatio: 0.76 }, // nouveau : centre rangée avant
   { xRatio: 0.68, yRatio: 0.76 },
+  // Table isolée droite (entre fond et milieu)
+  { xRatio: 0.82, yRatio: 0.31 }, // nouveau : coin droit haut
 ];
-
-// Vitesse du serveur NPC
-export const WAITER_SPEED = 380; // px/sec
 
 // Couleurs des items
 export const ITEM_COLORS = {
@@ -215,3 +219,13 @@ export const ITEM_ICONS = {
   LEMON: "🍋",
   WHIPPED_CREAM: "🍦",
 };
+
+// Ordre gauche→droite des toppings sur le plan de travail (BUTTER est le plus à gauche)
+export const TOPPING_ORDER = [
+  "BUTTER",
+  "SUGAR",
+  "CHOCOLATE",
+  "STRAWBERRY",
+  "LEMON",
+  "WHIPPED_CREAM",
+];

@@ -1,6 +1,10 @@
 // renderer-customers.js — Rendu des clients — style kawaii cartoon 3D
 
-import { ITEM_ICONS, TABLE_POSITIONS } from "../creperie-constants.js";
+import {
+  ITEM_ICONS,
+  TABLE_POSITIONS,
+  TOPPING_ORDER,
+} from "../creperie-constants.js";
 import {
   COL,
   dropShadow,
@@ -77,6 +81,19 @@ const OUTFITS = [
 export function drawCustomers(ctx, W, counterY, customers, time) {
   const rH = counterY;
   const BASE_SCALE = 0.7; // clients plus petits pour tenir dans la salle
+
+  // Trouver le client le plus urgent (patience la plus basse, assis et non géré par assistant)
+  let urgentCustomer = null;
+  let minPatience = Infinity;
+  for (const c of customers) {
+    if (c.state === "seated" && !c.handledByAssistant) {
+      if (c.patienceFraction < minPatience) {
+        minPatience = c.patienceFraction;
+        urgentCustomer = c;
+      }
+    }
+  }
+
   customers.forEach((c) => {
     const tablePos = TABLE_POSITIONS[c.tableIndex];
     if (!tablePos) return;
@@ -101,7 +118,7 @@ export function drawCustomers(ctx, W, counterY, customers, time) {
     drawCustomerBody(ctx, c, time);
     // Bulle de commande dessinée hors du scale client pour garder une taille lisible
     ctx.scale(1 / scale, 1 / scale);
-    drawSpeechBubble(ctx, c, time);
+    drawSpeechBubble(ctx, c, time, c === urgentCustomer);
     ctx.restore();
   });
 }
@@ -427,10 +444,10 @@ export function drawCustomerBody(ctx, customer, time) {
   ctx.restore(); // end bob
 }
 
-export function drawSpeechBubble(ctx, customer, time) {
+export function drawSpeechBubble(ctx, customer, time, isMostUrgent = false) {
   if (customer.state !== "seated" && customer.state !== "served") return;
-  const bw = 130,
-    bh = 68;
+  const bw = 118,
+    bh = 62;
   const bx = -bw / 2,
     by = 58;
 
@@ -501,7 +518,7 @@ export function drawSpeechBubble(ctx, customer, time) {
 
   // Patience timer — cerⶄle flottant juste au-dessus de la bulle
   const pf = customer.patienceFraction;
-  const timerR = 12;
+  const timerR = 14;
   const timerX = 0; // centré sur le client
   const timerY = by - timerR - 8; // au-dessus de la flèche
   const tColor = pf > 0.66 ? "#2ECC71" : pf > 0.12 ? "#F39C12" : "#E74C3C";
@@ -510,12 +527,12 @@ export function drawSpeechBubble(ctx, customer, time) {
   ctx.beginPath();
   ctx.arc(timerX, timerY, timerR, 0, Math.PI * 2);
   ctx.strokeStyle = "rgba(0,0,0,0.12)";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 6;
   ctx.stroke();
   ctx.beginPath();
   ctx.arc(timerX, timerY, timerR, 0, Math.PI * 2);
   ctx.strokeStyle = "#EEE";
-  ctx.lineWidth = 4.5;
+  ctx.lineWidth = 5.5;
   ctx.stroke();
 
   // Arc rempli
@@ -528,7 +545,7 @@ export function drawSpeechBubble(ctx, customer, time) {
     -Math.PI / 2 + Math.PI * 2 * pf,
   );
   ctx.strokeStyle = tColor;
-  ctx.lineWidth = 4.5;
+  ctx.lineWidth = 5.5;
   ctx.lineCap = "round";
   ctx.stroke();
   ctx.lineCap = "butt";
@@ -542,6 +559,19 @@ export function drawSpeechBubble(ctx, customer, time) {
     ctx.arc(timerX, timerY, timerR + 3, 0, Math.PI * 2);
     ctx.strokeStyle = "#E74C3C";
     ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Indicateur "client le plus urgent" : anneau bordeaux pulsant
+  if (isMostUrgent && !isHandled) {
+    const urgentPulse = 0.5 + 0.5 * Math.abs(Math.sin(time / 180));
+    ctx.save();
+    ctx.globalAlpha = 0.5 + 0.4 * urgentPulse;
+    ctx.beginPath();
+    ctx.arc(timerX, timerY, timerR + 6, 0, Math.PI * 2);
+    ctx.strokeStyle = "#8B0000";
+    ctx.lineWidth = 2.5;
     ctx.stroke();
     ctx.restore();
   }
@@ -565,8 +595,11 @@ export function drawSpeechBubble(ctx, customer, time) {
     ctx.fillText("🛡️ Traité par G2S", badgeX + badgeW / 2, badgeY + badgeH / 2);
   }
 
-  // Icônes de recette
-  const icons = recipe.toppings.map((t) => ITEM_ICONS[t] || "?");
+  // Icônes de recette (triées gauche→droite selon l'ordre du plan de travail)
+  const sortedToppings = [...recipe.toppings].sort(
+    (a, b) => TOPPING_ORDER.indexOf(a) - TOPPING_ORDER.indexOf(b),
+  );
+  const icons = sortedToppings.map((t) => ITEM_ICONS[t] || "?");
   const iconSize = isHandled ? 22 : 24;
   const iconGap = 10;
   const totalW = icons.length * (iconSize + iconGap) - iconGap;

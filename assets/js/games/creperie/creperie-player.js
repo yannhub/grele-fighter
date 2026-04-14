@@ -3,7 +3,6 @@
 import {
   KITCHEN_BOTTOM_LANE_Y_RATIO,
   KITCHEN_TOP_LANE_Y_RATIO,
-  PLAYER_DINING_Y_RATIO,
   PLAYER_SIZE,
   PLAYER_SPEED,
 } from "./creperie-constants.js";
@@ -12,12 +11,12 @@ const WALK_FRAME_COUNT = 4;
 const WALK_FRAME_DURATION = 120; // ms par frame
 
 export class CreperiePlayer {
-  constructor(startX, canvasHeight) {
+  constructor(startX, canvasWidth, canvasHeight) {
     this.x = startX;
     this.y = canvasHeight * KITCHEN_TOP_LANE_Y_RATIO;
     this.size = PLAYER_SIZE;
     this.minX = 22;
-    this.maxX = 800 - 22;
+    this.maxX = canvasWidth - 22;
 
     // Zone : "kitchen" ou "dining"
     this.zone = "kitchen";
@@ -93,7 +92,7 @@ export class CreperiePlayer {
       // ── Transition vers la salle (montée + à droite du passage) ──────────
       if (keys.up && this._lane === 0 && this.x > passageX - 20) {
         this.zone = "dining";
-        this.y = counterY * PLAYER_DINING_Y_RATIO; // dans la salle (coords jeu)
+        this.y = counterY - PLAYER_SIZE / 2; // arriver en bas de la salle, près du comptoir
         this._lane = 0;
         this.direction = -1;
       }
