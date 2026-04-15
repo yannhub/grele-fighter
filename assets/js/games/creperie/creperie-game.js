@@ -144,7 +144,11 @@ export default class CreperieGame {
       ...this.stations.filter((s) => s.type === "BILIG"),
       ...this.assistanceBiligs,
     ];
-    return allBiligs.some((b) => b.biligState === BILIG_STATE.BURNING);
+    if (allBiligs.some((b) => b.biligState === BILIG_STATE.BURNING)) return true;
+    const allIngredients = [
+      ...this.stations.filter((s) => s.type !== "BILIG"),
+    ];
+    return allIngredients.some((s) => s.isBurning);
   }
 
   resizeGame() {
@@ -634,22 +638,63 @@ export default class CreperieGame {
 
   // ── Incendie & propagation ─────────────────────────────────────────────────
   _updateFireSpread() {
+    const FLAMMABLE_INGREDIENT_TYPES = new Set([
+      "BATTER", "BUTTER", "SUGAR", "CHOCOLATE", "STRAWBERRY", "LEMON", "WHIPPED_CREAM",
+    ]);
     const allBiligs = [
       ...this.stations.filter((s) => s.type === "BILIG"),
       ...this.assistanceBiligs,
     ];
+    const allIngredients = this.stations.filter((s) =>
+      FLAMMABLE_INGREDIENT_TYPES.has(s.type)
+    );
+
+    // Propagation depuis les biligs en feu
     for (const bilig of allBiligs) {
       if (
         bilig.biligState === BILIG_STATE.BURNING &&
         bilig.spreadTimer !== null &&
         bilig.spreadTimer <= 0
       ) {
-        bilig.spreadTimer = null; // neutralise pour ne pas propager deux fois
-        // Trouver le bilig non-brûlant le plus proche
-        const target = allBiligs
-          .filter((b) => b !== bilig && b.biligState !== BILIG_STATE.BURNING)
-          .sort((a, b) => Math.abs(a.x - bilig.x) - Math.abs(b.x - bilig.x))[0];
-        if (target) target.setBurning();
+        bilig.spreadTimer = null;
+        // Trouver la station non-brûlante la plus proche (bilig OU ingrédient)
+        const cx = bilig.x + bilig.w / 2;
+        const candidates = [
+          ...allBiligs
+            .filter((b) => b !== bilig && b.biligState !== BILIG_STATE.BURNING)
+            .map((b) => ({ station: b, dist: Math.abs(b.x + b.w / 2 - cx), kind: "bilig" })),
+          ...allIngredients
+            .filter((s) => !s.isBurning)
+            .map((s) => ({ station: s, dist: Math.abs(s.x + s.w / 2 - cx), kind: "ingredient" })),
+        ];
+        candidates.sort((a, b) => a.dist - b.dist);
+        const target = candidates[0];
+        if (target) {
+          if (target.kind === "bilig") target.station.setBurning();
+          else target.station.setOnFire();
+        }
+      }
+    }
+
+    // Propagation depuis les stations ingrédients en feu
+    for (const s of allIngredients) {
+      if (s.isBurning && s.fireSpreadTimer !== null && s.fireSpreadTimer <= 0) {
+        s.fireSpreadTimer = null;
+        const cx = s.x + s.w / 2;
+        const candidates = [
+          ...allBiligs
+            .filter((b) => b.biligState !== BILIG_STATE.BURNING)
+            .map((b) => ({ station: b, dist: Math.abs(b.x + b.w / 2 - cx), kind: "bilig" })),
+          ...allIngredients
+            .filter((t) => t !== s && !t.isBurning)
+            .map((t) => ({ station: t, dist: Math.abs(t.x + t.w / 2 - cx), kind: "ingredient" })),
+        ];
+        candidates.sort((a, b) => a.dist - b.dist);
+        const target = candidates[0];
+        if (target) {
+          if (target.kind === "bilig") target.station.setBurning();
+          else target.station.setOnFire();
+        }
       }
     }
   }
@@ -662,13 +707,23 @@ export default class CreperieGame {
     const burningBiligs = allBiligs.filter(
       (b) => b.biligState === BILIG_STATE.BURNING,
     );
-    if (burningBiligs.length === 0) return;
+    const FLAMMABLE_INGREDIENT_TYPES = new Set([
+      "BATTER", "BUTTER", "SUGAR", "CHOCOLATE", "STRAWBERRY", "LEMON", "WHIPPED_CREAM",
+    ]);
+    const burningIngredients = this.stations.filter(
+      (s) => FLAMMABLE_INGREDIENT_TYPES.has(s.type) && s.isBurning,
+    );
+    const allBurning = [...burningBiligs, ...burningIngredients];
+    if (allBurning.length === 0) return;
+
+    // Trier par position X pour parcourir de gauche à droite
+    allBurning.sort((a, b) => a.x - b.x);
 
     this.firefighter = {
-      x: 0, // entre depuis la gauche
+      x: 0,
       y: this._kitchenTopLaneY,
-      targetsQueue: [...burningBiligs],
-      targetBilig: burningBiligs[0],
+      targetsQueue: [...allBurning],
+      targetBilig: allBurning[0],
       state: "walking",
       size: 70,
       direction: 1,
@@ -708,10 +763,10 @@ export default class CreperieGame {
             a.player.targetCustomer = null;
           }
         });
-        // Passer au bilig suivant en feu
+        // Passer à la prochaine station en feu (bilig OU ingrédient)
         ff.targetsQueue.shift();
         const next = ff.targetsQueue.find(
-          (b) => b.biligState === BILIG_STATE.BURNING,
+          (b) => b.biligState === BILIG_STATE.BURNING || b.isBurning,
         );
         if (next) {
           ff.targetBilig = next;

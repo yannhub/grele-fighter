@@ -57,6 +57,10 @@ export class Station {
     // Feedback visuel
     this.flashTimer = 0; // ms restantes pour le flash coloré
     this.flashColor = null;
+
+    // Incendie sur stations d'ingrédients (non-bilig)
+    this.isBurning = false;
+    this.fireSpreadTimer = null;
   }
 
   update(dt, cookMultiplier = 1) {
@@ -90,25 +94,40 @@ export class Station {
     if (this.flashTimer > 0) {
       this.flashTimer = Math.max(0, this.flashTimer - dt);
     }
+    // Minuterie de propagation pour les stations ingrédients en feu
+    if (this.isBurning && this.fireSpreadTimer !== null) {
+      this.fireSpreadTimer -= dt;
+    }
   }
 
   // Extinction d'incendie par le pompier
   resetFire() {
+    // Réinitialise bilig
     this.biligState = BILIG_STATE.EMPTY;
     this.cookTimer = 0;
     this.cookProgress = 0;
     this.burnTimer = 0;
     this.spreadTimer = null;
     this.biligToppings = [];
+    // Réinitialise état incendie ingrédient
+    this.isBurning = false;
+    this.fireSpreadTimer = null;
     this.flash("#4FC3F7"); // bleu eau
   }
 
-  // Forcer l'état incendie (propagation)
+  // Propager l'incendie à ce bilig (même si vide)
   setBurning() {
     if (this.biligState === BILIG_STATE.BURNING) return;
-    if (this.biligState === BILIG_STATE.EMPTY) return;
     this.biligState = BILIG_STATE.BURNING;
     this.spreadTimer = FIRE_SPREAD_DELAY;
+  }
+
+  // Mettre le feu à une station ingrédient (non-bilig)
+  setOnFire() {
+    if (this.isBurning) return;
+    this.isBurning = true;
+    this.fireSpreadTimer = FIRE_SPREAD_DELAY;
+    this.flash("#FF4400");
   }
 
   /**
@@ -116,6 +135,8 @@ export class Station {
    * Retourne { action, ... } selon le type et l'état du poste.
    */
   interact(playerHands) {
+    // Station en feu : inaccessible
+    if (this.isBurning) return { action: "none" };
     switch (this.type) {
       case ST.BATTER:
         return this._interactBatter(playerHands);

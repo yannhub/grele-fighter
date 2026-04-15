@@ -1,6 +1,6 @@
 // creperie-constants.js — Configuration du jeu La Crêperie
 
-export const GAME_DURATION = 2; // secondes
+export const GAME_DURATION = 120; // secondes
 export const MAX_HEARTS = 5;
 export const BILIG_COOK_TIME = 3500; // ms de cuisson
 export const GAMEOVER_ACTION_DELAY = 2000; // ms avant l'apparition des boutons de fin de partie
@@ -38,9 +38,9 @@ export const CONTRACT_DURATION = 20000; // ms avant disparition d'un contrat G2S
 export const CONTRACT_COLLECT_RADIUS = 90; // distance de collecte (px)
 
 // Mécanique d'incendie
-export const BROWN_DELAY = 9000; // ms après état READY avant que la crêpe brunisse
-export const BURN_DELAY = 13000; // ms après état READY avant d'attraper feu
-export const FIRE_SPREAD_DELAY = 14000; // ms avant propagation à un bilig voisin
+export const BROWN_DELAY = 8000; // ms après état READY avant que la crêpe brunisse
+export const BURN_DELAY = 12000; // ms après état READY avant d'attraper feu
+export const FIRE_SPREAD_DELAY = 3000; // ms avant propagation à un bilig voisin
 export const FIREFIGHTER_SPEED = 480; // px/sec
 
 // Configuration de l'écran d'accueil
@@ -175,7 +175,7 @@ export const DIFFICULTY_STEPS = [
   { at: 30, spawnInterval: 4400, patienceDuration: 35000 },
   { at: 60, spawnInterval: 4200, patienceDuration: 32000 },
   { at: 90, spawnInterval: 4000, patienceDuration: 30000 },
-  { at: 110, spawnInterval: 3600, patienceDuration: 28000 },
+  { at: 110, spawnInterval: 3200, patienceDuration: 28000 },
 ];
 
 // Positions des tables dans la salle (ratios relatifs à la zone restaurant = haut du canvas)

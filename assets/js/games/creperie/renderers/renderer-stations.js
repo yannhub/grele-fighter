@@ -94,6 +94,13 @@ export function drawStation(
       drawIngredientStation(ctx, s, sx, sy, sw, sh);
   }
 
+  // 🔥 Flammes sur stations d'ingrédients en feu
+  if (s.isBurning) {
+    const cx2 = sx + sw / 2;
+    const cy2 = sy + sh / 2;
+    _drawFlames(ctx, cx2, cy2, sw * 0.45, time);
+  }
+
   // Station label badge
   _drawStationLabel(ctx, s, time, isActive);
 
