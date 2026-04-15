@@ -144,10 +144,9 @@ export default class CreperieGame {
       ...this.stations.filter((s) => s.type === "BILIG"),
       ...this.assistanceBiligs,
     ];
-    if (allBiligs.some((b) => b.biligState === BILIG_STATE.BURNING)) return true;
-    const allIngredients = [
-      ...this.stations.filter((s) => s.type !== "BILIG"),
-    ];
+    if (allBiligs.some((b) => b.biligState === BILIG_STATE.BURNING))
+      return true;
+    const allIngredients = [...this.stations.filter((s) => s.type !== "BILIG")];
     return allIngredients.some((s) => s.isBurning);
   }
 
@@ -639,14 +638,20 @@ export default class CreperieGame {
   // ── Incendie & propagation ─────────────────────────────────────────────────
   _updateFireSpread() {
     const FLAMMABLE_INGREDIENT_TYPES = new Set([
-      "BATTER", "BUTTER", "SUGAR", "CHOCOLATE", "STRAWBERRY", "LEMON", "WHIPPED_CREAM",
+      "BATTER",
+      "BUTTER",
+      "SUGAR",
+      "CHOCOLATE",
+      "STRAWBERRY",
+      "LEMON",
+      "WHIPPED_CREAM",
     ]);
     const allBiligs = [
       ...this.stations.filter((s) => s.type === "BILIG"),
       ...this.assistanceBiligs,
     ];
     const allIngredients = this.stations.filter((s) =>
-      FLAMMABLE_INGREDIENT_TYPES.has(s.type)
+      FLAMMABLE_INGREDIENT_TYPES.has(s.type),
     );
 
     // Propagation depuis les biligs en feu
@@ -662,10 +667,18 @@ export default class CreperieGame {
         const candidates = [
           ...allBiligs
             .filter((b) => b !== bilig && b.biligState !== BILIG_STATE.BURNING)
-            .map((b) => ({ station: b, dist: Math.abs(b.x + b.w / 2 - cx), kind: "bilig" })),
+            .map((b) => ({
+              station: b,
+              dist: Math.abs(b.x + b.w / 2 - cx),
+              kind: "bilig",
+            })),
           ...allIngredients
             .filter((s) => !s.isBurning)
-            .map((s) => ({ station: s, dist: Math.abs(s.x + s.w / 2 - cx), kind: "ingredient" })),
+            .map((s) => ({
+              station: s,
+              dist: Math.abs(s.x + s.w / 2 - cx),
+              kind: "ingredient",
+            })),
         ];
         candidates.sort((a, b) => a.dist - b.dist);
         const target = candidates[0];
@@ -684,10 +697,18 @@ export default class CreperieGame {
         const candidates = [
           ...allBiligs
             .filter((b) => b.biligState !== BILIG_STATE.BURNING)
-            .map((b) => ({ station: b, dist: Math.abs(b.x + b.w / 2 - cx), kind: "bilig" })),
+            .map((b) => ({
+              station: b,
+              dist: Math.abs(b.x + b.w / 2 - cx),
+              kind: "bilig",
+            })),
           ...allIngredients
             .filter((t) => t !== s && !t.isBurning)
-            .map((t) => ({ station: t, dist: Math.abs(t.x + t.w / 2 - cx), kind: "ingredient" })),
+            .map((t) => ({
+              station: t,
+              dist: Math.abs(t.x + t.w / 2 - cx),
+              kind: "ingredient",
+            })),
         ];
         candidates.sort((a, b) => a.dist - b.dist);
         const target = candidates[0];
@@ -708,7 +729,13 @@ export default class CreperieGame {
       (b) => b.biligState === BILIG_STATE.BURNING,
     );
     const FLAMMABLE_INGREDIENT_TYPES = new Set([
-      "BATTER", "BUTTER", "SUGAR", "CHOCOLATE", "STRAWBERRY", "LEMON", "WHIPPED_CREAM",
+      "BATTER",
+      "BUTTER",
+      "SUGAR",
+      "CHOCOLATE",
+      "STRAWBERRY",
+      "LEMON",
+      "WHIPPED_CREAM",
     ]);
     const burningIngredients = this.stations.filter(
       (s) => FLAMMABLE_INGREDIENT_TYPES.has(s.type) && s.isBurning,
