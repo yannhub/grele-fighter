@@ -1,5 +1,5 @@
 // Version du cache - Mettez à jour cette valeur à chaque modification de ressources
-const CACHE_VERSION = "1.1.7"; // Incrémentez ce numéro à chaque modification
+const CACHE_VERSION = "1.1.11"; // Incrémentez ce numéro à chaque modification
 const CACHE_NAME = `grele-fighter-v${CACHE_VERSION}`;
 
 // Détection de l'environnement de développement
@@ -47,6 +47,7 @@ const urlsToCache = [
   "./assets/js/games/creperie/creperie-player.js",
   "./assets/js/games/creperie/creperie-customers.js",
   "./assets/js/games/creperie/creperie-renderer.js",
+  "./assets/js/games/creperie/renderers/renderer-screens.js",
   // Images
   "./assets/img/logo-one.png",
   "./assets/img/logo-two.png",
