@@ -116,6 +116,7 @@ function initCreperieGame(playerInfo = null) {
 
   const realGameManager = {
     startGame: (playerInfo) => creperieGame.startGame(playerInfo),
+    showIntro: (playerInfo) => creperieGame.showIntro(playerInfo),
     endGame: () => creperieGame.endGame(),
     triggerStormCloud: () => {},
     resizeGame: () => creperieGame.resizeGame(),
@@ -129,5 +130,5 @@ function initCreperieGame(playerInfo = null) {
   creperieGame.leaderboard = currentUI.leaderboard;
   creperieGame.leaderboard.updateDisplay();
 
-  creperieGame.startGame(playerInfo || {});
+  creperieGame.showIntro(playerInfo || {});
 }

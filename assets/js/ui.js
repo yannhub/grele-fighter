@@ -135,7 +135,14 @@ export default class UI {
       nicknameError.style.display = "none";
       this.playerInfo = { ...this.playerInfo, nickname, organization };
       this.registerForm.style.display = "none";
-      this.gameInstructions.style.display = "block";
+
+      if (this.gameId === "creperie") {
+        // Pour la crêperie : aller directement au canvas (l'intro est dans le canvas)
+        this.gameCanvas.style.display = "block";
+        this.gameManager.startGame(this.playerInfo);
+      } else {
+        this.gameInstructions.style.display = "block";
+      }
     });
 
     this.playBtn.addEventListener("click", () => {
@@ -300,61 +307,8 @@ export default class UI {
 
   // Afficher l'écran de fin de jeu (crêperie)
   showCreperieGameOver(stats) {
-    // stats = { score, crepesServed, heartsLost, reason }
-    clearInterval(this.timerInterval);
-
-    this.gameCanvas.style.display = "none";
-    this.scoreDisplay.style.display = "none";
-    this.gameOverScreen.style.display = "block";
-
-    document.getElementById("creperie-final-score").textContent = stats.score;
-    document.getElementById("creperie-crepes-served").textContent =
-      stats.crepesServed;
-    document.getElementById("creperie-hearts-lost").textContent =
-      stats.heartsLost;
-    const heartsMaxEl = document.getElementById("creperie-hearts-max");
-    if (heartsMaxEl) heartsMaxEl.textContent = stats.maxUnhappy ?? 3;
-
-    const title = document.getElementById("creperie-game-over-title");
-    if (title) {
-      if (stats.reason === "time") {
-        title.textContent = "⏱️ Temps écoulé !";
-      } else {
-        title.textContent = "💔 Trop de clients mécontents !";
-      }
-    }
-
-    // Breakdown recettes
-    const breakdown = document.getElementById("creperie-recipe-breakdown");
-    if (
-      breakdown &&
-      stats.recipeBreakdown &&
-      stats.recipeBreakdown.length > 0
-    ) {
-      breakdown.innerHTML = stats.recipeBreakdown
-        .map(
-          (r) =>
-            `<p>${r.label} × ${r.count} = <strong>${r.points} pts</strong></p>`,
-        )
-        .join("");
-    }
-
-    // Section dons à l'association
-    const donationSection = document.getElementById(
-      "creperie-donation-section",
-    );
-    const donationCount = document.getElementById("creperie-donation-count");
-    if (donationSection && donationCount) {
-      if (stats.donationCount > 0) {
-        donationCount.textContent = stats.donationCount;
-        donationSection.style.display = "flex";
-      } else {
-        donationSection.style.display = "none";
-      }
-    }
-
-    // Sauvegarder le score
-    this.leaderboard.saveScore(this.playerInfo, stats.score);
+    // Pour la crêperie, l'écran de fin est désormais géré par le canvas (renderer-screens.js)
+    // Cette méthode ne fait plus rien (garde pour compatibilité avec l'ancien code)
   }
 
   // ── Sélecteur de personnage ──────────────────────────────────────────────────

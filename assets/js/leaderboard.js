@@ -319,7 +319,11 @@ export default class Leaderboard {
     this.ui.hideAllScreens();
     this.ui.showGameScreen();
 
-    // Démarrer une nouvelle partie
-    this.ui.gameManager.startGame(this.ui.playerInfo);
+    // Pour la crêperie : passer par l'écran d'intro avant de lancer
+    if (this.ui.gameManager.showIntro) {
+      this.ui.gameManager.showIntro(this.ui.playerInfo);
+    } else {
+      this.ui.gameManager.startGame(this.ui.playerInfo);
+    }
   }
 }

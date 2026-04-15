@@ -10,6 +10,7 @@ import {
   COUNTER_Y_RATIO,
   FIREFIGHTER_SPEED,
   GAME_DURATION,
+  GAMEOVER_ACTION_DELAY,
   HUD_H,
   KITCHEN_BOTTOM_LANE_Y_RATIO,
   KITCHEN_TOP_LANE_Y_RATIO,
@@ -25,8 +26,12 @@ import {
 import { CustomerManager } from "./creperie-customers.js";
 import { CreperiePlayer } from "./creperie-player.js";
 import { CreperieRenderer } from "./creperie-renderer.js";
-import { BILIG_STATE, Station, createStations } from "./creperie-stations.js";
+import { BILIG_STATE, createStations, Station } from "./creperie-stations.js";
 import { CreperieWaiter } from "./creperie-waiter.js";
+import {
+  drawGameOverScreen,
+  drawIntroScreen,
+} from "./renderers/renderer-screens.js";
 
 export default class CreperieGame {
   constructor() {
@@ -103,10 +108,19 @@ export default class CreperieGame {
     this._kitchenTopLaneY = 0;
     this._kitchenBottomLaneY = 0;
 
+    // Phase : "idle" | "intro" | "playing" | "over"
+    this.phase = "idle";
+    this._playerInfo = {};
+    this._gameOverStats = null;
+    this._screenTime = 0; // temps animé pour les écrans
+
     // Handlers
     this._onKeyDown = this._handleKeyDown.bind(this);
     this._onKeyUp = this._handleKeyUp.bind(this);
     this._loop = this._gameLoop.bind(this);
+    this._introLoop = this._runIntroLoop.bind(this);
+    this._gameOverLoop = this._runGameOverLoop.bind(this);
+    this._onScreenKey = this._handleScreenKey.bind(this);
   }
 
   // ── Interface adapter ──────────────────────────────────────────────────────
@@ -146,6 +160,123 @@ export default class CreperieGame {
     this.assistants.forEach((a) =>
       a.player.onResize(this.canvas.width, this._gameH),
     );
+  }
+
+  // ── Écran d'intro (canvas) ─────────────────────────────────────────────────
+  showIntro(playerInfo = {}) {
+    this._playerInfo = playerInfo;
+    this.character = playerInfo.character || "cerise";
+    this.phase = "intro";
+    this._screenTime = 0;
+
+    // Ajuster le canvas
+    this.resizeGame();
+
+    // Upscale le buffer pour un rendu net sur écrans HiDPI
+    const dpr = window.devicePixelRatio || 1;
+    this._dpr = dpr;
+    this._logW = this.canvas.width;
+    this._logH = this.canvas.height;
+    if (dpr > 1) {
+      this.canvas.width = Math.round(this._logW * dpr);
+      this.canvas.height = Math.round(this._logH * dpr);
+    }
+
+    window.addEventListener("keydown", this._onScreenKey);
+    this.rafId = requestAnimationFrame(this._introLoop);
+  }
+
+  _runIntroLoop(timestamp) {
+    if (this.phase !== "intro") return;
+    this._screenTime += 16;
+    const dpr = this._dpr || 1;
+    const W = this._logW || this.canvas.width;
+    const H = this._logH || this.canvas.height;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.ctx.clearRect(0, 0, W, H);
+    drawIntroScreen(this.ctx, W, H, this._playerInfo, this._screenTime);
+    this.rafId = requestAnimationFrame(this._introLoop);
+  }
+
+  // ── Écran de game-over (canvas) ────────────────────────────────────────────
+  _startGameOverScreen(stats) {
+    this._gameOverStats = stats;
+    this.phase = "over";
+    this._screenTime = 0;
+    this._gameOverSelected = 0; // 0 = Accueil, 1 = Rejouer
+
+    // Upscale le buffer pour un rendu net sur écrans HiDPI
+    const dpr = window.devicePixelRatio || 1;
+    this._dpr = dpr;
+    this._logW = this.canvas.width;
+    this._logH = this.canvas.height;
+    if (dpr > 1) {
+      this.canvas.width = Math.round(this._logW * dpr);
+      this.canvas.height = Math.round(this._logH * dpr);
+    }
+
+    window.addEventListener("keydown", this._onScreenKey);
+    this.rafId = requestAnimationFrame(this._gameOverLoop);
+  }
+
+  _runGameOverLoop(timestamp) {
+    if (this.phase !== "over") return;
+    this._screenTime += 16;
+    const dpr = this._dpr || 1;
+    const W = this._logW || this.canvas.width;
+    const H = this._logH || this.canvas.height;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.ctx.clearRect(0, 0, W, H);
+    drawGameOverScreen(
+      this.ctx,
+      W,
+      H,
+      this._gameOverStats,
+      this._screenTime,
+      this._gameOverSelected,
+      this._screenTime,
+    );
+    this.rafId = requestAnimationFrame(this._gameOverLoop);
+  }
+
+  // ── Gestion clavier des écrans statiques ────────────────────────────────────
+  _handleScreenKey(e) {
+    if (this.phase === "over") {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        this._gameOverSelected = this._gameOverSelected === 0 ? 1 : 0;
+        return;
+      }
+      if (e.key === " ") {
+        if (this._screenTime < GAMEOVER_ACTION_DELAY) return;
+        e.preventDefault();
+        window.removeEventListener("keydown", this._onScreenKey);
+        if (this.rafId) cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+        if (this._gameOverSelected === 0) {
+          this._goHome();
+        } else {
+          this.showIntro(this._playerInfo);
+        }
+      }
+      return;
+    }
+
+    if (e.key !== " ") return;
+    e.preventDefault();
+
+    if (this.phase === "intro") {
+      window.removeEventListener("keydown", this._onScreenKey);
+      if (this.rafId) cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+      this.startGame(this._playerInfo);
+    }
+  }
+
+  _goHome() {
+    if (this.ui && this.ui.homeBtn) {
+      this.ui.homeBtn.click();
+    }
   }
 
   startGame(playerInfo = {}) {
@@ -211,6 +342,7 @@ export default class CreperieGame {
       this.ui.scoreDisplay.style.display = "none";
     }
 
+    this.phase = "playing";
     window.addEventListener("keydown", this._onKeyDown);
     window.addEventListener("keyup", this._onKeyUp);
     this.rafId = requestAnimationFrame(this._loop);
@@ -862,18 +994,24 @@ export default class CreperieGame {
       ([label, data]) => ({ label, count: data.count, points: data.points }),
     );
 
-    if (this.ui) {
-      this.ui.showCreperieGameOver({
-        score: this.score,
-        crepesServed: this.crepesServed,
-        heartsLost: MAX_HEARTS - this.heartsLeft,
-        maxUnhappy: MAX_HEARTS,
-        reason,
-        recipeBreakdown,
-        donationCount: this.donationCount,
-        assistantsUsed: this.assistants.length,
-      });
+    const stats = {
+      score: this.score,
+      crepesServed: this.crepesServed,
+      heartsLost: MAX_HEARTS - this.heartsLeft,
+      maxUnhappy: MAX_HEARTS,
+      reason,
+      recipeBreakdown,
+      donationCount: this.donationCount,
+      assistantsUsed: this.assistants.length,
+    };
+
+    // Sauvegarder le score dans le leaderboard
+    if (this.leaderboard) {
+      this.leaderboard.saveScore(this._playerInfo, this.score);
     }
+
+    // Afficher l'écran de fin sur le canvas
+    this._startGameOverScreen(stats);
   }
 
   // ── Gestion du clavier ─────────────────────────────────────────────────────
