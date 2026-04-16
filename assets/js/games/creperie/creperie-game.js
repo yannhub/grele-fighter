@@ -168,6 +168,16 @@ export default class CreperieGame {
 
   // ── Écran d'intro (canvas) ─────────────────────────────────────────────────
   showIntro(playerInfo = {}) {
+    // Nettoyer tout état précédent (partie en cours, écran de fin, etc.)
+    this.isRunning = false;
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+    window.removeEventListener("keydown", this._onKeyDown);
+    window.removeEventListener("keyup", this._onKeyUp);
+    window.removeEventListener("keydown", this._onScreenKey);
+
     this._playerInfo = playerInfo;
     this.character = playerInfo.character || "cerise";
     this.phase = "intro";

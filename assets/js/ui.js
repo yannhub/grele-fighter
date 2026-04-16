@@ -142,10 +142,14 @@ export default class UI {
       this.registerForm.style.display = "none";
 
       if (this.gameId === "creperie") {
-        // Pour la crêperie : aller directement au canvas (l'intro est dans le canvas)
+        // Pour la crêperie : aller directement au canvas (intro sur canvas)
         this.gameCanvas.style.display = "block";
         this._setGameActive(true);
-        this.gameManager.startGame(this.playerInfo);
+        if (this.gameManager.showIntro) {
+          this.gameManager.showIntro(this.playerInfo);
+        } else {
+          this.gameManager.startGame(this.playerInfo);
+        }
       } else {
         this.gameInstructions.style.display = "block";
       }

@@ -1,6 +1,6 @@
 // creperie-constants.js — Configuration du jeu La Crêperie
 
-export const GAME_DURATION = 120; // secondes
+export const GAME_DURATION = 2; // secondes
 export const MAX_HEARTS = 5;
 export const BILIG_COOK_TIME = 3500; // ms de cuisson
 export const GAMEOVER_ACTION_DELAY = 2000; // ms avant l'apparition des boutons de fin de partie
