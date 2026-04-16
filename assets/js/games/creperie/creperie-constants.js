@@ -17,13 +17,13 @@ export const BOTTOM_COUNTER_Y_RATIO = 0.86; // bord supérieur du 2e comptoir (b
 export const BOTTOM_COUNTER_HEIGHT_RATIO = 0.11; // hauteur du 2e comptoir
 
 // Joueur
-export const PLAYER_SPEED = 800; // px/sec
+export const PLAYER_SPEED = 900; // px/sec
 export const MAX_HANDS = 4;
 export const PLAYER_SIZE = 110; // px (hauteur du sprite)
 export const INTERACT_Y_TOLERANCE = 44; // px — proximité front comptoir pour interaction
 
 // Vitesse du serveur NPC
-export const WAITER_SPEED = 800; // px/sec
+export const WAITER_SPEED = 900; // px/sec
 
 // Bonus Assurance G2S — assistants obtenus via contrats clients
 export const BONUS_COOK_SPEEDUP = 1; // les biligs assistants cuisent à vitesse normale

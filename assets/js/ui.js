@@ -22,6 +22,7 @@ export default class UI {
     this.scoreDisplay = document.getElementById("score-display");
     this.currentScoreEl = document.getElementById("current-score");
     this.timerDisplay = document.getElementById("timer");
+    this.contentEl = document.querySelector(".content");
 
     // Éléments spécifiques au jeu actif
     if (gameId === "grele") {
@@ -74,6 +75,10 @@ export default class UI {
 
   setGameManager(gameManager) {
     this.gameManager = gameManager;
+  }
+
+  _setGameActive(active) {
+    this.contentEl.classList.toggle("game-active", active);
   }
 
   // Initialise les valeurs de l'interface à partir des constantes (grêle)
@@ -139,6 +144,7 @@ export default class UI {
       if (this.gameId === "creperie") {
         // Pour la crêperie : aller directement au canvas (l'intro est dans le canvas)
         this.gameCanvas.style.display = "block";
+        this._setGameActive(true);
         this.gameManager.startGame(this.playerInfo);
       } else {
         this.gameInstructions.style.display = "block";
@@ -148,6 +154,7 @@ export default class UI {
     this.playBtn.addEventListener("click", () => {
       this.gameInstructions.style.display = "none";
       this.gameCanvas.style.display = "block";
+      this._setGameActive(true);
       if (this.gameId !== "creperie") {
         this.scoreDisplay.style.display = "block";
       }
@@ -165,6 +172,7 @@ export default class UI {
           e.preventDefault();
           this.gameInstructions.style.display = "none";
           this.gameCanvas.style.display = "block";
+          this._setGameActive(true);
           this.gameManager.startGame(this.playerInfo);
         }
       });
@@ -179,6 +187,7 @@ export default class UI {
     this.playAgainBtn.addEventListener("click", () => {
       this.gameOverScreen.style.display = "none";
       this.gameCanvas.style.display = "block";
+      this._setGameActive(true);
       if (this.gameId !== "creperie") {
         this.scoreDisplay.style.display = "block";
       }
@@ -187,6 +196,7 @@ export default class UI {
 
     this.homeBtn.addEventListener("click", () => {
       this.gameCanvas.style.display = "none";
+      this._setGameActive(false);
       this.scoreDisplay.style.display = "none";
       this.gameOverScreen.style.display = "none";
       this.welcomeScreen.style.display = "block";
@@ -216,6 +226,7 @@ export default class UI {
     this.playerInfo = { nickname: "TesteurG2S", organization: "G2S" };
     this.welcomeScreen.style.display = "none";
     this.gameCanvas.style.display = "block";
+    this._setGameActive(true);
     this.scoreDisplay.style.display = "block";
     this.gameManager.startGame(this.playerInfo);
   }
@@ -279,6 +290,7 @@ export default class UI {
     const finalScore = hailPoints + cloudDropPoints + cornPoints;
 
     this.gameCanvas.style.display = "none";
+    this._setGameActive(false);
     this.scoreDisplay.style.display = "none";
     this.gameOverScreen.style.display = "block";
 
@@ -417,12 +429,14 @@ export default class UI {
     this.registerForm.style.display = "none";
     this.gameInstructions.style.display = "none";
     this.gameCanvas.style.display = "none";
+    this._setGameActive(false);
     this.scoreDisplay.style.display = "none";
     this.gameOverScreen.style.display = "none";
   }
 
   showGameScreen() {
     this.gameCanvas.style.display = "block";
+    this._setGameActive(true);
     this.scoreDisplay.style.display = "block";
   }
 
@@ -451,6 +465,7 @@ export default class UI {
     this.registerForm.style.display = "none";
     this.gameInstructions.style.display = "none";
     this.gameCanvas.style.display = "none";
+    this._setGameActive(false);
     this.scoreDisplay.style.display = "none";
     this.showGameOver(1500, 120, 50, 5, testPowerups);
   }

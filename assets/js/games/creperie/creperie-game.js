@@ -19,6 +19,7 @@ import {
   MAX_HEARTS,
   MIN_PLAYER_ORDERS,
   PASSAGE_X_RATIO,
+  ST,
   STATION_LAYOUT,
   STATION_LAYOUT_BOTTOM,
   TABLE_POSITIONS,
@@ -373,7 +374,9 @@ export default class CreperieGame {
 
     if (this.stations.length === 0) return;
 
-    const stationW = Math.max(56, W * 0.085);
+    // Largeur max fixée pour que les graphiques des bols/pâte ne s'élargissent
+    // pas trop en mode plein écran (les stations s'espacent, mais gardent leur taille)
+    const stationW = Math.min(78, Math.max(56, W * 0.085));
     const stationH = this._counterH * 0.85;
 
     // Postes du comptoir HAUT (jusqu'au passage)
@@ -384,6 +387,17 @@ export default class CreperieGame {
       s.h = stationH;
     });
 
+    // La zone d'envoi est plus large que les autres stations
+    const deliveryStation = this.stations.find((s) => s.type === ST.DELIVERY);
+    if (deliveryStation) {
+      const deliveryW = stationW * 1.5;
+      deliveryStation.x = W * deliveryStation.xRatio - deliveryW / 2;
+      deliveryStation.w = deliveryW;
+    }
+
+    // Zones de hit contiguës : chaque station couvre l'espace jusqu'à la suivante
+    this._assignHitZones(this.stations);
+
     // Postes du comptoir BAS (CALL_G2S + DONATION)
     const bottomStationH = this._bottomCounterH * 0.85;
     this.bottomStations.forEach((s) => {
@@ -392,6 +406,7 @@ export default class CreperieGame {
       s.w = stationW;
       s.h = bottomStationH;
     });
+    this._assignHitZones(this.bottomStations);
 
     // Biligs assistants — rangée du bas, même taille que les biligs joueur
     const assistBiligXRatios = [0.08, 0.18, 0.28, 0.38, 0.48];
@@ -401,6 +416,7 @@ export default class CreperieGame {
       s.w = stationW;
       s.h = bottomStationH;
     });
+    this._assignHitZones(this.assistanceBiligs);
 
     // Rectangles de collision des tables (en coords jeu)
     this.tableRects = TABLE_POSITIONS.map((tp) => ({
@@ -791,13 +807,28 @@ export default class CreperieGame {
             a.player.targetCustomer = null;
           }
         });
-        // Passer à la prochaine station en feu (bilig OU ingrédient)
+        // Re-scanner TOUS les feux restants (y compris propagations pendant l'extinction)
         ff.targetsQueue.shift();
-        const next = ff.targetsQueue.find(
-          (b) => b.biligState === BILIG_STATE.BURNING || b.isBurning,
-        );
-        if (next) {
-          ff.targetBilig = next;
+        const allBiligsNow = [
+          ...this.stations.filter((s) => s.type === "BILIG"),
+          ...this.assistanceBiligs,
+        ];
+        const FLAMMABLE = new Set([
+          "BATTER",
+          "BUTTER",
+          "SUGAR",
+          "CHOCOLATE",
+          "STRAWBERRY",
+          "LEMON",
+          "WHIPPED_CREAM",
+        ]);
+        const stillBurning = [
+          ...allBiligsNow.filter((b) => b.biligState === BILIG_STATE.BURNING),
+          ...this.stations.filter((s) => FLAMMABLE.has(s.type) && s.isBurning),
+        ].sort((a, b) => a.x - b.x);
+        if (stillBurning.length > 0) {
+          ff.targetsQueue = stillBurning;
+          ff.targetBilig = stillBurning[0];
           ff.state = "walking";
           ff.isMoving = true;
         } else {
@@ -860,6 +891,22 @@ export default class CreperieGame {
     // HUD entier dans le canvas — ne rien faire
   }
 
+  // Calcule des zones de hit contiguës : chaque station couvre jusqu'au centre
+  // de l'espace avec sa voisine (graphiques inchangés, seul hitX/hitW change)
+  _assignHitZones(stations) {
+    if (!stations || stations.length === 0) return;
+    const sorted = [...stations].sort((a, b) => a.x - b.x);
+    for (let i = 0; i < sorted.length; i++) {
+      const s = sorted[i];
+      const prev = sorted[i - 1];
+      const next = sorted[i + 1];
+      const leftEdge = prev ? (s.x + prev.x + prev.w) / 2 : s.x;
+      const rightEdge = next ? (s.x + s.w + next.x) / 2 : s.x + s.w;
+      s.hitX = leftEdge;
+      s.hitW = rightEdge - leftEdge;
+    }
+  }
+
   // ── Détection de station ───────────────────────────────────────────────────
   _detectStation() {
     if (this.player.zone !== "kitchen") return null;
@@ -868,13 +915,15 @@ export default class CreperieGame {
     // Comptoir haut — seulement si le joueur est en lane 0 (devant le comptoir haut)
     if (this.player._lane === 0) {
       for (const s of this.stations) {
-        if (px >= s.x && px <= s.x + s.w) return s;
+        const hx = s.hitX ?? s.x;
+        if (px >= hx && px <= hx + (s.hitW ?? s.w)) return s;
       }
     }
     // Comptoir bas — seulement si le joueur est en lane 1 (devant le comptoir bas)
     if (this.player._lane === 1) {
-      for (const s of this.bottomStations) {
-        if (px >= s.x && px <= s.x + s.w) return s;
+      for (const s of [...this.bottomStations, ...this.assistanceBiligs]) {
+        const hx = s.hitX ?? s.x;
+        if (px >= hx && px <= hx + (s.hitW ?? s.w)) return s;
       }
     }
     return null;
