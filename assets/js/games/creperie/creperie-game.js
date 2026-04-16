@@ -172,6 +172,7 @@ export default class CreperieGame {
     this.character = playerInfo.character || "cerise";
     this.phase = "intro";
     this._screenTime = 0;
+    if (this._selectedSpeedIdx === undefined) this._selectedSpeedIdx = 1;
 
     // Ajuster le canvas
     this.resizeGame();
@@ -198,7 +199,14 @@ export default class CreperieGame {
     const H = this._logH || this.canvas.height;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.ctx.clearRect(0, 0, W, H);
-    drawIntroScreen(this.ctx, W, H, this._playerInfo, this._screenTime);
+    drawIntroScreen(
+      this.ctx,
+      W,
+      H,
+      this._playerInfo,
+      this._screenTime,
+      this._selectedSpeedIdx,
+    );
     this.rafId = requestAnimationFrame(this._introLoop);
   }
 
@@ -266,6 +274,19 @@ export default class CreperieGame {
       return;
     }
 
+    if (this.phase === "intro") {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        this._selectedSpeedIdx = Math.max(0, (this._selectedSpeedIdx ?? 1) - 1);
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        this._selectedSpeedIdx = Math.min(2, (this._selectedSpeedIdx ?? 1) + 1);
+        return;
+      }
+    }
+
     if (e.key !== " ") return;
     e.preventDefault();
 
@@ -328,12 +349,19 @@ export default class CreperieGame {
       this._gameH,
     );
     this.player.character = this.character;
+    // Appliquer la vitesse choisie à l'écran d'intro
+    const SPEED_OPTIONS = [600, 800, 1000];
+    // Multiplicateurs de spawn : débutant = clients plus rares, expert = plus fréquents
+    const SPAWN_MULTIPLIERS = [1.4, 1.0, 0.7];
+    const lvl = this._selectedSpeedIdx ?? 1;
+    this.player.speed = SPEED_OPTIONS[lvl];
     this.customerManager = new CustomerManager(
       () => this._onUnhappyGameOver(),
       () => {
         this.heartsLeft = Math.max(0, this.heartsLeft - 1);
       },
     );
+    this.customerManager.spawnMultiplier = SPAWN_MULTIPLIERS[lvl];
     this.customerManager.onCustomerSpawned = (customer) =>
       this._tryAssignToAssistant(customer);
     this.renderer = new CreperieRenderer(this.ctx);

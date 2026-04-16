@@ -133,7 +133,8 @@ export class CustomerManager {
     }
     // Chaque assistant ralentit un peu le spawn (plafonné à 1.5× pour ne pas bloquer les spawns)
     const assistantSlowdown = Math.min(1.5, 1 + this.assistantCount * 0.35);
-    this.spawnInterval = step.spawnInterval * assistantSlowdown;
+    this.spawnInterval =
+      step.spawnInterval * assistantSlowdown * this.spawnMultiplier;
     this.patienceDuration = step.patienceDuration;
   }
 

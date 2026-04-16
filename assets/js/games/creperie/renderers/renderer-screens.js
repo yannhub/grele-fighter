@@ -127,7 +127,14 @@ function _drawBackground(ctx, W, H, time) {
 //  ÉCRAN D'INTRO / RÈGLES
 // ══════════════════════════════════════════════════════════════════════════════
 
-export function drawIntroScreen(ctx, W, H, playerInfo, time) {
+export function drawIntroScreen(
+  ctx,
+  W,
+  H,
+  playerInfo,
+  time,
+  selectedSpeedIdx = 1,
+) {
   const t = Date.now();
   const pulse = 0.5 + 0.5 * Math.sin(t / 600);
 
@@ -257,6 +264,59 @@ export function drawIntroScreen(ctx, W, H, playerInfo, time) {
     ctx.restore();
   });
   curY = rulesTopY + rulesH + gap * 1.5;
+
+  // ── Sélection de vitesse ───────────────────────────────────────────────────
+  const speedOptions = [
+    { label: "Débutant", sublabel: "600", idx: 0 },
+    { label: "Intermédiaire", sublabel: "800", idx: 1 },
+    { label: "Expert", sublabel: "1000", idx: 2 },
+  ];
+  const speedCardH = 72;
+  const speedCardTopY = curY;
+  _glassCard(ctx, cardX, speedCardTopY, cardW, speedCardH, 14);
+
+  ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("◀  Vitesse du joueur  ▶", cx, speedCardTopY + 13);
+
+  const btnW = (cardW - 32) / 3;
+  const btnH = 38;
+  const btnY = speedCardTopY + 26;
+  speedOptions.forEach((opt) => {
+    const bx = cardX + 8 + opt.idx * (btnW + 8);
+    const isSelected = opt.idx === selectedSpeedIdx;
+    // Fond bouton
+    const btnBg = ctx.createLinearGradient(bx, btnY, bx, btnY + btnH);
+    if (isSelected) {
+      btnBg.addColorStop(0, "rgba(255,180,0,0.85)");
+      btnBg.addColorStop(1, "rgba(200,90,0,0.85)");
+    } else {
+      btnBg.addColorStop(0, "rgba(255,255,255,0.12)");
+      btnBg.addColorStop(1, "rgba(255,255,255,0.05)");
+    }
+    roundRect(ctx, bx, btnY, btnW, btnH, 10);
+    ctx.fillStyle = btnBg;
+    ctx.fill();
+    ctx.strokeStyle = isSelected
+      ? `rgba(255,230,100,${0.7 + 0.3 * pulse})`
+      : "rgba(255,255,255,0.2)";
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.stroke();
+    // Texte
+    ctx.font = `bold 15px 'Segoe UI', Arial, sans-serif`;
+    ctx.fillStyle = isSelected ? "#FFFFFF" : "rgba(255,255,255,0.6)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(opt.label, bx + btnW / 2, btnY + btnH / 2 - 6);
+    ctx.font = `12px 'Segoe UI', Arial, sans-serif`;
+    ctx.fillStyle = isSelected
+      ? "rgba(255,255,200,0.85)"
+      : "rgba(255,255,255,0.35)";
+    ctx.fillText(`${opt.sublabel} px/s`, bx + btnW / 2, btnY + btnH / 2 + 10);
+  });
+  curY = speedCardTopY + speedCardH + gap * 1.5;
 
   // ── CTA Lancement ──────────────────────────────────────────────────────────
   const ctaY = curY + 8;

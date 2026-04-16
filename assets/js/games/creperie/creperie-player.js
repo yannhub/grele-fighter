@@ -35,6 +35,9 @@ export class CreperiePlayer {
     // Station devant laquelle le joueur se trouve (mis à jour chaque frame)
     this.currentStation = null;
 
+    // Vitesse de déplacement (peut être surchargée selon la difficulté)
+    this.speed = PLAYER_SPEED;
+
     // Feedback flash (item reçu / déposé)
     this.interactFlashTimer = 0;
   }
@@ -62,7 +65,7 @@ export class CreperiePlayer {
       tableRects = [],
     } = gameLayout || {};
 
-    const spd = PLAYER_SPEED * (dt / 1000);
+    const spd = this.speed * (dt / 1000);
     let moving = false;
 
     if (this.zone === "kitchen") {
