@@ -350,7 +350,7 @@ export default class CreperieGame {
     );
     this.player.character = this.character;
     // Appliquer la vitesse choisie à l'écran d'intro
-    const SPEED_OPTIONS = [600, 800, 1000];
+    const SPEED_OPTIONS = [650, 750, 850];
     // Multiplicateurs de spawn : débutant = clients plus rares, expert = plus fréquents
     const SPAWN_MULTIPLIERS = [1.4, 1.0, 0.7];
     const lvl = this._selectedSpeedIdx ?? 1;

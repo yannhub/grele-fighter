@@ -267,9 +267,9 @@ export function drawIntroScreen(
 
   // ── Sélection de vitesse ───────────────────────────────────────────────────
   const speedOptions = [
-    { label: "Débutant", sublabel: "600", idx: 0 },
-    { label: "Intermédiaire", sublabel: "800", idx: 1 },
-    { label: "Expert", sublabel: "1000", idx: 2 },
+    { label: "Débutant", idx: 0 },
+    { label: "Intermédiaire", idx: 1 },
+    { label: "Expert", idx: 2 },
   ];
   const speedCardH = 72;
   const speedCardTopY = curY;
@@ -309,12 +309,7 @@ export function drawIntroScreen(
     ctx.fillStyle = isSelected ? "#FFFFFF" : "rgba(255,255,255,0.6)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(opt.label, bx + btnW / 2, btnY + btnH / 2 - 6);
-    ctx.font = `12px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillStyle = isSelected
-      ? "rgba(255,255,200,0.85)"
-      : "rgba(255,255,255,0.35)";
-    ctx.fillText(`${opt.sublabel} px/s`, bx + btnW / 2, btnY + btnH / 2 + 10);
+    ctx.fillText(opt.label, bx + btnW / 2, btnY + btnH / 2);
   });
   curY = speedCardTopY + speedCardH + gap * 1.5;
 
