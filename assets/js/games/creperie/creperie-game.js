@@ -283,6 +283,7 @@ export default class CreperieGame {
   }
 
   startGame(playerInfo = {}) {
+    this._playerInfo = playerInfo;
     this.character = playerInfo.character || "cerise";
 
     // Réinitialiser l'état
