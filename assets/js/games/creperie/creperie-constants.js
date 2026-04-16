@@ -40,7 +40,7 @@ export const CONTRACT_COLLECT_RADIUS = 90; // distance de collecte (px)
 // Mécanique d'incendie
 export const BROWN_DELAY = 8000; // ms après état READY avant que la crêpe brunisse
 export const BURN_DELAY = 12000; // ms après état READY avant d'attraper feu
-export const FIRE_SPREAD_DELAY = 3000; // ms avant propagation à un bilig voisin
+export const FIRE_SPREAD_DELAY = 4000; // ms avant propagation à un bilig voisin
 export const FIREFIGHTER_SPEED = 480; // px/sec
 
 // Configuration de l'écran d'accueil
