@@ -47,7 +47,7 @@ export const FIREFIGHTER_SPEED = 480; // px/sec
 export const GAME_CONFIG = {
   title: "Bienvenue dans votre crêperie !",
   subtitle:
-    "Préparez et servez un maximum de crêpes délicieuses à vos clients en 1 minute 30 !",
+    "Préparez et servez un maximum de crêpes délicieuses à vos clients en 2 minutes !",
   hidePrize: false,
 };
 
