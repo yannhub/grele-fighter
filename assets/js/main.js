@@ -8,6 +8,18 @@ import UI from "./ui.js";
 
 let currentUI;
 
+function buildBgSvg(emoji, fill) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><rect width='160' height='160' fill='${fill}'/><text x='20' y='52' font-size='42' opacity='0.18'>${emoji}</text><text x='90' y='110' font-size='36' opacity='0.14'>${emoji}</text><text x='5' y='140' font-size='28' opacity='0.12'>${emoji}</text><text x='115' y='42' font-size='30' opacity='0.13'>${emoji}</text></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
+function setFavicon(emoji) {
+  const link = document.querySelector('link[rel="icon"]');
+  if (!link) return;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='50' font-size='95' text-anchor='middle' dominant-baseline='central'>${emoji}</text></svg>`;
+  link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(location.search);
   const gameId = params.get("game");
@@ -41,6 +53,16 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function configureWelcomeScreen(gameId) {
+  if (gameId === "grele") {
+    document.body.classList.add("grele-mode");
+    document.body.style.backgroundImage = buildBgSvg("🌽", "#f5faf0");
+    setFavicon("🌽");
+  } else {
+    document.body.classList.remove("grele-mode");
+    document.body.style.backgroundImage = buildBgSvg("🥞", "#fff8f0");
+    setFavicon("🥞");
+  }
+
   const tagline = document.getElementById("welcome-tagline");
   const description = document.getElementById("welcome-description");
   const prize = document.getElementById("welcome-prize");
