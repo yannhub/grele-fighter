@@ -1,0 +1,54 @@
+name: Update Cache Version and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-cache:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Make script executable
+        run: chmod +x ./update-cache-version.sh
+
+      - name: Update cache version
+        run: ./update-cache-version.sh patch
+
+      - name: Check if files changed
+        id: verify-changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure Git user
+        if: steps.verify-changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Commit cache version update
+        if: steps.verify-changes.outputs.changed == 'true'
+        run: |
+          git add sw.js
+          git commit -m "chore: update cache version [skip ci]"
+
+      - name: Push changes
+        if: steps.verify-changes.outputs.changed == 'true'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
+      - name: Wait for deployment
+        if: steps.verify-changes.outputs.changed == 'true'
+        run: sleep 5
