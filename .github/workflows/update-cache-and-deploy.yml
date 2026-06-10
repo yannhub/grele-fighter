@@ -20,7 +20,7 @@ jobs:
       - name: Make script executable
         run: chmod +x ./update-cache-version.sh
 
-      - name: Update cache version
+      - name: Update cache and version
         run: ./update-cache-version.sh patch
 
       - name: Check if files changed
@@ -42,7 +42,7 @@ jobs:
         if: steps.verify-changes.outputs.changed == 'true'
         run: |
           git add sw.js
-          git commit -m "chore: update cache version [skip ci]"
+          git commit -m "chore: update cache list and version [skip ci]"
 
       - name: Push changes
         if: steps.verify-changes.outputs.changed == 'true'

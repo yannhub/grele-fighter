@@ -1,5 +1,5 @@
 // Version du cache - Mettez à jour cette valeur à chaque modification de ressources
-const CACHE_VERSION = "1.1.22"; // Incrémentez ce numéro à chaque modification
+const CACHE_VERSION = "1.1.23"; // Incrémentez ce numéro à chaque modification
 const CACHE_NAME = `grele-fighter-v${CACHE_VERSION}`;
 
 // Détection de l'environnement de développement
@@ -17,43 +17,56 @@ const urlsToCache = [
   "./offline.html",
 
   // CSS
-  "./assets/css/style.css",
   "./assets/css/base.css",
+  "./assets/css/creperie-game.css",
   "./assets/css/game.css",
   "./assets/css/game-over.css",
   "./assets/css/layout.css",
   "./assets/css/leaderboard.css",
   "./assets/css/responsive.css",
+  "./assets/css/style.css",
   "./assets/css/welcome.css",
-  "./assets/css/creperie-game.css",
 
-  // JavaScript — commun
-  "./assets/js/main.js",
+  // JavaScript
   "./assets/js/constants.js",
-  "./assets/js/leaderboard.js",
-  "./assets/js/ui.js",
-  // Jeu Grêle Fighter
-  "./assets/js/games/grele/grele-game.js",
-  "./assets/js/games/grele/grele-constants.js",
-  "./assets/js/games/grele/grele-player.js",
-  "./assets/js/games/grele/grele-hail.js",
-  "./assets/js/games/grele/grele-corn.js",
-  "./assets/js/games/grele/grele-collision.js",
-  "./assets/js/games/grele/grele-powerups.js",
-  // Jeu Crêperie
-  "./assets/js/games/creperie/creperie-game.js",
+  "./assets/js/games/creperie/creperie-auto-player.js",
   "./assets/js/games/creperie/creperie-constants.js",
-  "./assets/js/games/creperie/creperie-stations.js",
-  "./assets/js/games/creperie/creperie-player.js",
   "./assets/js/games/creperie/creperie-customers.js",
+  "./assets/js/games/creperie/creperie-game.js",
+  "./assets/js/games/creperie/creperie-player.js",
   "./assets/js/games/creperie/creperie-renderer.js",
+  "./assets/js/games/creperie/creperie-stations.js",
+  "./assets/js/games/creperie/creperie-waiter.js",
+  "./assets/js/games/creperie/renderers/renderer-ambient.js",
+  "./assets/js/games/creperie/renderers/renderer-background.js",
+  "./assets/js/games/creperie/renderers/renderer-colors.js",
+  "./assets/js/games/creperie/renderers/renderer-counter.js",
+  "./assets/js/games/creperie/renderers/renderer-crepe.js",
+  "./assets/js/games/creperie/renderers/renderer-customers.js",
+  "./assets/js/games/creperie/renderers/renderer-furniture.js",
+  "./assets/js/games/creperie/renderers/renderer-hud.js",
+  "./assets/js/games/creperie/renderers/renderer-player.js",
   "./assets/js/games/creperie/renderers/renderer-screens.js",
+  "./assets/js/games/creperie/renderers/renderer-stations.js",
+  "./assets/js/games/creperie/renderers/renderer-waiter.js",
+  "./assets/js/games/grele/grele-collision.js",
+  "./assets/js/games/grele/grele-constants.js",
+  "./assets/js/games/grele/grele-corn.js",
+  "./assets/js/games/grele/grele-game.js",
+  "./assets/js/games/grele/grele-hail.js",
+  "./assets/js/games/grele/grele-player.js",
+  "./assets/js/games/grele/grele-powerups.js",
+  "./assets/js/leaderboard.js",
+  "./assets/js/main.js",
+  "./assets/js/ui.js",
+
   // Images
+  "./assets/img/background-tile.png",
+  "./assets/img/gift.png",
   "./assets/img/logo-one.png",
   "./assets/img/logo-two.png",
-  "./assets/img/gift.png",
   "./assets/img/sketchnote.png",
-  "./assets/img/background-tile.png",
+  "./assets/img/mixit-icon.svg",
 ];
 
 // Installation du Service Worker
