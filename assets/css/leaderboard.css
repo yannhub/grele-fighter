@@ -183,3 +183,41 @@
 .tooltip-play-btn:active {
   background-color: #004020;
 }
+
+/* Bouton pour lancer la roue */
+.spinner-launch-btn {
+  width: 100%;
+  padding: 12px 0;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff1493 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 20, 147, 0.3);
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.spinner-launch-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 20, 147, 0.5);
+  animation: spinnerBtnPulse 0.6s infinite;
+}
+
+.spinner-launch-btn:active {
+  transform: scale(0.95);
+}
+
+@keyframes spinnerBtnPulse {
+  0%,
+  100% {
+    box-shadow: 0 6px 16px rgba(255, 20, 147, 0.5);
+  }
+  50% {
+    box-shadow: 0 6px 25px rgba(255, 20, 147, 0.8);
+  }
+}

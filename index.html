@@ -6,6 +6,7 @@
     <title id="page-title">Jeux G2S</title>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./assets/css/style.css" />
+    <link rel="stylesheet" href="./assets/css/spinner.css" />
 
     <!-- PWA Configuration -->
     <link rel="manifest" href="./manifest.json" />
@@ -27,7 +28,7 @@
           <img
             src="./assets/img/logo-two.png"
             alt="Agile Lyon Logo"
-            class="logo bg-midnight"
+            class="logo bg-white"
           />
         </div>
 
@@ -336,6 +337,38 @@
           <ul id="leaderboard-list" class="leaderboard-list">
             <!-- Les scores seront ajoutés ici dynamiquement -->
           </ul>
+          <button id="spinner-launch-btn" class="spinner-launch-btn">
+            🎡 Lancer la roue
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SPINNER WHEEL MODAL ===== -->
+    <div id="spinner-modal" class="spinner-modal" style="display: none">
+      <div class="spinner-overlay" id="spinner-overlay"></div>
+      <button class="spinner-close-btn" id="spinner-close">✕</button>
+      <div class="spinner-container">
+        <div class="spinner-header">
+          <h1>🎯 TIRAGE AU SORT 🎯</h1>
+          <p>Qui sera le grand gagnant ?</p>
+          <div class="participants-count" id="participants-count"></div>
+        </div>
+        <div class="spinner-wheel-wrapper">
+          <canvas id="spinner-wheel" style="width: 100%; height: auto"></canvas>
+        </div>
+        <div class="spinner-button-group">
+          <button id="spin-button" class="spin-button">
+            🚀 LANCER LA ROUE
+          </button>
+        </div>
+      </div>
+      <div id="winner-display" class="winner-display">
+        <button class="winner-close-btn" id="winner-close">✕</button>
+        <div class="winner-content">
+          <span class="winner-medal">🏆</span>
+          <div class="winner-label">🎉 LE GAGNANT 🎉</div>
+          <div class="winner-name" id="winner-name"></div>
         </div>
       </div>
     </div>

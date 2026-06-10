@@ -1,0 +1,456 @@
+/* spinner.css - Styles pour l'écran de tirage au sort */
+
+/* Conteneur de la modale */
+#spinner-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#spinner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+
+.spinner-modal {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.spinner-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.spinner-header {
+  text-align: center;
+  animation: slideDown 0.6s ease-out;
+}
+
+.spinner-header h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  margin: 0;
+  color: #fff;
+  text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.4);
+  letter-spacing: 2px;
+}
+
+.spinner-header p {
+  font-size: 1.2rem;
+  color: #fff;
+  margin: 10px 0 0 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Wheel Canvas */
+.spinner-wheel-wrapper {
+  position: relative;
+
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+  /* S'adapte à l'espace disponible sans jamais dépasser 1000px ni 70vh */
+  width: min(100%, 1000px, 70vh);
+}
+
+#spinner-wheel {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  filter: drop-shadow(0 15px 40px rgba(0, 0, 0, 0.5));
+}
+
+/* Glow effect lors de la rotation */
+#spinner-wheel.spinning {
+  animation: wheelGlow 0.5s ease-in-out infinite;
+}
+
+@keyframes wheelGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 10px 40px rgba(255, 20, 147, 0.8));
+  }
+}
+
+/* Bouton de lancement */
+.spinner-button-group {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  animation: slideUp 0.6s ease-out 0.2s both;
+}
+
+#spin-button {
+  padding: 18px 40px;
+  font-size: 1.3rem;
+  font-weight: 900;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff1493 100%);
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(255, 20, 147, 0.4);
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  transform: scale(1);
+}
+
+#spin-button:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 12px 30px rgba(255, 20, 147, 0.6);
+  animation: spinner-pulse 0.6s infinite;
+}
+
+#spin-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+#spin-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+#spin-button.winner-mode {
+  background: linear-gradient(135deg, #76ff03 0%, #00ff00 100%);
+  box-shadow: 0 8px 20px rgba(118, 255, 3, 0.4);
+}
+
+.spin-button {
+  padding: 18px 40px;
+  font-size: 1.3rem;
+  font-weight: 900;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff1493 100%);
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(255, 20, 147, 0.4);
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  transform: scale(1);
+}
+
+.spin-button:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 12px 30px rgba(255, 20, 147, 0.6);
+  animation: spinner-pulse 0.6s infinite;
+}
+
+.spin-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.spin-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spin-button.winner-mode {
+  background: linear-gradient(135deg, #76ff03 0%, #00ff00 100%);
+  box-shadow: 0 8px 20px rgba(118, 255, 3, 0.4);
+}
+
+@keyframes spinner-pulse {
+  0%,
+  100% {
+    box-shadow: 0 12px 30px rgba(255, 20, 147, 0.6);
+  }
+  50% {
+    box-shadow: 0 12px 50px rgba(255, 20, 147, 1);
+  }
+}
+
+/* Bouton fermer */
+.spinner-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  font-size: 2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.spinner-close-btn:hover {
+  background: white;
+  transform: rotate(90deg);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Bouton fermer du winner display */
+.winner-close-btn {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  width: 60px;
+  height: 60px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  font-size: 2.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 11;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.winner-close-btn:hover {
+  background: white;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Écran du gagnant */
+#winner-display {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 215, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(5px);
+}
+
+#winner-display.show-winner {
+  animation: fadeInWinner 0.5s ease-out;
+}
+
+.winner-content {
+  text-align: center;
+  animation: scaleUpWinner 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.winner-medal {
+  font-size: 8rem;
+  display: block;
+  margin-bottom: 20px;
+  animation: medalPop 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.winner-label {
+  font-size: 1.5rem;
+  color: #fff;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.5);
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+}
+
+.winner-name {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 4px 4px 12px rgba(0, 0, 0, 0.8);
+  margin: 20px 0;
+  letter-spacing: 2px;
+  animation: slideInDown 0.8s ease-out 0.3s both;
+  text-transform: uppercase;
+}
+
+.winner-confetti {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ffd700;
+  opacity: 1;
+}
+
+@keyframes fadeInWinner {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleUpWinner {
+  from {
+    opacity: 0;
+    transform: scale(0.3) rotate(-20deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes medalPop {
+  0% {
+    transform: scale(0) rotate(-180deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Texte de participation */
+.participants-count {
+  color: #fff;
+  font-size: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  margin-top: 15px;
+  opacity: 0.9;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .spinner-header h1 {
+    font-size: 2rem;
+  }
+
+  #spin-button {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+  }
+
+  .winner-medal {
+    font-size: 5rem;
+  }
+
+  .winner-name {
+    font-size: 2.5rem;
+  }
+
+  .spinner-close-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
+  }
+
+  .winner-close-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 2rem;
+    top: 30px;
+    right: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .spinner-header h1 {
+    font-size: 1.5rem;
+  }
+
+  #spin-button {
+    padding: 12px 24px;
+    font-size: 1rem;
+  }
+
+  .winner-medal {
+    font-size: 4rem;
+  }
+
+  .winner-name {
+    font-size: 2rem;
+  }
+
+  .winner-close-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 1.5rem;
+    top: 20px;
+    right: 20px;
+  }
+}

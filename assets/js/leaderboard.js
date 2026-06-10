@@ -1,6 +1,7 @@
 // leaderboard.js - Gestion du classement des joueurs
 
 import { STORAGE_KEY } from "./constants.js";
+import Spinner from "./spinner.js";
 
 export default class Leaderboard {
   constructor(ui = null, gameId = "grele") {
@@ -9,7 +10,17 @@ export default class Leaderboard {
     this.ui = ui;
     // Clé de stockage séparée par jeu
     this.storageKey = `${STORAGE_KEY}_${gameId}`;
+    this.spinner = new Spinner(this);
     this.initTooltip();
+    this.initSpinnerButton();
+  }
+
+  // Initialiser le bouton du spinner
+  initSpinnerButton() {
+    const spinnerBtn = document.getElementById("spinner-launch-btn");
+    if (spinnerBtn) {
+      spinnerBtn.addEventListener("click", () => this.spinner.openSpinner());
+    }
   }
 
   // Initialiser l'élément tooltip
