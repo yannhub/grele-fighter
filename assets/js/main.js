@@ -66,24 +66,18 @@ function configureWelcomeScreen(gameId) {
   const tagline = document.getElementById("welcome-tagline");
   const description = document.getElementById("welcome-description");
   const prize = document.getElementById("welcome-prize");
-  const testBtn = document.getElementById("test-mode-btn");
-  const testRecapBtn = document.getElementById("test-recap-btn");
 
   if (gameId === "creperie") {
     if (tagline) tagline.textContent = CREPERIE_CONFIG.title;
     if (description)
       description.innerHTML = `<p>${CREPERIE_CONFIG.subtitle}</p>`;
     if (prize && CREPERIE_CONFIG.hidePrize) prize.style.display = "none";
-    if (testBtn) testBtn.style.display = "none";
-    if (testRecapBtn) testRecapBtn.style.display = "none";
   } else {
     // Configuration depuis grele-constants.js
     if (tagline) tagline.textContent = GRELE_CONFIG.tagline;
     if (description)
       description.innerHTML = `<p>${GRELE_CONFIG.description}</p>`;
     if (prize) prize.style.display = "block";
-    if (testBtn) testBtn.style.display = "block";
-    if (testRecapBtn) testRecapBtn.style.display = "block";
   }
 
   // Initialiser l'UI pour ce jeu

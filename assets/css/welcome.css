@@ -97,22 +97,6 @@
   }
 }
 
-.test-btn {
-  display: none;
-  width: 40%;
-  min-width: 180px;
-  max-width: 200px;
-  margin: 1vh auto;
-  background-color: #ff9800;
-  border-radius: 50px;
-}
-
-.test-btn:hover {
-  background-color: #e65100;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(230, 81, 0, 0.3);
-}
-
 /* Registre form modernisé */
 .register-form {
   width: 80%;

@@ -32,8 +32,6 @@ export default class UI {
       this.playBtn = document.getElementById("play-btn");
       this.homeBtn = document.getElementById("home-btn");
       this.playAgainBtn = document.getElementById("play-again-btn");
-      this.testModeBtn = document.getElementById("test-mode-btn");
-      this.testRecapBtn = document.getElementById("test-recap-btn");
     } else {
       // Crêperie ou autre jeu
       this.gameInstructions = document.getElementById(
@@ -44,13 +42,6 @@ export default class UI {
       this.playBtn = document.getElementById("play-btn-creperie");
       this.homeBtn = document.getElementById("creperie-home-btn");
       this.playAgainBtn = document.getElementById("creperie-play-again-btn");
-      this.testModeBtn = null;
-      this.testRecapBtn = null;
-      // Masquer les boutons de test spécifiques à grêle
-      const testBtn = document.getElementById("test-mode-btn");
-      if (testBtn) testBtn.style.display = "none";
-      const testRecapBtn = document.getElementById("test-recap-btn");
-      if (testRecapBtn) testRecapBtn.style.display = "none";
     }
 
     // Timer
@@ -208,31 +199,9 @@ export default class UI {
       this.playerInfo = { character: "cerise" };
     });
 
-    if (this.testModeBtn) {
-      this.testModeBtn.addEventListener("click", () => {
-        this.startTestMode();
-      });
-    }
-
-    if (this.testRecapBtn) {
-      this.testRecapBtn.addEventListener("click", () => {
-        this.showTestRecap();
-      });
-    }
-
     window.addEventListener("resize", () => {
       this.gameManager.resizeGame();
     });
-  }
-
-  // Mode test pour démarrer rapidement (grêle)
-  startTestMode() {
-    this.playerInfo = { nickname: "TesteurG2S", organization: "G2S" };
-    this.welcomeScreen.style.display = "none";
-    this.gameCanvas.style.display = "block";
-    this._setGameActive(true);
-    this.scoreDisplay.style.display = "block";
-    this.gameManager.startGame(this.playerInfo);
   }
 
   // Démarrer le timer (utilisé par le jeu grêle uniquement)
@@ -450,27 +419,5 @@ export default class UI {
 
   stopTimer() {
     clearInterval(this.timerInterval);
-  }
-
-  // Test de l'écran de récapitulation (grêle)
-  showTestRecap() {
-    if (!this.playerInfo.nickname) {
-      this.playerInfo = { nickname: "TesteurRecap", organization: "G2S" };
-    }
-    this.gameEndReason = "time";
-    const testPowerups = [];
-    for (let type in POWERUP_TYPES) {
-      const count = Math.floor(Math.random() * 4);
-      for (let i = 0; i < count; i++) {
-        testPowerups.push({ type, name: POWERUP_TYPES[type].name });
-      }
-    }
-    this.welcomeScreen.style.display = "none";
-    this.registerForm.style.display = "none";
-    this.gameInstructions.style.display = "none";
-    this.gameCanvas.style.display = "none";
-    this._setGameActive(false);
-    this.scoreDisplay.style.display = "none";
-    this.showGameOver(1500, 120, 50, 5, testPowerups);
   }
 }
