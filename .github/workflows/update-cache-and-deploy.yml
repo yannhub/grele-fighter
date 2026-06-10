@@ -8,10 +8,12 @@ on:
 jobs:
   update-cache:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.7
         with:
           ref: main
 
@@ -44,7 +46,7 @@ jobs:
 
       - name: Push changes
         if: steps.verify-changes.outputs.changed == 'true'
-        uses: ad-m/github-push-action@master
+        uses: ad-m/github-push-action@v0.8.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
